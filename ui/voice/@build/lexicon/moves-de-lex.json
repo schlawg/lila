@@ -22,6 +22,7 @@
   { "in": "Läufer", "tok": "B", "tags": [ "role", "move" ] },
   { "in": "Turm", "tok": "R", "tags": [ "role", "move" ] },
   { "in": "Dame", "tok": "Q", "tags": [ "role", "move" ] },
+  { "in": "Königin", "tok": "Q", "tags": [ "role", "move" ] },
   { "in": "König", "tok": "K", "tags": [ "role", "move" ] },
 
   { "in": "Rochade", "val": "castle", "tags": [ "move" ] },
@@ -84,6 +85,15 @@
   { "in": "foxtrot", "val": "f", "tags": [ "file", "move", "nato" ] },
   { "in": "golf", "val": "g", "tags": [ "file", "move", "nato" ] },
   { "in": "hotel", "val": "h", "tags": [ "file", "move", "nato" ] },
+  
+  { "in": "Anton", "tok": "a", "tags": [ "file", "move" ] },
+  { "in": "Berta", "tok": "b", "tags": [ "file", "move" ] },
+  { "in": "Cäsar", "tok": "c", "tags": [ "file", "move" ] },
+  { "in": "Dora", "tok": "d", "tags": [ "file", "move" ] },
+  { "in": "Emil", "tok": "e", "tags": [ "file", "move" ] },
+  { "in": "Friedrich", "tok": "f", "tags": [ "file", "move" ] },
+  { "in": "Gustav", "tok": "g", "tags": [ "file", "move" ] },
+  { "in": "Heinrich", "tok": "h", "tags": [ "file", "move" ] },
 
   { "in": "Matt", "val": "", "tags": [ "move", "ignore" ] },
   { "in": "Schachmatt", "val": "", "tags": [ "move", "ignore" ] },
