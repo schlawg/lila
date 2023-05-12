@@ -30,19 +30,30 @@ $c-recording-hover: hsl(6, 100%, if($theme == 'light', 40%, 60%));
 
 #microphone-button {
   span {
+    padding: 1px;
     font-family: 'lichess';
     font-size: 1.6em;
-    border: 1px solid transparent;
-    border-width: 0 1px;
-    border-radius: 0.25em;
+    border: 1px solid transparent; //$c-font-dimmer;
+    border-width: 1px 1px;
+    border-radius: 0.3em;
+    &:hover {
+      color: $c-font;
+    }
   }
   &.enabled span {
-    color: $c-recording;
-    animation: pulseBorderRed 1s;
+    color: $c-font;
+
+    animation: pulseBorderRed 2s;
     animation-iteration-count: infinite;
-    border-color: $c-recording;
+    border-color: $c-primary;
     &:hover {
-      color: $c-recording-hover;
+      color: $c-secondary-over;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      color: $c-primary;
+      &:hover {
+        color: $c-font;
+      }
     }
   }
   @keyframes pulseBorderRed {
@@ -50,7 +61,7 @@ $c-recording-hover: hsl(6, 100%, if($theme == 'light', 40%, 60%));
       border-color: transparent;
     }
     50% {
-      border-color: $c-recording;
+      border-color: $c-primary;
     }
     100% {
       border-color: transparent;
