@@ -1,5 +1,5 @@
-$c-recording: hsl(6, 86%, 50%);
-$c-recording-hover: hsl(6, 100%, if($theme == 'light', 40%, 60%));
+$c-mic-enabled: if($theme == 'light', $c-primary, $c-primary);
+$c-mic-bg-hover: if($theme == 'light', $c-font-dimmer, transparent);
 
 #voice-control {
   position: relative;
@@ -33,30 +33,24 @@ $c-recording-hover: hsl(6, 100%, if($theme == 'light', 40%, 60%));
     padding: 1px;
     font-family: 'lichess';
     font-size: 1.6em;
-    border: 1px solid transparent; //$c-font-dimmer;
+    border: 1px solid transparent;
     border-width: 1px 1px;
     border-radius: 0.3em;
     &:hover {
       color: $c-font;
+      background-color: $c-mic-bg-hover;
     }
   }
   &.enabled span {
-    color: $c-font;
-
-    animation: pulseBorderRed 2s;
+    color: $c-mic-enabled;
+    animation: pulseBorder 2s;
     animation-iteration-count: infinite;
     border-color: $c-primary;
     &:hover {
-      color: $c-secondary-over;
-    }
-    @media (prefers-reduced-motion: reduce) {
-      color: $c-primary;
-      &:hover {
-        color: $c-font;
-      }
+      color: $c-font;
     }
   }
-  @keyframes pulseBorderRed {
+  @keyframes pulseBorder {
     0% {
       border-color: transparent;
     }
