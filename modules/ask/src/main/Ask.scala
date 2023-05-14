@@ -22,11 +22,11 @@ case class Ask(
       answer == a.answer &&
       footer == a.footer &&
       creator == a.creator &&
-      isPublic == a.isPublic &&
+      isOpen == a.isOpen &&
+      isTransparent == a.isTransparent &&
       isAnon == a.isAnon &&
       isRanked == a.isRanked &&
-      isMulti == a.isMulti &&
-      isRange == a.isRange
+      isMulti == a.isMulti
 
   def merge(dbAsk: Ask): Ask =
     if this.compatible(dbAsk) then // keep votes & feedback
@@ -38,23 +38,21 @@ case class Ask(
     case Some(p) => p.keys.toSeq
     case None    => Nil
 
-  def isAnon: Boolean      = tags.exists(_ startsWith "anon") // hide voters from creator/mods
-  def isPublic: Boolean    = tags contains "public"           // everyone can see who voted for what
-  def isTally: Boolean     = tags contains "tally"            // partial results viewable before conclusion
-  def isConcluded: Boolean = tags contains "concluded"        // no more votes, notify participants
-
-  def isRandom: Boolean   = tags contains "random"              // randomize order of choices
-  def isCenter: Boolean   = tags contains "center"              // horizontally center each row of choices
-  def isVertical: Boolean = tags.exists(_ startsWith "vert")    // one choice per row
+  def isAnon: Boolean        = tags.exists(_ startsWith "anon")  // hide voters from creator/mods
+  def isOpen: Boolean        = tags contains "open"              // allow votes from anyone
+  def isTransparent: Boolean = tags.exists(_ startsWith "trans") // everyone can see who voted for what
+  def isTally: Boolean       = tags contains "tally"             // partial results viewable before conclusion
+  def isConcluded: Boolean   = tags contains "concluded"         // no more votes, notify participants
+  def isRandom: Boolean      = tags contains "random"            // randomize order of choices
+  def isCenter: Boolean      = tags contains "center"            // horizontally center each row of choices
+  def isVertical: Boolean    = tags.exists(_ startsWith "vert")  // one choice per row
   def isStretch: Boolean  = tags.exists(_ startsWith "stretch") // stretch choices to fill width
+  def isCheckbox: Boolean = tags.exists(_ startsWith "check")   // use checkboxes, implies vertical
+  def isMulti: Boolean    = tags.exists(_ startsWith "multi")   // multiple choices allowed
+  def isRanked: Boolean   = tags.exists(_ startsWith "rank")    // drag to sort
+  def isFeedback: Boolean = tags contains "feedback"            // has a feedback/submit form
+  def isQuiz: Boolean     = answer nonEmpty                     // has a correct answer
 
-  def isMulti: Boolean    = tags.exists(_ startsWith "multi") // multiple choices allowed
-  def isRanked: Boolean   = tags.exists(_ startsWith "rank")  // drag to sort
-  def isRange: Boolean    = tags.exists(_ startsWith "range") // slider
-  def isFeedback: Boolean = tags contains "feedback"          // has a feedback/submit form
-  def isQuiz: Boolean     = answer nonEmpty                   // has a correct answer
-
-  def range: Int = tags.find(_ startsWith "range(") flatMap (_.drop(6).toIntOption) getOrElse choices.size
   def anon(user: UserId): String = if isAnon then Ask.anon(user, _id) else user.value
 
   def hasPickFor(uid: UserId): Boolean               = picks exists (_ contains anon(uid))

@@ -8,10 +8,11 @@ import lila.hub.actorApi.timeline.{ AskConcluded, Propagate }
 import lila.user.User
 import lila.security.Granter
 
-/* an ASK is an object that represents a single poll, quiz, or feedback.  in this file the term
- * MARKUP refers to the ask definition syntax.  the FREEZE process transforms form text prior to
- * database storage and updates collection objects with ask markup.  freeze methods return FROZEN
- * replacement text with magic{id} tags substituted for markup. UNFREEZE methods allow editing by
+/* an Ask is an object that represents a poll or quiz question together with its choices, tags
+ * that specify its behavior & rendering, and an optional feedback field. Ask markup is the
+ * text syntax used to define the ask.  the Freeze process transforms form text prior to
+ * database storage and updates collection objects with ask markup.  freeze methods return Frozen
+ * replacement text with magic{id} tags substituted for markup. Unfreeze methods allow editing by
  * substituting the markup back into a previously frozen text.
  */
 
@@ -28,7 +29,7 @@ final class AskApi(
     coll.byId[Ask](id)
 
   // note that uid is a String (not a UserId) on purpose - they can be anonymous hashes.
-  // this is all confined to a few places so it's really not worth opaque typing
+  // this is confined to a few places so i don't think it's worth a new opaque type
   def setPicks(id: Ask.ID, uid: String, ranking: Option[List[Int]]): Fu[Option[Ask]] =
     update(id, ranking.fold($unset(s"picks.$uid"))(r => $set(s"picks.$uid" -> r)))
 
@@ -40,7 +41,7 @@ final class AskApi(
 
   def conclude(ask: Ask): Fu[Option[Ask]] = conclude(ask._id)
 
-  def conclude(id: Ask.ID): Fu[Option[Ask]] = askDb { coll => // scalafmt indent fails here
+  def conclude(id: Ask.ID): Fu[Option[Ask]] = askDb { coll =>
     coll.findAndUpdateSimplified[Ask](
       $id(id),
       $addToSet("tags" -> "concluded"),
@@ -69,7 +70,7 @@ final class AskApi(
   def deleteAll(text: String): Funit = askDb: coll =>
     coll.delete.one($inIds(extractIds(text))).void
 
-  // None values in the asksIn list are still important for sequencing
+  // None values in the returned list are still important for sequencing
   def asksIn(text: String): Fu[List[Option[Ask]]] = askDb: coll =>
     coll.optionsByOrderedIds[Ask, Ask.ID](extractIds(text))(_._id)
 
@@ -159,10 +160,8 @@ final class AskApi(
     coll.delete.one($id(id)).void
 
 object AskApi:
-  // when we can't find the thing, assuming html
   val askNotFoundFrag = "&lt;deleted&gt;<br>"
 
-  // used as return value / parameter
   case class Frozen(text: String, asks: Iterable[Ask])
 
   def hasAskId(text: String): Boolean = text.contains(frozenIdMagic)
@@ -171,7 +170,7 @@ object AskApi:
   def stripAsks(text: String, n: Int = -1): String =
     frozenIdRe.replaceAllIn(text, "").take(if n == -1 then text.length else n)
 
-  // combine text (html) fragments with frozen text in proper order
+  // combine text fragments with frozen text in proper order
   def bake(text: String, askFrags: Iterable[String]): String =
     val sb = new java.lang.StringBuilder(text.length + askFrags.foldLeft(0)((x, y) => x + y.length))
     val it = askFrags.iterator
@@ -184,13 +183,20 @@ object AskApi:
   // render ask as markup text
   private def askToText(ask: Ask): String =
     val sb = new mutable.StringBuilder(1024)
-    // scala StringBuilder here for ++= readability
     sb ++= s"?? ${ask.question}\n"
     sb ++= s"?= id{${ask._id}}"
-    sb ++= s"${ask.isPublic ?? " public"}${ask.isTally ?? " tally"}${ask.isRanked ?? " rank"}"
-    sb ++= s"${ask.isMulti ?? " multiple"}${ask.isRange ?? " range"}${ask.isAnon ?? " anon"}"
-    sb ++= s"${ask.isVertical ?? " vertical"}${ask.isCenter ?? " center"}${ask.isStretch ?? " stretch"}"
-    sb ++= s"${ask.isRandom ?? " random"}${ask.isFeedback ?? " feedback"}${ask.isConcluded ?? " concluded"}\n"
+    if ask.isTransparent then sb ++= " transparent"
+    if ask.isTally then sb ++= " tally"
+    if ask.isAnon then sb ++= " anon"
+    if ask.isVertical then sb ++= " vertical"
+    if ask.isCenter then sb ++= " center"
+    if ask.isStretch then sb ++= " stretch"
+    if ask.isRandom then sb ++= " random"
+    if ask.isCheckbox then sb ++= " checkbox"
+    if ask.isRanked then sb ++= " ranked"
+    if ask.isMulti then sb ++= " multiple"
+    if ask.isFeedback then sb ++= " feedback"
+    if ask.isConcluded then sb ++= " concluded"
     sb ++= ask.choices.map(c => s"?${if (ask.answer.contains(c)) "@" else "#"} $c\n").mkString
     sb ++= s"${ask.footer.fold("")(r => s"?! $r\n")}"
     sb.toString
@@ -208,7 +214,7 @@ object AskApi:
       footer = extractFooter(segment)
     )
 
-  // keep track of index pairs for value equality on matches
+  // keep track of index pairs for value equality on regex matches
   type Interval  = (Int, Int) // [start, end)
   type Intervals = List[Interval]
 
@@ -221,7 +227,6 @@ object AskApi:
     val points = (0 :: subs.flatten(i => List(i._1, i._2)) ::: upper :: Nil).distinct.sorted
     points zip (points tail)
 
-  // extractIds is called often - don't use regex for simple processing that should be fast.
   // magic/id in a frozen text looks like:  ﷖﷔﷒﷐{8 char id}
   private def extractIds(t: String): List[Ask.ID] =
     var i   = t indexOf frozenIdMagic
@@ -236,7 +241,7 @@ object AskApi:
   private val frozenIdRe    = s"$frozenIdMagic\\{(\\S{8})}".r
 
   private def extractQuestion(t: String): String =
-    questionInAskRe.findFirstMatchIn(t).get group 1 trim // NPE is desired if we fail here
+    questionInAskRe.findFirstMatchIn(t).get group 1 trim // NPE is desired if get fails
 
   private def extractParams(t: String): Option[String] =
     paramsInAskRe findFirstMatchIn t map (_ group 1)
@@ -258,10 +263,9 @@ object AskApi:
   private def extractFooter(t: String): Option[String] =
     footerInAskRe findFirstMatchIn t map (_ group 1 trim)
 
-  // markup, there is no nesting so parse with regex for now.
   private val askRe = (
     raw"(?m)^\?\?\h*\S.*\R"         // match "?? <question>" line and (
-      + raw"((\?=.*\R?)?"           //      (match optional "?= <params>" line and
+      + raw"((\?=.*\R?)?"           //      (match optional "?= <tags/params>" line and
       + raw"(\?[#@]\h*\S.*\R?){2,}" //       match two+ "?# <choice>"/"?@ <choice>" lines and
       + raw"(\?!.*\R?)?"            //       match optional "?! <footer>" line)
       + raw"|\?=.*feedback.*\R?)"   //   or: match ?= with "feedback" param (a feedback-only ask)

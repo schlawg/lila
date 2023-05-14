@@ -43,16 +43,14 @@ object ask:
         if ask.choices.nonEmpty then s"${ask.picks ?? (_ size)} responses"
         else s"${ask.feedback ?? (_ size)} responses"
       ),
-      if ask.choices.isEmpty then emptyFrag
-      else
-        RenderType(ask, tally) match {
+      if ask.choices.nonEmpty then
+        RenderType(ask, tally) match
           case POLL    => pollBody(ask, view)
           case RANK    => rankBody(ask, view)
           case QUIZ    => quizBody(ask, view)
           case BAR     => barGraphBody(ask)
           case RANKBAR => rankGraphBody(ask)
-        }
-      ,
+      else emptyFrag,
       footer(ask)
     )
 
@@ -82,8 +80,8 @@ object ask:
 
   private def footer(ask: Ask)(using ctx: Context): Frag =
     div(cls := "ask__footer")(
-      // TODO jesus christ fix this boolean nightmare
-      ask.footer.nonEmpty && (!ask.isQuiz || ask.hasPickFor(ctx.me)) option ask.footer map (label(_)),
+      ask.footer.nonEmpty && (!ask.isQuiz || ask.hasPickFor(ctx.me))
+        option ask.footer map (label(_)),
       ask.isFeedback && !ask.isConcluded option ctx.me.fold(emptyFrag) { u =>
         frag:
           Seq(
@@ -101,25 +99,45 @@ object ask:
         ask.feedback.map: fbmap =>
           div(cls := "feedback-results")(
             ask.footer map (label(_)),
-            fbmap.toSeq flatMap { case (uid, fb) => Seq(div(s"${ask.isPublic ?? s"$uid:"}"), div(fb)) }
+            fbmap.toSeq flatMap:
+              case (uid, fb) => Seq(div(s"${ask.isTransparent ?? s"$uid:"}"), div(fb))
           )
     )
 
   private def pollBody(ask: Ask, view: List[Int])(using ctx: Context): Frag = choiceContainer(ask):
     val picks = ask.picksFor(ctx.me)
-    val clz   = s"choice ${if (ask.isMulti) "multiple" else "exclusive"} ${ask.isStretch ?? "stretch "}"
-    view map ask.choices.zipWithIndex map:
-      case (choiceText, choice) =>
-        div(
-          cls   := clz + (if (picks.exists(_ contains choice)) "selected" else "enabled"),
-          title := tooltip(ask, choice),
-          value := choice
-        )(label(choiceText))
+    val sb    = new mutable.StringBuilder(256)
+    sb ++= "choice "
+    if ask.isCheckbox then sb ++= "cbx " else sb ++= "btn "
+    if ask.isMulti then sb ++= "multi " else sb ++= "exclusive "
+    if ask.isStretch then sb ++= "stretch "
+    val choices = view map ask.choices.zipWithIndex
+    if ask.isCheckbox then
+      choices map:
+        case (choiceText, choice) =>
+          val selected = picks.exists(_ contains choice)
+          label(
+            cls   := sb.toString + (if selected then "selected" else "enabled"),
+            title := tooltip(ask, choice),
+            value := choice
+          )(
+            choiceText,
+            input(tpe := "checkbox", selected option checked),
+            span(cls  := "mark")
+          )
+    else
+      choices map:
+        case (choiceText, choice) =>
+          div(
+            cls   := sb.toString + (if picks.exists(_ contains choice) then "selected" else "enabled"),
+            title := tooltip(ask, choice),
+            value := choice
+          )(label(choiceText))
 
   private def rankBody(ask: Ask, view: List[Int])(using ctx: Context): Frag = choiceContainer(ask):
     validRanking(ask).zipWithIndex map:
       case (choice, index) =>
-        val clz = s"choice rank${ask.isStretch ?? " stretch"}${ask.hasPickFor(ctx.me) ?? " badge"}"
+        val clz = s"choice btn rank${ask.isStretch ?? " stretch"}${ask.hasPickFor(ctx.me) ?? " badge"}"
         div(cls := clz, value := choice, draggable := true)(
           div(s"${index + 1}"),
           label(ask.choices(choice)),
@@ -130,16 +148,16 @@ object ask:
     val pick = ask.firstPickFor(ctx.me)
     view map ask.choices.zipWithIndex map:
       case (choiceText, choice) =>
-        val classes =
-          if (pick isEmpty) "choice exclusive enabled"
-          else if (ask.answer map (a => ask.choices indexOf a) contains choice) "choice correct"
-          else if (pick contains choice) "choice wrong"
-          else "choice disabled"
-        div(
-          title := tooltip(ask, choice),
-          cls   := s"$classes${ask.isStretch ?? " stretch"}",
-          value := choice
-        )(label(choiceText))
+        val sb = new mutable.StringBuilder(256)
+        sb ++= "choice"
+        if ask.isCheckbox then sb ++= " cbx" else sb ++= " btn"
+        if ask.isStretch then sb ++= " stretch"
+        if pick isEmpty then sb ++= " exclusive enabled"
+        else if (ask.answer map (a => ask.choices indexOf a) contains choice) sb ++= " correct"
+        else if pick contains choice then sb ++= " wrong"
+        else sb ++= " disabled"
+        div(title := tooltip(ask, choice), cls := sb.toString, value := choice)
+        (label(choiceText))
 
   def barGraphBody(ask: Ask)(using Context): Frag =
     div(cls := "ask__graph")(frag:
@@ -190,13 +208,13 @@ object ask:
     RenderType(ask) match
       case BAR =>
         sb ++= pluralize("vote", count)
-        if ask.isPublic || isShusher then sb ++= s"\n\n${whoPicked(ask, choice)}"
+        if ask.isTransparent || isShusher then sb ++= s"\n\n${whoPicked(ask, choice)}"
       case QUIZ =>
         if ask.isTally && hasPick || isAuthor || isShusher then sb ++= pluralize("pick", count)
-        if ((hasPick || isAuthor) && ask.isPublic || isShusher) sb ++= s"\n\n${whoPicked(ask, choice)}"
+        if ((hasPick || isAuthor) && ask.isTransparent || isShusher) sb ++= s"\n\n${whoPicked(ask, choice)}"
       case POLL =>
         if isAuthor || ask.isTally then sb ++= pluralize("vote", count)
-        if ask.isPublic && ask.isTally || isShusher then sb ++= s"\n\n${whoPicked(ask, choice)}"
+        if ask.isTransparent && ask.isTally || isShusher then sb ++= s"\n\n${whoPicked(ask, choice)}"
       case _ =>
 
     if sb.isEmpty then choiceText else sb.toString
@@ -217,7 +235,7 @@ object ask:
     }
 
   private def pluralize(item: String, n: Int): String =
-    if (n == 0) s"No ${item}s" else if (n == 1) s"1 ${item}" else s"$n ${item}s"
+    s"${if n == 0 then "No" else n} ${item}${n != 1 option "s"}"
 
   private def whoPicked(ask: Ask, choice: Int, max: Int = 40): String =
     val who = ask.whoPicked(choice)
@@ -237,7 +255,7 @@ object ask:
       else r
     }
 
-  sealed abstract class RenderType() // TODO - fix this stupid fuckery
+  sealed abstract class RenderType()
   object RenderType:
     case object POLL    extends RenderType
     case object RANK    extends RenderType
