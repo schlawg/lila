@@ -1,12 +1,8 @@
 import * as ps from 'node:process';
 import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { Readable } from 'node:stream';
 import { finished } from 'node:stream/promises';
-
-// Based on the original implementation by Sam 'Spammy' Ezeh who found Vosk-browser and first
-// got it working in lichess.
-//
-// requires node 18.x
 
 let builder: Builder;
 
@@ -35,9 +31,9 @@ async function main() {
   const opThreshold = Number(getArg('max-ops') ?? '1');
   const freqThreshold = Number(getArg('freq') ?? '0.002');
   const countThreshold = Number(getArg('count') ?? '6');
-  const grammar = ps.argv.slice(2).filter(x => !x.startsWith('-'))[0] ?? getArg('grammar') ?? 'move-en';
-  const lexicon = JSON.parse(fs.readFileSync(`lexicon/${grammar}-lex.json`, 'utf-8')) as Lexicon;
-
+  let grammar = ps.argv.slice(2).filter(x => !x.startsWith('-'))[0];
+  const lexicon = JSON.parse(fs.readFileSync(grammar, 'utf-8')) as Lexicon;
+  grammar = path.basename(grammar, '-lex.json');
   builder = new Builder(lexicon);
   const entries = lexicon.crowdv
     ? ((await parseCrowdvData(lexicon.crowdv)).map(data => makeLexEntry(data)).filter(x => x) as LexEntry[])

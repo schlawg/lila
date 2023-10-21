@@ -15,7 +15,7 @@ lazy val root = Project("lila", file("."))
 
 organization         := "org.lichess"
 Compile / run / fork := true
-javaOptions ++= Seq("-Xms64m", "-Xmx512m", "-Dlogger.file=conf/logger.dev.xml")
+javaOptions ++= Seq("-Xms64m", "-Xmx512m", "-Dlogger.file=conf/logger.dev.xml", "-Dfile.encoding=UTF-8")
 // shorter prod classpath
 scriptClasspath             := Seq("*")
 Compile / resourceDirectory := baseDirectory.value / "conf"
@@ -65,7 +65,7 @@ lazy val modules = Seq(
   study, studySearch, fishnet, explorer, learn, plan,
   event, coach, practice, evalCache, irwin,
   activity, relay, streamer, bot, clas, swiss, storm, racer,
-  ublog, tutor, opening
+  ublog, tutor, opening, ask
 )
 
 lazy val moduleRefs = modules map projectToRef
@@ -134,7 +134,7 @@ lazy val blog = module("blog",
 )
 
 lazy val ublog = module("ublog",
-  Seq(timeline),
+  Seq(timeline, ask),
   Seq(bloomFilter) ++ tests.bundle ++ reactivemongo.bundle
 )
 
@@ -401,8 +401,13 @@ lazy val msg = module("msg",
   reactivemongo.bundle
 )
 
+lazy val ask = module("ask",
+  Seq(common, db, user, security, hub, mod, notifyModule),
+  reactivemongo.bundle
+)
+
 lazy val forum = module("forum",
-  Seq(mod),
+  Seq(mod, ask),
   reactivemongo.bundle
 )
 

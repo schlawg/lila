@@ -3,6 +3,8 @@ package lila.ublog
 import reactivemongo.akkastream.{ cursorProducer, AkkaStreamCursor }
 import reactivemongo.api.*
 
+import lila.ask.AskApi
+import lila.common.Markdown
 import lila.db.dsl.{ *, given }
 import lila.hub.actorApi.timeline.Propagate
 import lila.memo.PicfitApi
@@ -15,23 +17,29 @@ final class UblogApi(
     userApi: UserApi,
     picfitApi: PicfitApi,
     timeline: lila.hub.actors.Timeline,
-    irc: lila.irc.IrcApi
+    irc: lila.irc.IrcApi,
+    askApi: lila.ask.AskApi
 )(using Executor):
 
   import UblogBsonHandlers.{ *, given }
 
   def create(data: UblogForm.UblogPostData)(using me: Me): Fu[UblogPost] =
-    val post = data.create(me.value)
-    colls.post.insert.one(
-      bsonWriteObjTry[UblogPost](post).get ++ $doc("likers" -> List(me.userId))
-    ) inject post
+    val frozen = askApi.freeze(data.markdown.value, me)
+    val post   = data.create(me.value, Markdown(frozen.text))
+    askApi.commit(frozen, s"/ublog/${post.id}/redirect".some) >>
+      colls.post.insert.one(
+        bsonWriteObjTry[UblogPost](post).get ++ $doc("likers" -> List[UserId](me.userId))
+      ) inject post
 
   def update(data: UblogForm.UblogPostData, prev: UblogPost)(using me: Me): Fu[UblogPost] =
-    getUserBlog(me.value, insertMissing = true) flatMap { blog =>
-      val post = data.update(me.value, prev)
-      colls.post.update.one($id(prev.id), $set(bsonWriteObjTry[UblogPost](post).get)) >> {
-        (post.live && prev.lived.isEmpty) so onFirstPublish(me.value, blog, post)
-      } inject post
+    askApi
+      .freezeAsync(data.markdown.value, me) flatMap { frozen =>
+      getUserBlog(me, insertMissing = true) flatMap { blog =>
+        val post = data.update(me.value, prev, Markdown(frozen.text))
+        colls.post.update.one($id(prev.id), $set(bsonWriteObjTry[UblogPost](post).get)) >> {
+          (post.live && prev.lived.isEmpty).so(onFirstPublish(me.value, blog, post))
+        } inject post.copy(markdown = Markdown(askApi.unfreeze(frozen.text, frozen.asks map some)))
+      }
     }
 
   private def onFirstPublish(user: User, blog: UblogBlog, post: UblogPost): Funit =
@@ -136,7 +144,8 @@ final class UblogApi(
 
   def delete(post: UblogPost): Funit =
     colls.post.delete.one($id(post.id)) >>
-      picfitApi.deleteByRel(imageRel(post))
+      picfitApi.deleteByRel(imageRel(post)) >>
+      askApi.deleteAll(post.markdown.value)
 
   def setTier(blog: UblogBlog.Id, tier: UblogBlog.Tier): Funit =
     colls.blog.update

@@ -4,6 +4,8 @@ import ornicar.scalalib.ThreadLocalRandom
 
 import lila.user.{ Me, User }
 import lila.security.Granter
+import lila.ask.Ask
+import lila.ask.AskApi
 
 case class OldVersion(text: String, createdAt: Instant)
 
@@ -77,6 +79,8 @@ case class ForumPost(
 
   def isBy(u: User) = userId.exists(_ == u.id)
 
+  def cleanTake(n: Int): String = AskApi.stripAsks(text, n)
+
   override def toString = s"Post($categId/$topicId/$id)"
 
 object ForumPost:
@@ -109,7 +113,12 @@ object ForumPost:
           case (reaction, users) if users(me.id) => reaction
         .toSet
 
-  case class WithFrag(post: ForumPost, body: scalatags.Text.all.Frag, hide: Boolean = false)
+  case class WithFrag(
+      post: ForumPost,
+      body: scalatags.Text.all.Frag,
+      asks: Iterable[Option[lila.ask.Ask]],
+      hide: Boolean = false
+  )
 
   def make(
       topicId: ForumTopicId,

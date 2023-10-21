@@ -42,7 +42,7 @@ case class PostView(
     categ: ForumCateg
 ):
 
-  def show         = post.showUserIdOrAuthor + " @ " + topic.name + " - " + post.text.take(80)
+  def show         = post.showUserIdOrAuthor + " @ " + topic.name + " - " + post.cleanTake(80)
   def logFormatted = "%s / %s#%s / %s".format(categ.name, topic.name, post.number, post.text)
 
 object PostView:
@@ -56,8 +56,17 @@ case class MiniForumPost(
     topicName: String,
     userId: Option[UserId],
     text: String,
-    createdAt: Instant
+    createdAt: Instant,
+    categId: ForumCategId
 )
+
+class RecentForumTopic(minis: List[MiniForumPost]):
+  val posts     = minis.sortBy(_.createdAt)(Ordering[Instant])
+  val name      = posts.head.topicName
+  val categId   = posts.head.categId
+  val updatedAt = posts.last.createdAt
+  val postId    = posts.head.postId
+  val contribs  = posts.map(_.userId).distinct.reverse
 
 case class PostUrlData(categ: ForumCategId, topicSlug: String, page: Int, number: Int)
 

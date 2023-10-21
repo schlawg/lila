@@ -7,7 +7,7 @@ import lila.app.{ given, * }
 import lila.common.config
 import lila.i18n.{ I18nLangPicker, LangList }
 import lila.report.Suspect
-import lila.ublog.{ UblogBlog, UblogPost }
+import lila.ublog.{ UblogBlog, UblogPost, Markdown }
 import lila.user.{ User as UserModel }
 
 final class Ublog(env: Env) extends LilaController(env):
@@ -55,9 +55,20 @@ final class Ublog(env: Env) extends LilaController(env):
                     blocked        <- ctx.userId.so(env.relation.api.fetchBlocks(user.id, _))
                     followable = prefFollowable && !blocked
                     markup <- env.ublog.markup(post)
+                    asks   <- env.ask.api.asksIn(post.markdown.value)
                     viewedPost = env.ublog.viewCounter(post, ctx.ip)
                     page <- renderPage:
-                      html.ublog.post(user, blog, viewedPost, markup, others, liked, followable, followed)
+                      html.ublog.post(
+                        user,
+                        blog,
+                        viewedPost,
+                        markup,
+                        others,
+                        liked,
+                        followable,
+                        followed,
+                        asks
+                      )
                   yield Ok(page)
             }
 
@@ -122,11 +133,48 @@ final class Ublog(env: Env) extends LilaController(env):
       }
   }
 
+  // def OptionPage[A](
+  //  fua: Fu[Option[A]]
+  // )(op: A => PageContext ?=> Frag)(using Context): Fu[Result] =
+  //  fua flatMap { _.fold(notFound)(a => Ok.page(op(a))) }
+
   def edit(id: UblogPostId) = AuthBody { ctx ?=> me ?=>
-    NotForKids:
+    env.ublog.api
+      .findByUserBlogOrAdmin(id)
+      .flatMap:
+        case Some(post) =>
+          env.ask.api
+            .unfreezeAsync(post.markdown.value)
+            .flatMap: editText =>
+              val editPost =
+                if editText == post.markdown.value then post else post.copy(markdown = Markdown(editText))
+              Ok.page(html.ublog.form.edit(editPost, env.ublog.form.edit(editPost)))
+        case None => notFound
+  }
+  /*for
+      post <- env.ublog.api.findByUserBlogOrAdmin(id)
+      text <- env.ask.api.unfreezeAsync(post.markdown.value)
+      editable =
+        if text == post.markdown.value then post else post.copy(markdown = lila.common.Markdown(text))
+    yield editable match
+      case Some(post) => Ok.page(html.ublog.form.edit(post, env.ublog.form.edit(post)))
+      case None       => notFound
+  }
+
+      NotForKids:
       FoundPage(env.ublog.api.findByUserBlogOrAdmin(id)): post =>
         html.ublog.form.edit(post, env.ublog.form.edit(post))
-  }
+   */
+  /*OptionPage(env.ublog.api.findByUserBlogOrAdmin(id)): post =>
+      if !lila.ask.AskApi.hasAskId(post.markdown.value) then
+        html.ublog.form.edit(post, env.ublog.form.edit(post))
+      else
+        env.ask.api
+          .unfreezeAsync(post.markdown.value)
+          .map: text =>
+            val editable = post.copy(markdown = lila.common.Markdown(text))
+            Ok(html.ublog.form.edit(editable, env.ublog.form.edit(editable)))
+  }*/
 
   def update(id: UblogPostId) = AuthBody { ctx ?=> me ?=>
     NotForKids:

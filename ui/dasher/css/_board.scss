@@ -30,6 +30,10 @@
     @include transition(transform);
   }
 
+  &.d2 .list button {
+    flex: 0 0 33%;
+  }
+
   .list button:hover {
     filter: brightness(1.05);
   }

@@ -6,6 +6,7 @@ import controllers.routes
 
 import lila.app.templating.Environment.{ given, * }
 import lila.app.ui.ScalatagsTemplate.{ *, given }
+import lila.ask.AskApi.Frozen
 import lila.forum.ForumPost
 
 object post:
@@ -36,7 +37,7 @@ object post:
       canModCateg: Boolean,
       canReact: Boolean
   )(using ctx: PageContext) = postWithFrag match
-    case ForumPost.WithFrag(post, body, hide) =>
+    case ForumPost.WithFrag(post, body, asks, hide) =>
       st.article(cls := List("forum-post" -> true, "erased" -> post.erased), id := post.number)(
         div(cls := "forum-post__metas")(
           (!post.erased || canModCateg) option div(
@@ -106,7 +107,7 @@ object post:
         frag:
           val postFrag = p(cls := s"forum-post__message expand-text")(
             if post.erased then "<Comment deleted by user>"
-            else body
+            else views.html.ask.renderMany(body, asks)
           )
           if hide then
             div(cls := "forum-post__blocked")(
@@ -126,7 +127,7 @@ object post:
               cls            := "post-text-area edit-post-box",
               minlength      := 3,
               required
-            )(post.text),
+            )(env.ask.api.unfreeze(post.text, asks)),
             div(cls := "edit-buttons")(
               a(
                 cls   := "edit-post-cancel",

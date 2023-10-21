@@ -3,6 +3,7 @@
   "include": ["src/*.ts"],
   "exclude": [],
   "compilerOptions": {
+    "forceConsistentCasingInFileNames": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "allowUnreachableCode": true,

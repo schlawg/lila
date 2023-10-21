@@ -240,7 +240,7 @@ export function view(ctrl: AnalyseCtrl): VNode {
                       {
                         name: 'Use NNUE',
                         title: ceval.platform.supportsNnue
-                          ? 'Downloads 6 MB neural network evaluation file (page reload required after change)'
+                          ? 'Downloads 40 MB neural network evaluation file (page reload required after change)'
                           : notSupported,
                         id: 'enable-nnue',
                         checked: ceval.platform.supportsNnue && ceval.enableNnue(),

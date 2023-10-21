@@ -9,7 +9,7 @@ final class SwissFeature(
     mongo: SwissMongo,
     cacheApi: CacheApi,
     swissCache: SwissCache
-)(using Executor):
+)(using mode: play.api.Mode)(using Executor):
 
   import BsonHandlers.given
 

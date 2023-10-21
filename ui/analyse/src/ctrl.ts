@@ -394,6 +394,7 @@ export default class AnalyseCtrl {
       if (this.study) this.study.onJump();
     }
     lichess.pubsub.emit('ply', this.node.ply, this.tree.lastMainlineNode(this.path).ply === this.node.ply);
+
     this.showGround();
   }
 
@@ -611,7 +612,7 @@ export default class AnalyseCtrl {
     return treeOps.withMainlineChild(this.node, (n: Tree.Node) => n.eval?.best);
   }
 
-  setAutoShapes = (): void => {
+  setAutoShapes = () => {
     this.withCg(cg => cg.setAutoShapes(computeAutoShapes(this)));
     keyboard.maybeShowVariationArrowHelp(this);
   };

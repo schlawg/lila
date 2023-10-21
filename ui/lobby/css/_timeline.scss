@@ -1,8 +1,8 @@
-.timeline {
+.lobby__timeline {
   @extend %page-text;
-
+  display: block;
   flex: 1 1 auto;
-  margin: 1em 0 0 $block-gap;
+  margin: 1em 0 0 1em; // TODO: REMOVE TV - margin: 1em 0 0 $block-gap;
 
   @include hoverflow;
 

@@ -3,4 +3,9 @@
 VOICE_DIR=$(dirname "${BASH_SOURCE:-$0}")
 
 cd "$VOICE_DIR/@build"
-pnpm -s dev "$@"
+
+shopt -s nullglob
+
+find "lexicon" -name "*-lex.json" -type f | while read -r file; do
+  if [ -f "$file" ]; then pnpm -s dev "$@" "$file"; fi
+done
