@@ -17,6 +17,6 @@
     "moduleResolution": "node",
     "declaration": false,
     "lib": ["ES2020"],
-    "types": ["node", "web"]
+    "types": ["node"]
   }
 }
