@@ -11,13 +11,13 @@ export { renderVoiceBar } from './view';
 export const VOSK_TS_VERSION = '_____1'; // this versions the wasm asset (see vosk.ts)
 export const supportedLangs = [
   ['en', 'English'],
-  /*['fr', 'Français'],
+  ['fr', 'Français'],
   ['de', 'Deutsch'],
   ['tr', 'Türkçe'],
   ['vi', 'Tiếng Việt'],
   ['ru', 'Русский'],
   ['it', 'Italiano'],
-  ['sv', 'Svenska'],*/
+  ['sv', 'Svenska'],
 ];
 
 export function makeCtrl(opts: {
