@@ -55,31 +55,23 @@ final class RelayPush(sync: RelaySync, api: RelayApi, irc: lila.irc.IrcApi)(usin
               event.error.fold(Right(event.moves))(err => Left(LilaInvalid(err)))
 
   private def pgnToGames(rt: RelayRound.WithTour, pgnBody: PgnStr): Either[LilaInvalid, Vector[RelayGame]] =
-    Reader
-      .full(pgnBody)
-      .fold(
-        err => Left(LilaInvalid(err.value)),
-        _ match
-          case Reader.Result.Incomplete(_, errorStr) => Left(LilaInvalid(errorStr.value))
-          case Reader.Result.Complete(_) =>
-            MultiPgn
-              .split(pgnBody, Max(128))
-              .value
-              .foldLeft[Either[LilaInvalid, Vector[RelayGame]]](Right(Vector.empty)):
-                case (left @ Left(_), _) => left // short circuit
-                case (Right(vec), pgn) =>
-                  lila.study.PgnImport(pgn, Nil) match
-                    case Left(err) => Left(LilaInvalid(err.value))
-                    case Right(res) =>
-                      Right:
-                        vec :+ RelayGame(
-                          tags = res.tags,
-                          variant = res.variant,
-                          root = res.root.copy(
-                            comments = lila.tree.Node.Comments.empty,
-                            children = res.root.children
-                              .updateMainline(_.copy(comments = lila.tree.Node.Comments.empty))
-                          ),
-                          ending = res.end
-                        )
-      )
+    MultiPgn
+      .split(pgnBody, Max(128))
+      .value
+      .foldLeft[Either[LilaInvalid, Vector[RelayGame]]](Right(Vector.empty)):
+        case (left @ Left(_), _) => left // short circuit
+        case (Right(vec), pgn) =>
+          lila.study.PgnImport(pgn, Nil) match
+            case Left(err) => Left(LilaInvalid(err.value))
+            case Right(res) =>
+              Right:
+                vec :+ RelayGame(
+                  tags = res.tags,
+                  variant = res.variant,
+                  root = res.root.copy(
+                    comments = lila.tree.Node.Comments.empty,
+                    children = res.root.children
+                      .updateMainline(_.copy(comments = lila.tree.Node.Comments.empty))
+                  ),
+                  ending = res.end
+                )
