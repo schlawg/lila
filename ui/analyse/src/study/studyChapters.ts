@@ -65,7 +65,6 @@ export function resultOf(tags: TagArray[], isWhite: boolean): string | undefined
 export function view(ctrl: StudyCtrl): VNode {
   const canContribute = ctrl.members.canContribute(),
     current = ctrl.currentChapter();
-
   function update(vnode: VNode) {
     const newCount = ctrl.chapters.list().length,
       vData = vnode.data!.li!,

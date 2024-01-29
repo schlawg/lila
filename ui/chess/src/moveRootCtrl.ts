@@ -13,6 +13,13 @@ export interface MoveRootCtrl {
   solve?: () => void;
   blindfold?: (v?: boolean) => boolean;
   speakClock?: () => void;
+  goBerserk?: () => void;
+}
+
+export interface MoveUpdate {
+  fen: string;
+  canMove: boolean;
+  cg?: CgApi;
 }
 
 export interface MoveUpdate {

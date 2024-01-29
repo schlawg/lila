@@ -5,8 +5,10 @@ import reactivemongo.api.bson.Macros.Annotations.Key
 import java.time.format.{ DateTimeFormatter, FormatStyle }
 import lila.ask.{ Ask, AskEmbed }
 import lila.db.dsl.{ *, given }
+import lila.common.paginator.Paginator
+import lila.db.paginator.Adapter
 import lila.memo.CacheApi
-import lila.common.config.{ Max, BaseUrl }
+import lila.common.config.{ Max, BaseUrl, MaxPerPage }
 import play.api.data.Form
 import lila.user.Me
 
@@ -27,8 +29,9 @@ object DailyFeed:
     def published           = public && at.isBeforeNow
     def future              = at.isAfterNow
 
-  private val renderer      = lila.common.MarkdownRender(autoLink = false, strikeThrough = true)
-  private val dateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+  private val renderer              = lila.common.MarkdownRender(autoLink = false, strikeThrough = true)
+  private val dateFormatter         = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+  given BSONDocumentHandler[Update] = Macros.handler
 
   type GetLastUpdates = () => List[Update]
 
@@ -43,7 +46,7 @@ final class DailyFeed(coll: Coll, cacheApi: CacheApi, askEmbed: AskEmbed, baseUr
 
   private val max = Max(50)
 
-  private given BSONDocumentHandler[Update] = Macros.handler
+  // private given BSONDocumentHandler[Update] = Macros.handler
 
   private val atomRenderer =
     lila.common.MarkdownRender(autoLink = false, strikeThrough = true, baseUrl = baseUrl.some)
@@ -67,9 +70,7 @@ final class DailyFeed(coll: Coll, cacheApi: CacheApi, askEmbed: AskEmbed, baseUr
 
   export cache.lastUpdate
 
-  def recent: Fu[List[Update]] = cache.store.get({})
-
-  def recentPublished = recent.map(_.filter(_.published))
+  def recentPublished = cache.store.get({}).map(_.filter(_.published))
 
   def get(id: ID): Fu[Option[Update]] = coll.byId[Update](id) flatMap:
     case Some(up) => askEmbed.repo.preload(up.content.value) inject up.some
@@ -110,3 +111,22 @@ final class DailyFeed(coll: Coll, cacheApi: CacheApi, askEmbed: AskEmbed, baseUr
     from.fold(form)(u => form.fill(UpdateData(u.content, u.public, u.at, u.flair)))
 
   def renderAtom(up: Update): Html = atomRenderer(s"dailyFeed:atom:${up.id}")(up.content)
+
+final class DailyFeedPaginatorBuilder(
+    coll: Coll
+)(using Executor):
+  import DailyFeed.*
+
+  def recent(includeAll: Boolean, page: Int): Fu[Paginator[Update]] =
+    Paginator(
+      adapter = Adapter[Update](
+        collection = coll,
+        selector =
+          if includeAll then $empty
+          else $doc("public" -> true, "at" $lt nowInstant),
+        projection = none,
+        sort = $sort.desc("at")
+      ),
+      page,
+      MaxPerPage(25)
+    )

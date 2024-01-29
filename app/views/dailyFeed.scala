@@ -8,6 +8,7 @@ import lila.app.ui.ScalatagsTemplate.{ *, given }
 import lila.blog.DailyFeed.Update
 import play.api.data.Form
 import play.api.i18n.Lang
+import lila.common.paginator.Paginator
 import scalatags.text.Builder
 import scalatags.generic.Frag
 
@@ -18,11 +19,14 @@ object dailyFeed:
       title = title,
       active = "news",
       moreCss = frag(cssTag("dailyFeed"), hasAsks option cssTag("ask")),
-      moreJs =
-        frag(hasAsks option jsModuleInit("ask"), edit option jsModule("flatpickr"), jsModule("dailyFeed"))
+      moreJs = frag(
+        hasAsks option jsModuleInit("ask"),
+        edit option jsModule("flatpickr"),
+        edit option jsModule("dailyFeed")
+      )
     )
 
-  def index(updates: List[Update], hasAsks: Boolean)(using PageContext) =
+  def index(ups: Paginator[Update], hasAsks: Boolean)(using PageContext) =
     layout("Updates", hasAsks):
       div(cls := "daily-feed box box-pad")(
         boxTop(
@@ -37,15 +41,15 @@ object dailyFeed:
           )
         ),
         standardFlash,
-        updateList(updates, editor = isGranted(_.DailyFeed))
+        updates(ups, editor = isGranted(_.DailyFeed))
       )
 
-  def updateList(ups: List[Update], editor: Boolean)(using PageContext) =
-    div(cls := "daily-feed__updates"):
-      ups.view
+  def updates(ups: Paginator[Update], editor: Boolean)(using PageContext) =
+    div(cls := "daily-feed__updates infinite-scroll")(
+      ups.currentPageResults
         .filter(_.published || editor)
         .map: update =>
-          div(cls := "daily-feed__update", id := update.id)(
+          div(cls := "daily-feed__update paginated", id := update.id)(
             marker(update.flair),
             div(cls := "daily-feed__update__content")(
               st.section(cls := "daily-feed__update__day")(
@@ -64,8 +68,9 @@ object dailyFeed:
                 views.html.ask.render(rawHtml(update.rendered))
               )
             )
-          )
-        .toList
+          ),
+      pagerNext(ups, np => routes.DailyFeed.index(np).url)
+    )
 
   def lobbyUpdates(ups: List[Update])(using PageContext) =
     div(cls := "daily-feed__updates")(
@@ -92,7 +97,7 @@ object dailyFeed:
       main(cls := "daily-feed page-small box box-pad")(
         boxTop(
           h1(
-            a(href := routes.DailyFeed.index)("Daily Feed"),
+            a(href := routes.DailyFeed.index(1))("Daily Feed"),
             " • ",
             "New update!"
           )
@@ -107,7 +112,7 @@ object dailyFeed:
         div(cls := "box box-pad")(
           boxTop(
             h1(
-              a(href := routes.DailyFeed.index)("Lichess update"),
+              a(href := routes.DailyFeed.index(1))("Lichess update"),
               " • ",
               semanticDate(up.at)
             )
@@ -115,10 +120,7 @@ object dailyFeed:
           standardFlash,
           postForm(cls := "content_box_content form3", action := routes.DailyFeed.update(up.id)):
             inForm(form)
-        ),
-        br,
-        div(cls := "box box-pad")(
-          updateList(List(up), editor = true),
+          ,
           postForm(action := routes.DailyFeed.delete(up.id))(cls := "daily-feed__delete"):
             submitButton(cls := "button button-red button-empty confirm")("Delete")
         )
@@ -159,7 +161,7 @@ object dailyFeed:
     import views.html.base.atom.{ atomDate, category }
     views.html.base.atom(
       elems = ups,
-      htmlCall = routes.DailyFeed.index,
+      htmlCall = routes.DailyFeed.index(1),
       atomCall = routes.DailyFeed.atom,
       title = "Lichess updates feed",
       updated = ups.headOption.map(_.at)
@@ -170,8 +172,11 @@ object dailyFeed:
         link(
           rel  := "alternate",
           tpe  := "text/html",
-          href := s"$netBaseUrl${routes.DailyFeed.index}#${up.id}"
+          href := s"$netBaseUrl${routes.DailyFeed.index(1)}#${up.id}"
         ),
         tag("title")(up.title),
         tag("content")(tpe := "html")(env.blog.dailyFeed.renderAtom(up))
       )
+
+  private def convertToAbsoluteHrefs(html: Html): Html =
+    html.map(_.replaceAll(""" href="/""", s""" href="$netBaseUrl/"""))

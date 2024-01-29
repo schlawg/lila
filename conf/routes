@@ -124,7 +124,7 @@ GET   /blog/community/$lang<[\w-]{2,6}>.atom controllers.Ublog.communityAtom(lan
 GET   /blog/:id/:slug                  controllers.Blog.show(id, slug, ref: Option[String] ?= None)
 GET   /blog/prismic-preview            controllers.Blog.preview(token)
 
-GET   /feed                            controllers.DailyFeed.index
+GET   /feed                            controllers.DailyFeed.index(page: Int ?= 1)
 GET   /feed/new                        controllers.DailyFeed.createForm
 POST  /feed/new                        controllers.DailyFeed.create
 GET   /feed/:id/edit                  controllers.DailyFeed.edit(id)
@@ -258,6 +258,7 @@ GET   /broadcast/$tourId<\w{8}>/edit          controllers.RelayTour.edit(tourId)
 POST  /broadcast/$tourId<\w{8}>/edit          controllers.RelayTour.update(tourId)
 POST  /broadcast/$tourId<\w{8}>/delete        controllers.RelayTour.delete(tourId)
 POST  /broadcast/$tourId<\w{8}>/clone         controllers.RelayTour.cloneTour(tourId)
+POST  /broadcast/$tourId<\w{8}>/subscribe     controllers.RelayTour.subscribe(tourId, set: Boolean)
 GET   /broadcast/$tourId<\w{8}>/new           controllers.RelayRound.form(tourId)
 POST  /broadcast/$tourId<\w{8}>/new           controllers.RelayRound.create(tourId)
 GET   /broadcast/:ts/:rs/$roundId<\w{8}>      controllers.RelayRound.show(ts, rs, roundId)
@@ -714,11 +715,12 @@ GET   /api/cloud-eval                  controllers.Api.cloudEval
 POST  /api/import                      controllers.Importer.apiSendGame
 GET   /api/bulk-pairing                controllers.BulkPairing.list
 POST  /api/bulk-pairing                controllers.BulkPairing.create
+GET   /api/bulk-pairing/:id            controllers.BulkPairing.show(id)
 DELETE /api/bulk-pairing/:id           controllers.BulkPairing.delete(id)
 POST  /api/bulk-pairing/:id/start-clocks  controllers.BulkPairing.startClocks(id)
 
 GET   /api/games/user/:username        controllers.Game.apiExportByUser(username)
-GET   /api/games/user/:username/imports controllers.Game.apiExportByUserImportedGames(username)
+GET   /api/games/export/imports        controllers.Game.apiExportByUserImportedGames()
 
 # Lichess Mobile
 GET   /api/mobile/my-games             controllers.Api.mobileGames
