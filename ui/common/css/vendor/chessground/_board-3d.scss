@@ -1,5 +1,6 @@
 @import 'themes';
 
+$site-theme: $theme;
 $td-outer-height-ratio: 476 / 512;
 $td-outer-height-percent: $td-outer-height-ratio * 100%;
 $td-inner-height-ratio: 464.5 / 512;
@@ -63,6 +64,11 @@ cg-board::before {
   .#{$name} .is3d {
     cg-board::before {
       background-image: img-url('staunton/board/#{$name}.png');
+      @if $site-theme == 'transp' {
+        opacity: var(--board-opacity);
+      } @else {
+        filter: brightness(var(--board-brightness));
+      }
     }
 
     $coord-color-white: map-get($theme, coord-color-white);

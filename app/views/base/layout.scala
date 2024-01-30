@@ -60,15 +60,22 @@ object layout:
     !ctx.pref.pieceNotationIsLetter option
       preload(assetUrl("font/lichess.chess.woff2"), "font", crossorigin = true, "font/woff2".some)
   )
-  private def boardPreload(using ctx: PageContext) = frag(
+
+  private def board(using ctx: PageContext) = frag(
     preload(assetUrl(s"images/board/${ctx.pref.currentTheme.file}"), "image", crossorigin = false),
-    ctx.pref.is3d option
-      preload(
-        assetUrl(s"images/staunton/board/${ctx.pref.currentTheme3d.file}"),
-        "image",
-        crossorigin = false
-      )
+    ctx.pref.is3d option preload(
+      assetUrl(s"images/board/${ctx.pref.currentTheme3d.file}"),
+      "image",
+      crossorigin = false
+    ),
+    ctx.pref.bg == lila.pref.Pref.Bg.TRANSPARENT option ctx.pref.bgImgOrDefault map: img =>
+      raw(s"""<style id="bg-data">body.transp::before{background-image:url("${escapeHtmlRaw(img)
+          .replace("&amp;", "&")}");}</style>"""),
+    raw(
+      s"""<style>body{--board-brightness:${ctx.pref.boardBrightness}%;--board-opacity:${ctx.pref.boardOpacity};</style>"""
+    )
   )
+
   private def piecesPreload(using ctx: PageContext) =
     env.pieceImageExternal.get() option raw:
       (for
@@ -273,13 +280,8 @@ object layout:
           noTranslate,
           openGraph.map(_.frags),
           atomLinkTag | dailyNewsAtom,
-          pref.bg == lila.pref.Pref.Bg.TRANSPARENT option pref.bgImgOrDefault map { img =>
-            raw:
-              s"""<style id="bg-data">body.transp::before{background-image:url("${escapeHtmlRaw(img)
-                  .replace("&amp;", "&")}");}</style>"""
-          },
+          board,
           fontPreload,
-          boardPreload,
           piecesPreload,
           manifests,
           jsLicense,
