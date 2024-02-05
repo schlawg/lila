@@ -107,7 +107,7 @@ function imageInput(ctrl: BackgroundCtrl) {
             'change keyup paste',
             debounce(function (this: HTMLInputElement) {
               const url = (this.value as string).trim();
-              // modules/pref/src/main/PrefForm.scala
+              // file://./../../../modules/pref/src/main/PrefForm.scala
               if (
                 (url.startsWith('https://') || url.startsWith('//')) &&
                 url.length >= 10 &&
@@ -169,7 +169,7 @@ function replaceStylesheet(old: HTMLLinkElement, oldKey: string, newKey: string,
   link.href = old.href.replace('.' + oldKey + '.', '.' + newKey + '.');
   if (media) link.media = `(prefers-color-scheme: ${media})`;
   link.onload = () => setTimeout(() => old.remove(), 100);
-  document.head.appendChild(link);
+  document.head.insertBefore(link, document.getElementById('piece-sprite'));
 }
 
 function galleryInput(ctrl: BackgroundCtrl) {
@@ -184,8 +184,7 @@ function galleryInput(ctrl: BackgroundCtrl) {
   const gallery = ctrl.data.gallery!;
   const cols = window.matchMedia('(min-width: 650px)').matches ? 4 : 2; // $mq-x-small
   const montageUrl = lichess.asset.url(gallery[`montage${cols}`], { noVersion: true });
-  // our layout is static due to the single image gallery optimization. set width here
-  // and allow for the possibility of non-overlaid scrollbars
+  // set width here and allow for the possibility of non-overlaid scrollbars
   const width = cols * (160 + 2) + (gallery.images.length > cols * 4 ? elementScrollBarWidth() : 0);
 
   return h('div#gallery', { attrs: { style: `width: ${width}px` } }, [

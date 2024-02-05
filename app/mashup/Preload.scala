@@ -35,7 +35,7 @@ final class Preload(
     lastPostsCache: AsyncLoadingCache[Unit, List[UblogPost.PreviewPost]],
     askRepo: lila.ask.AskRepo,
     msgApi: lila.msg.MsgApi,
-    relayApi: lila.relay.RelayApi,
+    relayListing: lila.relay.RelayListing,
     notifyApi: lila.notify.NotifyApi
 )(using Executor):
 
@@ -100,7 +100,7 @@ final class Preload(
     tours,
     swiss,
     events,
-    relayApi.spotlight,
+    relayListing.spotlight,
     simuls,
     feat,
     lead,
