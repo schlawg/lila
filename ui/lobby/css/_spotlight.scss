@@ -1,7 +1,9 @@
 .lobby__spotlights {
+  margin: auto 0;
   @extend %box-neat-force;
-
+  //@extend %flex-column;
   flex: 0 0 auto;
+  //gap: 0.75em;
 }
 
 .tour-spotlight {

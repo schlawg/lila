@@ -1,5 +1,5 @@
-$mq-col2: $mq-xx-small;
-$mq-col3: $mq-small;
+$mq-col2: $mq-xx-small; // $mq-not-small;
+$mq-col3: $mq-small; // $mq-not-x-large;
 $mq-col4: $mq-x-large;
 
 @mixin lobby-app-size {

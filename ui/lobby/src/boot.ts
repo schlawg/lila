@@ -3,8 +3,6 @@ import main from './main';
 import { LobbyOpts } from './interfaces';
 
 export function initModule(opts: LobbyOpts) {
-  opts.appElement = document.querySelector('.lobby__app') as HTMLElement;
-  opts.tableElement = document.querySelector('.lobby__table') as HTMLElement;
   opts.pools = [
     // mirrors modules/pool/src/main/PoolList.scala
     { id: '1+0', lim: 1, inc: 0, perf: 'Bullet' },

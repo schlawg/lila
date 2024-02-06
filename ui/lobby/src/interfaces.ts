@@ -58,8 +58,6 @@ export interface Pool {
 }
 
 export interface LobbyOpts {
-  appElement: HTMLElement;
-  tableElement: HTMLElement;
   socketSend: SocketSend;
   pools: Pool[];
   hasUnreadLichessMessage: boolean;

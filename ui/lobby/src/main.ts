@@ -3,21 +3,27 @@ import { LobbyOpts } from './interfaces';
 import { init as initBoard } from 'common/miniBoard';
 import makeCtrl from './ctrl';
 import appView from './view/main';
-import tableView from './view/table';
+import startView from './view/start';
+import { countersView } from './view/counters';
 
 export const patch = init([classModule, attributesModule, eventListenersModule]);
 
 export default function main(opts: LobbyOpts) {
   const ctrl = new makeCtrl(opts, redraw);
-
-  opts.appElement.innerHTML = '';
-  let appVNode = patch(opts.appElement, appView(ctrl));
-  opts.tableElement.innerHTML = '';
-  let tableVNode = patch(opts.tableElement, tableView(ctrl));
+  const appElement = document.querySelector('.lobby__app') as HTMLElement;
+  const startElement = document.querySelector('.lobby__start') as HTMLElement;
+  const countersElement = document.querySelector('.lobby__counters') as HTMLElement;
+  appElement.innerHTML = '';
+  let appVNode = patch(appElement, appView(ctrl));
+  startElement.innerHTML = '';
+  let startVNode = patch(startElement, startView(ctrl));
+  countersElement.innerHTML = '';
+  let countersVNode = patch(document.querySelector('.lobby__counters')!, countersView(ctrl));
 
   function redraw() {
     appVNode = patch(appVNode, appView(ctrl));
-    tableVNode = patch(tableVNode, tableView(ctrl));
+    startVNode = patch(startVNode, startView(ctrl));
+    countersVNode = patch(countersVNode, countersView(ctrl));
   }
 
   lichess.requestIdleCallback(() => {

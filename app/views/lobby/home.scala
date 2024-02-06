@@ -51,11 +51,28 @@ object home:
           "lobby-nope" -> (playban.isDefined || currentGame.isDefined || homepage.hasUnreadLichessMessage)
         )
       )(
-        div(cls := "lobby__table")(
+        div(cls := "lobby__buttons")(
+          div(cls := "lobby__counters")(a, a),
           div(cls := "lobby__start")(
             button(cls := "button button-metal", tpe := "button", trans.createAGame()),
             button(cls := "button button-metal", tpe := "button", trans.playWithAFriend()),
             button(cls := "button button-metal", tpe := "button", trans.playWithTheMachine())
+          ),
+          div(cls := "lobby__support")(
+            a(href := routes.Plan.index)(
+              iconTag(patronIconChar),
+              span(cls := "lobby__support__text")(
+                strong(trans.patron.donate()),
+                span(trans.patron.becomePatron())
+              )
+            ),
+            a(href := "https://shop.spreadshirt.com/lichess-org")(
+              iconTag(licon.Tshirt),
+              span(cls := "lobby__support__text")(
+                strong("Store"),
+                span(trans.playChessInStyle())
+              )
+            )
           )
         ),
         currentGame
@@ -69,13 +86,6 @@ object home:
         ,
         div(cls := "lobby__side")(
           ctx.blind option h2("Highlights"),
-          ctx.kid.no option st.section(cls := "lobby__streams")(
-            views.html.streamer.bits liveStreams streams,
-            streams.live.streams.nonEmpty option a(href := routes.Streamer.index(), cls := "more")(
-              trans.streamersMenu(),
-              " »"
-            )
-          ),
           div(cls := "lobby__spotlights")(
             events.map(bits.spotlight),
             views.html.relay.bits.spotlight(relays),
@@ -92,6 +102,13 @@ object home:
                 simulBBB map views.html.simul.bits.homepageSpotlight
               )
             }
+          ),
+          ctx.kid.no && streams.live.streams.nonEmpty option st.section(cls := "lobby__streams")(
+            views.html.streamer.bits liveStreams streams,
+            a(href := routes.Streamer.index(), cls := "more")(
+              trans.streamersMenu(),
+              " »"
+            )
           ),
           if ctx.isAuth then
             div(cls := "lobby__timeline")(
@@ -124,22 +141,6 @@ object home:
         div(cls := "lobby__feed"):
           views.html.dailyFeed.lobbyUpdates(lastUpdates)
         ,
-        div(cls := "lobby__support")(
-          a(href := routes.Plan.index)(
-            iconTag(patronIconChar),
-            span(cls := "lobby__support__text")(
-              strong(trans.patron.donate()),
-              span(trans.patron.becomePatron())
-            )
-          ),
-          a(href := "https://shop.spreadshirt.com/lichess-org")(
-            iconTag(licon.Tshirt),
-            span(cls := "lobby__support__text")(
-              strong("Swag Store"),
-              span(trans.playChessInStyle())
-            )
-          )
-        ),
         div(cls := "lobby__about")(
           ctx.blind option h2("About"),
           a(href := "/about")(trans.aboutX("Lichess")),

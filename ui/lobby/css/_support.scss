@@ -1,12 +1,17 @@
 $c-support: $c-brag;
 
 .lobby__support {
+  margin-top: 0.75em;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75em;
   a {
     @extend %flex-center-nowrap, %box-neat;
 
     background: $c-bg-box;
     font-size: 1.3em;
-    padding: 0.2em 0.5em;
+    padding: 0.2em; // 0.5em;
+    //padding: 0.5em;
 
     @include transition(background);
 
@@ -22,12 +27,12 @@ $c-support: $c-brag;
 
   i {
     flex: 0 0 auto;
-    margin: 0 0.5em;
+    margin: 0 0.3em;
 
     &::before {
       margin-#{$end-direction}: 0.15em;
       color: $c-support;
-      font-size: 2.6em;
+      font-size: 1.6em;
 
       @include transition(color);
     }
@@ -47,7 +52,7 @@ $c-support: $c-brag;
     span {
       @extend %nowrap-ellipsis;
 
-      display: block;
+      display: none;
       font-size: 0.8em;
     }
   }

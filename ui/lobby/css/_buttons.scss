@@ -1,0 +1,39 @@
+.lobby__buttons {
+  @extend %flex-column;
+  //position: relative;
+  justify-content: space-around;
+}
+
+.lobby__start {
+  @extend %flex-column;
+
+  gap: 0.5em;
+
+  > button {
+    font-size: 1.1em;
+    text-align: center;
+    padding: 0.5em;
+
+    &.disabled {
+      opacity: 0.2;
+    }
+  }
+}
+
+.lobby__counters {
+  //@extend %flex-between, %page-text;
+  //margin-top: $block-gap / 2;
+  padding: 0.5em 0; // file://./../../common/css/component/_tabs-horiz.scss
+  display: none;
+
+  a {
+    margin-#{$start-direction}: auto;
+    color: $c-font-dim;
+
+    @include transition(color);
+
+    &:hover {
+      color: $c-link;
+    }
+  }
+}
