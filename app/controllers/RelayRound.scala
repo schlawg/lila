@@ -121,7 +121,7 @@ final class RelayRound(
 
   def apiMyRounds = Scoped(_.Study.Read) { ctx ?=> _ ?=>
     val source = env.relay.api.myRounds(MaxPerSecond(20), getIntAs[Max]("nb")).map(env.relay.jsonView.myRound)
-    apiC.GlobalConcurrencyLimitPerIP.download(ctx.ip)(source)(apiC.sourceToNdJson)
+    apiC.GlobalConcurrencyLimitPerIP.download(ctx.ip)(source)(jsToNdJson)
   }
 
   def stream(id: RelayRoundId) = AnonOrScoped(): ctx ?=>
@@ -185,8 +185,8 @@ final class RelayRound(
       for
         (sc, studyData) <- studyC.getJsonData(oldSc)
         rounds          <- env.relay.api.byTourOrdered(rt.tour)
-        isSubscribed <- ctx.me.so: me =>
-          env.relay.api.isSubscribed(rt.tour.id, me.userId).map(_.some)
+        isSubscribed <- ctx.me.soFu: me =>
+          env.relay.api.isSubscribed(rt.tour.id, me.userId)
         data <- env.relay.jsonView.makeData(
           rt.tour withRounds rounds.map(_.round),
           rt.round.id,
