@@ -55,15 +55,15 @@ object home:
           div(cls := "lobby__counters")(a, a),
           div(cls := "lobby__start")(
             button(cls := "button button-metal", tpe := "button", trans.createAGame()),
-            button(cls := "button button-metal", tpe := "button", trans.playWithAFriend()),
-            button(cls := "button button-metal", tpe := "button", trans.playWithTheMachine())
+            button(cls := "button button-metal", tpe := "button", trans.playAFriend()),
+            button(cls := "button button-metal", tpe := "button", trans.playTheComputer())
           ),
           div(cls := "lobby__support")(
             a(href := routes.Plan.index)(
               iconTag(patronIconChar),
               span(cls := "lobby__support__text")(
                 strong(trans.patron.donate()),
-                span(trans.patron.becomePatron())
+                span(trans.patron.lichessPatron())
               )
             ),
             a(href := "https://shop.spreadshirt.com/lichess-org")(
@@ -137,7 +137,7 @@ object home:
         puzzle.map: p =>
           views.html.puzzle.embed.dailyLink(p)(cls := "lobby__puzzle"),
         bits.lastPosts(lastPost, ublogPosts),
-        ctx.noBot option bits.underboards(tours, simuls, leaderboard, tournamentWinners),
+        ctx.noBot option bits.underboards(tours, simuls),
         div(cls := "lobby__feed"):
           views.html.dailyFeed.lobbyUpdates(lastUpdates)
         ,
@@ -186,8 +186,8 @@ object home:
     trans.yourTurn,
     trans.rating,
     trans.createAGame,
-    trans.playWithAFriend,
-    trans.playWithTheMachine,
+    trans.playAFriend,
+    trans.playTheComputer,
     trans.strength,
     trans.pasteTheFenStringHere,
     trans.quickPairing,

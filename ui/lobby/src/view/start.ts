@@ -13,8 +13,8 @@ export default function buttons(ctrl: LobbyController) {
     ...(lichess.blindMode ? [h('h2', 'Play')] : []),
     ...[
       ['hook', 'createAGame', hookDisabled],
-      ['friend', 'playWithAFriend', hasOngoingRealTimeGame],
-      ['ai', 'playWithTheMachine', hasOngoingRealTimeGame],
+      ['friend', 'playAFriend', hasOngoingRealTimeGame],
+      ['ai', 'playTheComputer', hasOngoingRealTimeGame],
     ].map(([gameType, transKey, disabled]: [GameType, string, boolean]) =>
       h(
         `button.button.button-metal.config_${gameType}`,

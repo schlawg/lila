@@ -403,13 +403,8 @@ object layout:
             else ctx.isBot option botImage,
             a(href := langHref("/"))(siteNameFrag)
           ),
-          ctx.blind option h2("Navigation"),
-          !ctx.isAppealUser option frag(
-            topnav(),
-            ctx.kid.no && ctx.me.exists(!_.isPatron) && !zenable option a(cls := "site-title-nav__donate")(
-              href := routes.Plan.index
-            )(trans.patron.donate())
-          )
+          !ctx.isAppealUser option frag(topnav()),
+          ctx.blind option h2("Navigation")
         ),
         div(cls := "site-buttons")(
           warnNoAutoplay,

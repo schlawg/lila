@@ -1,19 +1,18 @@
 .lobby__buttons {
   @extend %flex-column;
-  //position: relative;
+  gap: $block-gap;
   justify-content: space-around;
 }
 
 .lobby__start {
   @extend %flex-column;
 
-  gap: 0.5em;
+  gap: 0.75em;
 
   > button {
     font-size: 1.1em;
     text-align: center;
-    padding: 0.5em;
-
+    padding: 1em;
     &.disabled {
       opacity: 0.2;
     }
@@ -21,14 +20,14 @@
 }
 
 .lobby__counters {
-  //@extend %flex-between, %page-text;
-  //margin-top: $block-gap / 2;
-  padding: 0.5em 0; // file://./../../common/css/component/_tabs-horiz.scss
   display: none;
+  margin-top: 3em;
+  padding: 0;
+  flex-flow: column;
+  align-items: start;
 
   a {
-    margin-#{$start-direction}: auto;
-    color: $c-font-dim;
+    color: $c-font-dimmer;
 
     @include transition(color);
 

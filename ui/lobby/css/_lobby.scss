@@ -97,7 +97,7 @@ body {
 
 .lobby__blog {
   grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  grid-gap: 0 2%;
+  gap: $block-gap;
   grid-template-rows: auto; /* first row auto */
   grid-auto-rows: 0; /* all the other rows 0 */
   font-size: 0.9em;

@@ -138,4 +138,3 @@ object licon:
   val Blindfold: Icon       = "" // e078
   val AccountCircle: Icon   = "" // e079
   val QuestionCircle: Icon  = "" // e07a
-  val EmptyCircle: Icon     = "" // e07b

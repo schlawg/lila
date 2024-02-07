@@ -34,15 +34,4 @@
 .site-title-nav {
   display: flex;
   justify-content: flex-start;
-
-  &__donate {
-    @extend %flex-center;
-    color: $c-brag;
-    margin-left: 1rem;
-    text-transform: uppercase;
-    line-height: $site-header-height;
-    @include breakpoint($mq-not-xx-small) {
-      display: none;
-    }
-  }
 }
