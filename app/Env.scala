@@ -83,6 +83,7 @@ final class Env(
     val ublog: lila.ublog.Env,
     val opening: lila.opening.Env,
     val tutor: lila.tutor.Env,
+    val cms: lila.cms.Env,
     val lilaCookie: lila.common.LilaCookie,
     val net: NetConfig,
     val controllerComponents: ControllerComponents
@@ -247,6 +248,7 @@ final class EnvBoot(
   lazy val ublog: lila.ublog.Env             = wire[lila.ublog.Env]
   lazy val opening: lila.opening.Env         = wire[lila.opening.Env]
   lazy val tutor: lila.tutor.Env             = wire[lila.tutor.Env]
+  lazy val cms: lila.cms.Env                 = wire[lila.cms.Env]
   lazy val api: lila.api.Env                 = wire[lila.api.Env]
   lazy val lilaCookie                        = wire[lila.common.LilaCookie]
 

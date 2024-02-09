@@ -17,7 +17,8 @@ final private[api] class Cli(
     puzzle: lila.puzzle.Env,
     team: lila.team.Env,
     notify: lila.notify.Env,
-    accountClosure: AccountClosure
+    accountClosure: AccountClosure,
+    prismicExport: PrismicExport
 )(using Executor)
     extends lila.common.Cli:
 
@@ -50,6 +51,12 @@ final private[api] class Cli(
       fuccess:
         val threads = ornicar.scalalib.Jvm.threadGroups()
         s"${threads.map(_.total).sum} threads\n\n${threads.mkString("\n")}"
+    case "blog" :: "to" :: "ublog" :: Nil =>
+      prismicExport.blogPosts()
+      fuccess("Converting blogs to ublogs in the background, it can take a minute or two. Check the logs.")
+    case "prismic" :: "to" :: "pages" :: Nil =>
+      prismicExport.pages()
+      fuccess("Converting docs to pages in the background, it can take a minute or two. Check the logs.")
 
   private def run(args: List[String]): Fu[String] = {
     (processors lift args) | fufail("Unknown command: " + args.mkString(" "))

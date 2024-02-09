@@ -112,7 +112,7 @@ object form:
   ) =
     postForm(
       cls    := "form3 ublog-post-form__main",
-      action := post.fold(_ => routes.Ublog.create, p => routes.Ublog.update(p.id.value))
+      action := post.fold(u => routes.Ublog.create(u.username), p => routes.Ublog.update(p.id.value))
     )(
       form3.globalError(form),
       post.toOption.map { p =>
@@ -133,12 +133,11 @@ object form:
           br,
           tips
         ).some
-      ) { field =>
+      ): field =>
         frag(
           form3.textarea(field)(),
-          div(id := "markdown-editor", attr("data-image-upload-url") := routes.Main.uploadImage("ublogBody"))
-        )
-      },
+          div(cls := "markdown-editor", attr("data-image-upload-url") := routes.Main.uploadImage("ublogBody"))
+        ),
       post.toOption match
         case None =>
           form3.group(form("topics"), frag(trans.ublog.selectPostTopics()))(

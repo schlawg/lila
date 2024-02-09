@@ -57,7 +57,10 @@ final class Env(
     modLogApi: lila.mod.ModlogApi,
     activityWriteApi: lila.activity.ActivityWriteApi,
     ublogApi: lila.ublog.UblogApi,
+    blogApi: lila.blog.BlogApi,
     picfitUrl: lila.memo.PicfitUrl,
+    picfitApi: lila.memo.PicfitApi,
+    cmsApi: lila.cms.CmsApi,
     cacheApi: lila.memo.CacheApi,
     ws: StandaloneWSClient,
     val mode: Mode
@@ -113,6 +116,8 @@ final class Env(
   lazy val chatFreshness     = wire[ChatFreshness]
 
   private lazy val pagerDuty = wire[PagerDuty]
+
+  private lazy val prismicExport = wire[PrismicExport]
 
   Bus.subscribeFuns(
     "chatLinkCheck" -> { case GetLinkCheck(line, source, promise) =>

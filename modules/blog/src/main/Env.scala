@@ -19,7 +19,7 @@ final class Env(
     askEmbed: lila.ask.AskEmbed,
     baseUrl: lila.common.config.BaseUrl,
     db: lila.db.Db
-)(using Executor, Scheduler, play.api.libs.ws.StandaloneWSClient):
+)(using Executor, Scheduler, play.api.libs.ws.StandaloneWSClient, akka.stream.Materializer):
 
   private val config = appConfig.get[BlogConfig]("blog")(AutoConfig.loader)
 

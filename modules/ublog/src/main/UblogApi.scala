@@ -25,13 +25,25 @@ final class UblogApi(
 
   import UblogBsonHandlers.{ *, given }
 
-  def create(data: UblogForm.UblogPostData)(using me: Me): Fu[UblogPost] =
-    val frozen = askEmbed.freeze(data.markdown.value, me)
-    val post   = data.create(me.value, Markdown(frozen.text))
+  def create(data: UblogForm.UblogPostData, author: User): Fu[UblogPost] =
+    val frozen = askEmbed.freeze(data.markdown.value, author.id)
+    val post   = data.create(author, Markdown(frozen.text))
     askEmbed.commit(frozen, s"/ublog/${post.id}/redirect".some) >>
       colls.post.insert.one(
-        bsonWriteObjTry[UblogPost](post).get ++ $doc("likers" -> List[UserId](me.userId))
+        bsonWriteObjTry[UblogPost](post).get ++ $doc("likers" -> List(author.id))
       ) inject post
+
+  def migrateFromBlog(post: UblogPost, prismicId: String, prismicData: Bdoc) =
+    colls.post.insert
+      .one:
+        bsonWriteObjTry[UblogPost](post).get ++ $doc(
+          "likers"      -> List(post.created.by),
+          "prismicId"   -> prismicId,
+          "prismicData" -> prismicData
+        )
+      .void
+
+  def getByPrismicId(id: String): Fu[Option[UblogPost]] = colls.post.one[UblogPost]($doc("prismicId" -> id))
 
   def update(data: UblogForm.UblogPostData, prev: UblogPost)(using me: Me): Fu[UblogPost] =
     askEmbed
@@ -73,9 +85,9 @@ final class UblogApi(
 
   def getPost(id: UblogPostId): Fu[Option[UblogPost]] = colls.post.byId[UblogPost](id)
 
-  def findByUserBlogOrAdmin(id: UblogPostId)(using me: Me): Fu[Option[UblogPost]] =
+  def findEditableByMe(id: UblogPostId)(using me: Me): Fu[Option[UblogPost]] =
     colls.post.byId[UblogPost](id) dmap:
-      _.filter(_.isBy(me) || Granter(_.ModerateBlog))
+      _.filter(_.allows.edit)
 
   def findByIdAndBlog(id: UblogPostId, blog: UblogBlog.Id): Fu[Option[UblogPost]] =
     colls.post.one[UblogPost]($id(id) ++ $doc("blog" -> blog))
