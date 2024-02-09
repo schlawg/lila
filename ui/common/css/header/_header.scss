@@ -13,6 +13,7 @@
   margin: 0 auto;
   user-select: none;
   --dropdown-top: 40px;
+  --header-side-padding: calc((100vw - 1780px) / 2);
 
   @include breakpoint($mq-site-header-tall) {
     --dropdown-top: 60px;
@@ -20,7 +21,7 @@
     top: 0;
     left: 0;
     right: 0;
-    padding: 0 calc((100vw - 1780px) / 2);
+    padding: 0 var(--header-side-padding);
     width: 100%;
 
     @if $theme == 'transp' {
