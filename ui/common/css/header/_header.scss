@@ -10,7 +10,6 @@
   position: relative;
 
   z-index: z('site-header');
-  max-width: 1800px;
   margin: 0 auto;
   user-select: none;
   --dropdown-top: 40px;
@@ -20,6 +19,8 @@
     position: fixed;
     top: 0;
     left: 0;
+    right: 0;
+    padding: 0 calc((100vw - 1780px) / 2);
     width: 100%;
 
     @if $theme == 'transp' {
@@ -51,4 +52,15 @@
 .site-title-nav {
   display: flex;
   justify-content: flex-start;
+
+  &__donate {
+    @extend %flex-center;
+    color: $c-brag;
+    margin: 0 1rem;
+    text-transform: uppercase;
+    line-height: $site-header-height;
+    /*@include breakpoint($mq-not-xx-small) {
+      display: none;
+    }*/
+  }
 }

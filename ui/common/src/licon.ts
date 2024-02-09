@@ -133,3 +133,4 @@ export const Mute = ''; // e077
 export const Blindfold = ''; // e078
 export const AccountCircle = ''; // e079
 export const QuestionCircle = ''; // e07a
+export const Horsey = ''; // e07b

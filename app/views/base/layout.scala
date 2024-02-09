@@ -401,9 +401,14 @@ object layout:
           h1(cls := "site-title")(
             if ctx.kid.yes then span(title := trans.kidMode.txt(), cls := "kiddo")(":)")
             else ctx.isBot option botImage,
-            a(href := langHref("/"))(siteNameFrag)
+            a(href := langHref("/"), dataIcon := licon.Horsey) // siteNameFrag)
           ),
-          !ctx.isAppealUser option frag(topnav()),
+          !ctx.isAppealUser option frag(
+            ctx.kid.no && ctx.me.exists(!_.isPatron) && !zenable option a(cls := "site-title-nav__donate")(
+              href := routes.Plan.index
+            )(trans.patron.donate()),
+            topnav()
+          ),
           ctx.blind option h2("Navigation")
         ),
         div(cls := "site-buttons")(
