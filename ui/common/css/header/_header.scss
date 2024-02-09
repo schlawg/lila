@@ -57,9 +57,13 @@
   &__donate {
     @extend %flex-center;
     color: $c-brag;
-    margin: 0 1rem;
+    margin-#{$start-direction}: 0.5rem;
+    margin-#{$end-direction}: 1rem;
     text-transform: uppercase;
     line-height: $site-header-height;
+    @include breakpoint($mq-not-xx-small) {
+      margin-#{$start-direction}: 72px;
+    }
     /*@include breakpoint($mq-not-xx-small) {
       display: none;
     }*/
