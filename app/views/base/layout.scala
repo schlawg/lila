@@ -401,11 +401,13 @@ object layout:
           h1(cls := "site-title")(
             if ctx.kid.yes then span(title := trans.kidMode.txt(), cls := "kiddo")(":)")
             else ctx.isBot option botImage,
-            a(href := langHref("/"), dataIcon := licon.Horsey) // siteNameFrag)
+            a(href := langHref("/"), dataIcon := env.mode == play.api.Mode.Prod option licon.Horsey)(
+              env.mode != play.api.Mode.Prod option siteNameFrag
+            )
           ),
           !ctx.isAppealUser option frag(
-            ctx.kid.no && ctx.me.exists(!_.isPatron) && !zenable option a(cls := "site-title-nav__donate")(
-              href := routes.Plan.index
+            ctx.kid.no && !zenable option a(cls := "site-title-nav__donate")(
+              href := (if ctx.me.isEmpty then routes.Auth.login else routes.Plan.index)
             )(trans.patron.donate()),
             topnav()
           ),

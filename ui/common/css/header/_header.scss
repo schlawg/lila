@@ -28,7 +28,7 @@
       background: linear-gradient(
         to bottom,
         rgba(0, 0, 0, 1) 0%,
-        rgba(0, 0, 0, 0.8) calc(40px),
+        rgba(0, 0, 0, 0.8) calc(50px),
         rgba(0, 0, 0, 0) 100%
       );
     } @else {
@@ -61,7 +61,7 @@
     margin-#{$end-direction}: 1rem;
     text-transform: uppercase;
     line-height: $site-header-height;
-    @include breakpoint($mq-not-xx-small) {
+    @include breakpoint($mq-not-medium) {
       margin-#{$start-direction}: 72px;
     }
     /*@include breakpoint($mq-not-xx-small) {

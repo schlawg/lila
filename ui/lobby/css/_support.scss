@@ -20,7 +20,8 @@ $c-support: $c-brag;
     }
 
     &:hover .lobby__support__text,
-    &:hover i::before {
+    &:hover i::before,
+    &:hover .lobby__support__text span {
       color: #fff;
     }
   }
@@ -31,7 +32,7 @@ $c-support: $c-brag;
 
     &::before {
       margin-#{$end-direction}: 0.15em;
-      color: $c-support;
+      color: $c-font;
       font-size: 1.6em;
 
       @include transition(color);
