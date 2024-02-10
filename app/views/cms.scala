@@ -10,16 +10,21 @@ import lila.common.String.shorten
 
 object cms:
 
-  import controllers.Prismic.*
+  def render(page: CmsPage.Render)(using Context) =
+    if !page.live && !isGranted(_.Pages)
+    then p("Oops, looks like there will be something here soon... but not yet!")
+    else
+      frag(
+        editButton(page),
+        !page.live option span(cls := "cms__draft text", dataIcon := licon.Eye)(
+          "This draft is not published"
+        ),
+        rawHtml(page.html)
+      )
 
-  def render(p: AnyPage)(using Context) = frag(
-    editButton(p),
-    rawHtml(p.html)
-  )
-
-  def editButton(p: AnyPage)(using Context) =
+  def editButton(p: CmsPage.Render)(using Context) =
     isGranted(_.Pages) option a(
-      href     := p.pageId.fold(routes.Cms.create)(routes.Cms.edit(_)),
+      href     := routes.Cms.edit(p.id),
       cls      := "button button-empty text",
       dataIcon := licon.Pencil
     )("Edit")
@@ -47,34 +52,43 @@ object cms:
           )
         ),
         standardFlash,
-        table(cls := "cms__pages slist slist-pad")(
-          thead(
-            tr(
-              th("Page"),
-              th("Content"),
-              th("Live"),
-              th(dataSortDefault)("Updated")
-            )
-          ),
-          tbody(
-            pages
-              .map: page =>
-                tr(
-                  td(dataSort := page.id)(a(href := routes.Cms.edit(page.id))(page.title), br, code(page.id)),
-                  td(shorten(page.markdown.value, 140)),
-                  td(
-                    if page.live then goodTag(iconTag(licon.Checkmark))
-                    else badTag(iconTag(licon.X))
-                  ),
-                  td(dataSort := page.at.toMillis)(
-                    userIdLink(page.by.some, withOnline = false, withTitle = false),
-                    br,
-                    momentFromNow(page.at)
-                  )
-                )
-          )
-        )
+        renderTable(pages)
       )
+
+  private def renderTable(pages: List[CmsPage], tableName: String = "Page")(using PageContext) =
+    table(cls := "cms__pages slist slist-pad")(
+      thead(
+        tr(
+          th(tableName),
+          th("Content"),
+          th("Lang"),
+          th("Live"),
+          th(dataSortDefault)("Updated")
+        )
+      ),
+      tbody(
+        pages
+          .map: page =>
+            tr(
+              td(dataSort := page.key, cls := "title")(
+                a(href := routes.Cms.edit(page.id))(page.title),
+                br,
+                code(page.key)
+              ),
+              td(shorten(page.markdown.value, 140)),
+              td(cls := "lang")(page.language.toUpperCase),
+              td(
+                if page.live then goodTag(iconTag(licon.Checkmark))
+                else badTag(iconTag(licon.X))
+              ),
+              td(dataSort := page.at.toMillis)(
+                userIdLink(page.by.some, withOnline = false, withTitle = false),
+                br,
+                momentFromNow(page.at)
+              )
+            )
+      )
+    )
 
   def create(form: Form[?])(using PageContext) =
     layout("Lichess pages: New", true)(
@@ -84,19 +98,24 @@ object cms:
         inForm(form, none)
     )
 
-  def edit(form: Form[?], page: CmsPage)(using PageContext) =
-    layout(s"Lichess page ${page.id}", true)(
+  def edit(form: Form[?], page: CmsPage, alts: List[CmsPage])(using PageContext) =
+    layout(s"Lichess page ${page.key}", true)(
       cls := "box-pad",
       boxTop(
-        h1(a(href := routes.Cms.index)("Lichess page"), " • ", page.id),
+        h1(a(href := routes.Cms.index)("Lichess page"), " • ", page.key),
         div(cls := "box__top__actions"):
           a(
-            href     := page.canonicalPath.getOrElse(routes.ContentPage.loneBookmark(page.id).url),
+            href     := page.canonicalPath.getOrElse(routes.Cms.lonePage(page.key).url),
             cls      := "button button-green",
             dataIcon := licon.Eye
           )
       ),
       standardFlash,
+      alts.nonEmpty option div(cls := "cms__alternatives")(
+        renderTable(alts, "Alt languages"),
+        br,
+        br
+      ),
       postForm(cls := "content_box_content form3", action := routes.Cms.update(page.id)):
         inForm(form, page.some)
       ,
@@ -114,12 +133,29 @@ object cms:
           help = frag("The title is prepended to the page content, so no need to repeat it there.").some
         )(form3.input(_)(autofocus)),
         form3.group(
-          form("id"),
-          "ID",
+          form("key"),
+          "Key",
           half = true,
           help = frag(
             "Used as part of the page URL: /page/{ID}. Sometimes also used by lila to display somewhere else. Be very careful when changing it."
           ).some
+        )(form3.input(_))
+      ),
+      form3.split(
+        form3.group(
+          form("language"),
+          trans.language(),
+          half = true,
+          help = raw("Language of this content. Helps selecting the right content for each viewer.").some
+        ):
+          form3.select(_, lila.i18n.LangForm.popularLanguages.choices)
+        ,
+        form3.group(
+          form("canonicalPath"),
+          "Canonical path",
+          half = true,
+          help =
+            frag("The URL of the dedicated page of this content, if any. Example: /variant/crazyhouse").some
         )(form3.input(_))
       ),
       form3.group(
@@ -132,19 +168,7 @@ object cms:
           div(cls := "markdown-editor", attr("data-image-upload-url") := routes.Main.uploadImage("cmsPage"))
         ),
       form3.split(
-        form3.group(form("language"), trans.language(), half = true, help = raw("Not used yet.").some):
-          form3.select(_, lila.i18n.LangForm.popularLanguages.choices)
-        ,
         form3.checkbox(form("live"), raw("Live"), half = true)
-      ),
-      form3.split(
-        form3.group(
-          form("canonicalPath"),
-          "Canonical path",
-          half = true,
-          help =
-            frag("The URL of the dedicated page of this content, if any. Example: /variant/crazyhouse").some
-        )(form3.input(_)(autofocus))
       ),
       form3.action(form3.submit("Save"))
     )

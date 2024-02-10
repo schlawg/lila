@@ -5,24 +5,21 @@ import controllers.routes
 import lila.app.templating.Environment.{ given, * }
 import lila.app.ui.ScalatagsTemplate.{ *, given }
 import io.prismic.{ Document, DocumentLinkResolver }
+import lila.cms.CmsPage
 
 object page:
 
-  import controllers.Prismic.*
-
-  def lone(p: AnyPage)(using PageContext) =
+  def lone(p: CmsPage.Render)(using PageContext) =
     views.html.base.layout(
       moreCss = cssTag("page"),
       title = p.title,
-      moreJs = p.slugs.has("fair-play") option fairPlayJs
+      moreJs = p.key == CmsPage.Key("fair-play") option embedJsUnsafeLoadThen("""$('.slist td').each(function() {
+if (this.innerText == 'YES') this.style.color = 'green'; else if (this.innerText == 'NO') this.style.color = 'red';
+})""")
     ):
       main(cls := "page-small box box-pad page force-ltr")(pageContent(p))
 
-  private def fairPlayJs(using PageContext) = embedJsUnsafeLoadThen("""$('.slist td').each(function() {
-if (this.innerText == 'YES') this.style.color = 'green'; else if (this.innerText == 'NO') this.style.color = 'red';
-})""")
-
-  def withMenu(active: String, p: AnyPage)(using PageContext) =
+  def withMenu(active: String, p: CmsPage.Render)(using PageContext) =
     layout(
       title = p.title,
       active = active,
@@ -31,14 +28,12 @@ if (this.innerText == 'YES') this.style.color = 'green'; else if (this.innerText
     ):
       pageContent(p)
 
-  def pageContent(p: AnyPage)(using Context) = frag(
+  def pageContent(p: CmsPage.Render)(using Context) = frag(
     h1(cls := "box__top")(p.title),
-    div(cls := "body")(
-      views.html.cms.render(p)
-    )
+    div(cls := "body")(views.html.cms.render(p))
   )
 
-  def source(p: AnyPage)(using PageContext) =
+  def source(p: CmsPage.Render)(using PageContext) =
     layout(
       title = p.title,
       active = "source",
@@ -215,13 +210,13 @@ $('#asset-version-message').text(lichess.info.message);"""
           a(activeCls("news"), href := routes.DailyFeed.index(1))("Lichess updates"),
           a(activeCls("faq"), href := routes.Main.faq)(trans.faq.faqAbbreviation()),
           a(activeCls("contact"), href := routes.Main.contact)(trans.contact.contact()),
-          a(activeCls("tos"), href := routes.ContentPage.tos)(trans.termsOfService()),
+          a(activeCls("tos"), href := routes.Cms.tos)(trans.termsOfService()),
           a(activeCls("privacy"), href := "/privacy")(trans.privacy()),
-          a(activeCls("master"), href := routes.ContentPage.master)("Title verification"),
+          a(activeCls("master"), href := routes.Cms.master)("Title verification"),
           sep,
-          a(activeCls("source"), href := routes.ContentPage.source)(trans.sourceCode()),
-          a(activeCls("help"), href := routes.ContentPage.help)(trans.contribute()),
-          a(activeCls("changelog"), href := routes.ContentPage.menuBookmark("changelog"))("Changelog"),
+          a(activeCls("source"), href := routes.Cms.source)(trans.sourceCode()),
+          a(activeCls("help"), href := routes.Cms.help)(trans.contribute()),
+          a(activeCls("changelog"), href := routes.Cms.menuPage("changelog"))("Changelog"),
           a(activeCls("thanks"), href := "/thanks")(trans.thankYou()),
           sep,
           a(activeCls("webmasters"), href := routes.Main.webmasters)(trans.webmasters()),
