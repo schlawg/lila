@@ -35,7 +35,7 @@ object bits:
       )
     )
 
-  def lastPosts(
+  /*def lastPosts(
       lichess: Option[lila.blog.MiniPost],
       uposts: List[lila.ublog.UblogPost.PreviewPost]
   )(using ctx: Context): Frag =
@@ -59,7 +59,7 @@ object bits:
         .take(if lichess.isEmpty then 6 else 5)
         .map:
           views.html.ublog.post.card(_, showAuthor = views.html.ublog.post.ShowAt.bottom, showIntro = false)
-    )
+    )*/
 
   def showUnreadLichessMessage(using Context) =
     nopeInfo(

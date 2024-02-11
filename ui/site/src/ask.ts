@@ -11,23 +11,35 @@ class Ask {
   submitEl?: Element;
   formEl?: HTMLInputElement;
   view: string; // the initial order of picks when 'random' tag is used
+  initialRanks: string; // initial rank order
+  initialForm: string; // initial form value
   db: 'clean' | 'hasPicks'; // clean means no picks for this (ask, user) in the db
   constructor(askEl: Element) {
     this.el = askEl;
     this.anon = askEl.classList.contains('anon');
     this.db = askEl.hasAttribute('value') ? 'hasPicks' : 'clean';
     this.view = Array.from($('.choice', this.el), e => e?.getAttribute('value')).join('-');
+    this.initialRanks = this.ranking();
+    this.initialForm = this.formEl?.value ?? '';
+    wireSubmit(this);
+    wireForm(this);
+    wireRankedChoices(this);
     wireExclusiveChoices(this);
     wireMultipleChoices(this);
-    wireRankedChoices(this);
     wireActions(this);
-    wireForm(this);
-    wireSubmit(this);
   }
+  
   ranking(): string {
     return Array.from($('.choice.rank', this.el), e => e?.getAttribute('value')).join('-');
   }
-  formState(state: 'clean' | 'dirty' | 'success') {
+  relabel() {
+    const submitted = this.ranking() == this.initialRanks && this.db == 'hasPicks';
+    $('.choice.rank', this.el).each((i, e) => {
+      $('div', e).text(`${i + 1}`);
+      e.classList.toggle('submitted', submitted);
+    });
+  }
+  setSubmitState(state: 'clean' | 'dirty' | 'success') {
     this.submitEl?.classList.remove('dirty', 'success');
     if (state != 'clean') this.submitEl?.classList.add(state);
   }
@@ -47,7 +59,7 @@ function rewire(el: Element | null, frag: string): Ask | undefined {
 }
 
 function askXhr(req: { ask: Ask; url: string; method?: string; body?: FormData; after?: (_: Ask) => void }) {
-  xhr.textRaw(req.url, { method: req.method ? req.method : 'POST', body: req.body }).then(
+  return xhr.textRaw(req.url, { method: req.method ? req.method : 'POST', body: req.body }).then(
     async (rsp: Response) => {
       if (rsp.redirected) {
         if (!rsp.url.startsWith(window.location.origin)) throw new Error(`Bad redirect: ${rsp.url}`);
@@ -61,6 +73,28 @@ function askXhr(req: { ask: Ask; url: string; method?: string; body?: FormData; 
       console.log(`Ask failed: ${rsp.status} ${rsp.statusText}`);
     },
   );
+}
+
+function wireSubmit(ask: Ask) {
+  ask.submitEl = $('.form-submit', ask.el).get(0);
+  if (!ask.submitEl) return;
+  $('input', ask.submitEl).on('click', async () => {
+    const path = `/ask/form/${ask.el.id}?view=${ask.view}&anon=${ask.el.classList.contains('anon')}`;
+    const body = ask.formEl?.value ? xhr.form({ text: ask.formEl.value }) : undefined;
+    const newOrder = ask.ranking();
+    if (newOrder && (ask.db === 'clean' || newOrder != ask.initialRanks)) await askXhr({
+      ask: ask,
+      url: ask.picksUrl(newOrder),
+      body: body,
+      after: ask => ask.setSubmitState('success'),
+    });
+    else if (ask.formEl) askXhr({
+      ask: ask,
+      url: path,
+      body: body,
+      after: ask => ask.setSubmitState(ask.formEl?.value ? 'success' : 'clean'),
+    });
+  });
 }
 
 function wireExclusiveChoices(ask: Ask) {
@@ -88,7 +122,10 @@ function wireMultipleChoices(ask: Ask) {
 
 function wireForm(ask: Ask) {
   ask.formEl = $('.form-text', ask.el)
-    .on('input', () => ask.formState(ask.formEl?.value == initialForm ? 'clean' : 'dirty'))
+    .on('input', () => {
+      const dirty = ask.formEl?.value != ask.initialForm || (ask.initialRanks && (ask.ranking() != ask.initialRanks || ask.db === 'clean'));
+      ask.setSubmitState(dirty ? 'dirty' : 'clean')
+    })
     .on('keypress', (e: KeyboardEvent) => {
       if (
         e.key != 'Enter' ||
@@ -103,22 +140,6 @@ function wireForm(ask: Ask) {
       e.preventDefault();
     })
     .get(0) as HTMLInputElement;
-  const initialForm = ask.formEl?.value;
-}
-
-function wireSubmit(ask: Ask) {
-  ask.submitEl = $('.form-submit', ask.el).get(0);
-  if (!ask.submitEl) return;
-  $('input', ask.submitEl).on('click', () => {
-    const path = `/ask/form/${ask.el.id}?view=${ask.view}&anon=${ask.el.classList.contains('anon')}`;
-    const body = ask.formEl?.value ? xhr.form({ text: ask.formEl.value }) : undefined;
-    askXhr({
-      ask: ask,
-      url: path,
-      body: body,
-      after: ask => ask.formState(ask.formEl?.value ? 'success' : 'clean'),
-    });
-  });
 }
 
 function wireActions(ask: Ask) {
@@ -129,7 +150,6 @@ function wireActions(ask: Ask) {
 }
 
 function wireRankedChoices(ask: Ask) {
-  let initialOrder = ask.ranking();
   let d: DragContext;
 
   const container = $('.ask__choices', ask.el);
@@ -140,6 +160,7 @@ function wireRankedChoices(ask: Ask) {
     if (!d.isDone) vertical ? updateVCursor(d, e) : updateHCursor(d, e);
   });
 
+  if (ask.db === 'clean') ask.setSubmitState('dirty');
   container
     .on('dragover', (e: DragEvent) => {
       e.preventDefault();
@@ -173,16 +194,17 @@ function wireRankedChoices(ask: Ask) {
       if (d.cursorEl.parentElement != d.parentEl) return;
       d.parentEl.insertBefore(d.dragEl, d.cursorEl);
       clearCursor(d);
-
-      const newOrder = ask.ranking();
-      if (newOrder == initialOrder) return;
+      ask.relabel();
+      if (ask.ranking() != ask.initialRanks) ask.setSubmitState('dirty');
+      /*const newOrder = ask.ranking();
+      if (newOrder == ask.initialRanks) return;
       askXhr({
         ask: ask,
         url: ask.picksUrl(newOrder),
         after: () => {
-          initialOrder = newOrder;
+          ask.initialOrder = newOrder;
         },
-      });
+      });*/
     });
 }
 

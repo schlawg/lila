@@ -49,6 +49,7 @@ case class Ask(
   lazy val isStretch  = tags.exists(_ startsWith "stretch")            // stretch to fill width
   lazy val isVertical = tags.exists(_ startsWith "vert")               // one choice per row
   lazy val isCheckbox = !isRanked && isVertical                        // use checkboxes
+  lazy val isSubmit   = isForm || isRanked || tags.contains("submit")  // has a submit button
 
   def toAnon(user: UserId): Option[String] =
     Some(if isAnon then Ask.anonHash(user.value, _id) else user.value)

@@ -16,14 +16,27 @@ final class Ask(env: Env) extends LilaController(env):
         case Some(ask) => Ok.page(html.ask.renderOne(ask, intVec(view), tally))
         case _         => fuccess(NotFound(s"Ask $aid not found"))
 
-  def picks(aid: Ask.ID, picks: Option[String], view: Option[String], anon: Boolean) = Open: _ ?=>
+  def picks(aid: Ask.ID, picks: Option[String], view: Option[String], anon: Boolean) = OpenBody: _ ?=>
     effectiveId(aid, anon).flatMap:
       case Some(id) =>
-        env.ask.repo
-          .setPicks(aid, id, intVec(picks))
-          .map:
-            case Some(ask) => Ok(html.ask.renderOne(ask, intVec(view)))
-            case _         => NotFound(s"Ask $aid not found")
+        val setPicks = () =>
+          env.ask.repo
+            .setPicks(aid, id, intVec(picks))
+            .map:
+              case Some(ask) => Ok(html.ask.renderOne(ask, intVec(view)))
+              case _         => NotFound(s"Ask $aid not found")
+        feedbackForm
+          .bindFromRequest()
+          .fold(
+            _ => setPicks(),
+            text =>
+              setPicks() >>
+                env.ask.repo
+                  .setForm(aid, id, text.some)
+                  .flatMap:
+                    case Some(ask) => Ok(html.ask.renderOne(ask, intVec(view)))
+                    case _         => NotFound(s"Ask $aid not found")
+          )
       case _ => authenticationFailed
 
   def form(aid: Ask.ID, view: Option[String], anon: Boolean) = OpenBody: _ ?=>

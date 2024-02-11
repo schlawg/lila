@@ -113,6 +113,7 @@ object AskEmbed:
     if ask.isRandom then sb ++= " random"
     if ask.isRanked then sb ++= " ranked"
     if ask.isMulti then sb ++= " multiple"
+    if ask.isSubmit && !ask.isRanked && !ask.isForm then sb ++= " submit"
     if ask.isConcluded then sb ++= " concluded"
     sb ++= "\n"
     sb ++= ask.choices.map(c => s"$c\n").mkString

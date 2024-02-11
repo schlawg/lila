@@ -37,7 +37,7 @@ object ask:
     else RenderAsk(ask, None, true).pollGraphBody
 
   // AskEmbed.bake only has to support embedding in single fragments for all use cases
-  // but this recursion (probably) doesn't hurt us so keep it around for later
+  // but keep this recursion around for later
   private def extractIds(fragment: Modifier, ids: List[Ask.ID]): List[Ask.ID] = fragment match
     case StringFrag(s)  => ids ++ AskEmbed.extractIds(s)
     case RawFrag(f)     => ids ++ AskEmbed.extractIds(f)
@@ -123,8 +123,8 @@ private case class RenderAsk(
   def footer =
     div(cls := "ask__footer")(
       ask.footer map (label(_)),
-      ask.isForm && !ask.isConcluded && voterId.nonEmpty option frag(
-        input(
+      ask.isSubmit && !ask.isConcluded && voterId.nonEmpty option frag(
+        ask.isForm option input(
           cls         := "form-text",
           tpe         := "text",
           maxlength   := 80,
