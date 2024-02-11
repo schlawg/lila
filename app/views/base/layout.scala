@@ -401,8 +401,11 @@ object layout:
           h1(cls := "site-title")(
             if ctx.kid.yes then span(title := trans.kidMode.txt(), cls := "kiddo")(":)")
             else ctx.isBot option botImage,
-            a(href := langHref("/"), env.mode == play.api.Mode.Prod option (dataIcon := licon.Horsey))(
-              env.mode != play.api.Mode.Prod option siteNameFrag
+            a(
+              href     := langHref("/"),
+              dataIcon := licon.Horsey
+            )( // env.mode == play.api.Mode.Prod option (dataIcon := licon.Horsey))(
+              // env.mode != play.api.Mode.Prod option siteNameFrag
             )
           ),
           !ctx.isAppealUser option frag(

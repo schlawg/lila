@@ -45,7 +45,7 @@ final class Env(
       _.refreshAfterWrite(10 seconds).buildAsyncFuture: _ =>
         import ornicar.scalalib.ThreadLocalRandom
         val lookInto = 10
-        val keep     = 6
+        val keep     = 7
         api.pinnedPosts(2) zip api
           .latestPosts(lookInto)
           .map:
