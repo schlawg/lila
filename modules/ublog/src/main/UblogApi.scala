@@ -143,7 +143,7 @@ final class UblogApi(
     private def rel(post: UblogPost) = s"ublog:${post.id}"
 
     def upload(user: User, post: UblogPost, picture: PicfitApi.FilePart): Fu[UblogPost] = for
-      pic <- picfitApi.uploadFile(rel(post), picture, userId = user.id)
+      pic <- picfitApi.pp("picfitApi").uploadFile(rel(post), picture, userId = user.id)
       image = post.image.fold(UblogImage(pic.id))(_.copy(id = pic.id))
       _ <- colls.post.updateField($id(post.id), "image", image)
     yield post.copy(image = image.some)

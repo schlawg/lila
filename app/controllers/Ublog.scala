@@ -255,7 +255,7 @@ final class Ublog(env: Env) extends LilaController(env):
             }
         .inject(Redirect(urlOfPost(post)).flashSuccess)
         .recover { case e: Exception =>
-          BadRequest(e.getMessage)
+          BadRequest(e.getMessage.pp("image"))
         }
   }
 
