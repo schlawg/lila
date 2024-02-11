@@ -1,5 +1,6 @@
-package lila.blog
+package lila.feed
 
+import lila.Lila.{ *, given }
 import reactivemongo.api.bson.*
 import reactivemongo.api.bson.Macros.Annotations.Key
 import java.time.format.{ DateTimeFormatter, FormatStyle }
@@ -12,7 +13,7 @@ import lila.common.config.{ Max, BaseUrl, MaxPerPage }
 import play.api.data.Form
 import lila.user.Me
 
-object DailyFeed:
+object Feed:
 
   type ID = String
 
@@ -38,18 +39,13 @@ object DailyFeed:
   import ornicar.scalalib.ThreadLocalRandom
   def makeId = ThreadLocalRandom nextString 6
 
-final class DailyFeed(coll: Coll, cacheApi: CacheApi, askEmbed: AskEmbed, baseUrl: BaseUrl)(using
-    Executor
-):
+final class FeedApi(coll: Coll, cacheApi: CacheApi, askEmbed: AskEmbed)(using Executor):
 
-  import DailyFeed.*
+  import Feed.*
 
   private val max = Max(50)
 
   // private given BSONDocumentHandler[Update] = Macros.handler
-
-  private val atomRenderer =
-    lila.common.MarkdownRender(autoLink = false, strikeThrough = true, baseUrl = baseUrl.some)
 
   private object cache:
     private var mutableLastUpdates: List[Update] = Nil
@@ -65,7 +61,7 @@ final class DailyFeed(coll: Coll, cacheApi: CacheApi, askEmbed: AskEmbed, baseUr
     def clear() =
       store.underlying.synchronous.invalidateAll()
       store.get({}) // populate lastUpdate
-    def lastUpdate: DailyFeed.GetLastUpdates = () => mutableLastUpdates
+    def lastUpdate: Feed.GetLastUpdates = () => mutableLastUpdates
     store.get({}) // populate lastUpdate
 
   export cache.lastUpdate
@@ -110,12 +106,8 @@ final class DailyFeed(coll: Coll, cacheApi: CacheApi, askEmbed: AskEmbed, baseUr
       )(UpdateData.apply)(unapply)
     from.fold(form)(u => form.fill(UpdateData(u.content, u.public, u.at, u.flair)))
 
-  def renderAtom(up: Update): Html = atomRenderer(s"dailyFeed:atom:${up.id}")(up.content)
-
-final class DailyFeedPaginatorBuilder(
-    coll: Coll
-)(using Executor):
-  import DailyFeed.*
+final class FeedPaginatorBuilder(coll: Coll)(using Executor):
+  import Feed.*
 
   def recent(includeAll: Boolean, page: Int): Fu[Paginator[Update]] =
     Paginator(

@@ -213,7 +213,7 @@ object layout:
   private def spaceless(html: String) = raw(spaceRegex.replaceAllIn(html.replace("\\n", ""), ""))
 
   private val dailyNewsAtom = link(
-    href     := routes.DailyFeed.atom,
+    href     := routes.Feed.atom,
     st.title := "Lichess Updates Feed",
     tpe      := "application/atom+xml",
     rel      := "alternate"
@@ -395,13 +395,13 @@ object layout:
         )
 
     def apply(zenable: Boolean)(using ctx: PageContext) =
-      header(id := "top")(
+      header(id := "top", ctx.pref.stickyNavBar option (cls := "sticky"))(
         div(cls := "site-title-nav")(
           !ctx.isAppealUser option topnavToggle,
           h1(cls := "site-title")(
             if ctx.kid.yes then span(title := trans.kidMode.txt(), cls := "kiddo")(":)")
             else ctx.isBot option botImage,
-            a(href := langHref("/"), dataIcon := env.mode == play.api.Mode.Prod option licon.Horsey)(
+            a(href := langHref("/"), env.mode == play.api.Mode.Prod option (dataIcon := licon.Horsey))(
               env.mode != play.api.Mode.Prod option siteNameFrag
             )
           ),

@@ -3,6 +3,13 @@
 @import 'title';
 @import 'buttons';
 
+body {
+  --dropdown-top: 40px;
+  @include breakpoint($mq-site-header-tall) {
+    --dropdown-top: 60px;
+  }
+}
+
 #top {
   height: $site-header-height;
   display: flex;
@@ -12,16 +19,18 @@
   z-index: z('site-header');
   margin: 0 auto;
   user-select: none;
-  --dropdown-top: 40px;
-  --header-side-padding: calc((100vw - 1780px) / 2);
+  margin: 0 auto;
+  user-select: none;
+}
 
+#top.sticky {
   @include breakpoint($mq-site-header-tall) {
-    --dropdown-top: 60px;
+    max-width: unset;
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    padding: 0 var(--header-side-padding);
+    padding: 0 var(--site-header-padding);
     width: 100%;
 
     @if $theme == 'transp' {

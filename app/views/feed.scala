@@ -5,12 +5,12 @@ import controllers.routes
 import java.time.Instant
 import lila.app.templating.Environment.{ given, * }
 import lila.app.ui.ScalatagsTemplate.{ *, given }
-import lila.blog.DailyFeed.Update
+import lila.feed.Feed.Update
 import play.api.data.Form
 import play.api.i18n.Lang
 import lila.common.paginator.Paginator
 
-object dailyFeed:
+object feed:
 
   private def layout(title: String, hasAsks: Boolean, edit: Boolean = false)(using PageContext) =
     views.html.site.page.layout(
@@ -30,16 +30,16 @@ object dailyFeed:
         boxTop(
           h1("Lichess updates"),
           div(cls := "box__top__actions")(
-            isGranted(_.DailyFeed) option a(
-              href     := routes.DailyFeed.createForm,
+            isGranted(_.Feed) option a(
+              href     := routes.Feed.createForm,
               cls      := "button button-green",
               dataIcon := licon.PlusButton
             ),
-            views.html.site.bits.atomLink(routes.DailyFeed.atom)
+            views.html.site.bits.atomLink(routes.Feed.atom)
           )
         ),
         standardFlash,
-        updates(ups, editor = isGranted(_.DailyFeed))
+        updates(ups, editor = isGranted(_.Feed))
       )
 
   def updates(ups: Paginator[Update], editor: Boolean)(using PageContext) =
@@ -54,7 +54,7 @@ object dailyFeed:
                 h2(a(href := s"#${update.id}")(absClientInstant(update.at))),
                 editor option frag(
                   a(
-                    href     := routes.DailyFeed.edit(update.id),
+                    href     := routes.Feed.edit(update.id),
                     cls      := "button button-green button-empty button-thin text",
                     dataIcon := licon.Pencil
                   ),
@@ -67,7 +67,7 @@ object dailyFeed:
               )
             )
           ),
-      pagerNext(ups, np => routes.DailyFeed.index(np).url)
+      pagerNext(ups, np => routes.Feed.index(np).url)
     )
 
   def lobbyUpdates(ups: List[Update])(using PageContext) =
@@ -95,31 +95,31 @@ object dailyFeed:
       main(cls := "daily-feed page-small box box-pad")(
         boxTop(
           h1(
-            a(href := routes.DailyFeed.index(1))("Daily Feed"),
+            a(href := routes.Feed.index(1))("Daily Feed"),
             " • ",
             "New update!"
           )
         ),
-        postForm(cls := "content_box_content form3", action := routes.DailyFeed.create):
+        postForm(cls := "content_box_content form3", action := routes.Feed.create):
           inForm(form)
       )
 
-  def edit(form: Form[?], up: Update)(using PageContext) =
-    layout(s"Lichess update ${up.id}", hasAsks = true, edit = true):
+  def edit(form: Form[?], update: Update)(using PageContext) =
+    layout(s"Lichess update ${update.id}", hasAsks = true, edit = true):
       main(cls := "daily-feed page-small")(
         div(cls := "box box-pad")(
           boxTop(
             h1(
-              a(href := routes.DailyFeed.index(1))("Lichess update"),
+              a(href := routes.Feed.index(1))("Lichess update"),
               " • ",
-              semanticDate(up.at)
+              semanticDate(update.at)
             )
           ),
           standardFlash,
-          postForm(cls := "content_box_content form3", action := routes.DailyFeed.update(up.id)):
+          postForm(cls := "content_box_content form3", action := routes.Feed.update(update.id)):
             inForm(form)
           ,
-          postForm(action := routes.DailyFeed.delete(up.id))(cls := "daily-feed__delete"):
+          postForm(action := routes.Feed.delete(update.id))(cls := "daily-feed__delete"):
             submitButton(cls := "button button-red button-empty confirm")("Delete")
         )
       )
@@ -159,8 +159,8 @@ object dailyFeed:
     import views.html.base.atom.{ atomDate, category }
     views.html.base.atom(
       elems = ups,
-      htmlCall = routes.DailyFeed.index(1),
-      atomCall = routes.DailyFeed.atom,
+      htmlCall = routes.Feed.index(1),
+      atomCall = routes.Feed.atom,
       title = "Lichess updates feed",
       updated = ups.headOption.map(_.at)
     ): up =>
@@ -170,10 +170,10 @@ object dailyFeed:
         link(
           rel  := "alternate",
           tpe  := "text/html",
-          href := s"$netBaseUrl${routes.DailyFeed.index(1)}#${up.id}"
+          href := s"$netBaseUrl${routes.Feed.index(1)}#${up.id}"
         ),
         tag("title")(up.title),
-        tag("content")(tpe := "html")(env.blog.dailyFeed.renderAtom(up))
+        tag("content")(tpe := "html")(convertToAbsoluteHrefs(up.rendered))
       )
 
   private def convertToAbsoluteHrefs(html: Html): Html =

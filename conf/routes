@@ -120,13 +120,13 @@ GET   /blog/community.atom             controllers.Ublog.communityAtom(lang = "a
 GET   /blog/community/$lang<[\w-]{2,6}>.atom controllers.Ublog.communityAtom(lang)
 GET   /blog/:id/:slug                  controllers.Ublog.historicalBlogPost(id, slug)
 
-GET   /feed                            controllers.DailyFeed.index(page: Int ?= 1)
-GET   /feed/new                        controllers.DailyFeed.createForm
-POST  /feed/new                        controllers.DailyFeed.create
-GET   /feed/:id/edit                   controllers.DailyFeed.edit(id)
-POST  /feed/:id/edit                   controllers.DailyFeed.update(id)
-POST  /feed/:id/delete                 controllers.DailyFeed.delete(id)
-GET   /feed.atom                       controllers.DailyFeed.atom
+GET   /feed                            controllers.Feed.index(page: Int ?= 1)
+GET   /feed/new                        controllers.Feed.createForm
+POST  /feed/new                        controllers.Feed.create
+GET   /feed/:id/edit                   controllers.Feed.edit(id)
+POST  /feed/:id/edit                   controllers.Feed.update(id)
+POST  /feed/:id/delete                 controllers.Feed.delete(id)
+GET   /feed.atom                       controllers.Feed.atom
 
 GET   /opening                         controllers.Opening.index(q: Option[String] ?= None)
 POST  /opening/config/:key             controllers.Opening.config(key)
@@ -247,6 +247,7 @@ POST  /broadcast/new                          controllers.RelayTour.create
 GET   /broadcast/calendar                     controllers.RelayTour.calendar
 GET   /broadcast/help                         controllers.RelayTour.help
 GET   /broadcast/by/:user                     controllers.RelayTour.by(user, page: Int ?= 1)
+GET   /broadcast/subscribed                   controllers.RelayTour.subscribed(page: Int ?= 1)
 GET   /broadcast/:ts/$anyId<\w{8}>            controllers.RelayTour.show(ts, anyId)
 GET   /api/broadcast/$tourId<\w{8}>.pgn       controllers.RelayTour.pgn(tourId)
 GET   /broadcast/$tourId<\w{8}>/edit          controllers.RelayTour.edit(tourId)

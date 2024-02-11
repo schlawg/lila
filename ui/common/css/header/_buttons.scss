@@ -52,7 +52,7 @@
     position: absolute;
     #{$end-direction}: 0;
     @media (min-width: 1780px) {
-      #{$end-direction}: var(--header-side-padding);
+      #{$end-direction}: var(--site-header-padding);
     }
     top: var(--dropdown-top);
     background: $c-bg-header-dropdown;
@@ -134,7 +134,7 @@
       }
 
       &.signin {
-        margin-#{$end-direction}: -0.5rem; // for overlapping backgrounds on mouseover hilite
+        margin-#{$end-direction}: -0.5rem; // mouseover hilite background overlap
 
         &:hover {
           color: $c-link-hover;
@@ -152,7 +152,7 @@
   &::after {
     @extend %data-icon;
     content: $licon-AccountCircle;
-    font-size: 2.75rem; // for prominence and balance with the top left hamburger on mobile
+    font-size: 2.75rem;
   }
 }
 
