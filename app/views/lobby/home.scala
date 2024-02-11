@@ -137,7 +137,7 @@ object home:
         puzzle.map: p =>
           views.html.puzzle.embed.dailyLink(p)(cls := "lobby__puzzle"),
         div(cls := "lobby__blog ublog-post-cards"):
-          ublogPosts.filter(_.isLichess || ctx.kid.no).take(3) map:
+          ublogPosts.filter(_.isLichess || ctx.kid.no).take(7) map:
             views.html.ublog.post.card(_, showAuthor = views.html.ublog.post.ShowAt.bottom, showIntro = false)
         ,
         // bits.lastPosts(lastPost, ublogPosts),
