@@ -28,7 +28,7 @@ class Ask {
     wireMultipleChoices(this);
     wireActions(this);
   }
-  
+
   ranking(): string {
     return Array.from($('.choice.rank', this.el), e => e?.getAttribute('value')).join('-');
   }
@@ -82,18 +82,20 @@ function wireSubmit(ask: Ask) {
     const path = `/ask/form/${ask.el.id}?view=${ask.view}&anon=${ask.el.classList.contains('anon')}`;
     const body = ask.formEl?.value ? xhr.form({ text: ask.formEl.value }) : undefined;
     const newOrder = ask.ranking();
-    if (newOrder && (ask.db === 'clean' || newOrder != ask.initialRanks)) await askXhr({
-      ask: ask,
-      url: ask.picksUrl(newOrder),
-      body: body,
-      after: ask => ask.setSubmitState('success'),
-    });
-    else if (ask.formEl) askXhr({
-      ask: ask,
-      url: path,
-      body: body,
-      after: ask => ask.setSubmitState(ask.formEl?.value ? 'success' : 'clean'),
-    });
+    if (newOrder && (ask.db === 'clean' || newOrder != ask.initialRanks))
+      await askXhr({
+        ask: ask,
+        url: ask.picksUrl(newOrder),
+        body: body,
+        after: ask => ask.setSubmitState('success'),
+      });
+    else if (ask.formEl)
+      askXhr({
+        ask: ask,
+        url: path,
+        body: body,
+        after: ask => ask.setSubmitState(ask.formEl?.value ? 'success' : 'clean'),
+      });
   });
 }
 
@@ -123,8 +125,10 @@ function wireMultipleChoices(ask: Ask) {
 function wireForm(ask: Ask) {
   ask.formEl = $('.form-text', ask.el)
     .on('input', () => {
-      const dirty = ask.formEl?.value != ask.initialForm || (ask.initialRanks && (ask.ranking() != ask.initialRanks || ask.db === 'clean'));
-      ask.setSubmitState(dirty ? 'dirty' : 'clean')
+      const dirty =
+        ask.formEl?.value != ask.initialForm ||
+        (ask.initialRanks && (ask.ranking() != ask.initialRanks || ask.db === 'clean'));
+      ask.setSubmitState(dirty ? 'dirty' : 'clean');
     })
     .on('keypress', (e: KeyboardEvent) => {
       if (
