@@ -82,7 +82,8 @@ case class Pref(
       case Animation.SLOW => 120
       case _              => 70
 
-  def bgImgOrDefault = bgImg | Pref.defaultBgImg
+  def bgImgOrDefault =
+    bgImg | f"//lichess1.org/assets/lifat/background/gallery/bg17.webp"
 
   def pieceNotationIsLetter = pieceNotation == PieceNotation.LETTER
 

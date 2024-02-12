@@ -68,6 +68,11 @@ object layout:
       "image",
       crossorigin = false
     ),
+    env.security.authLockdown && !ctx.isAuth option raw:
+      """<style id="bg-data">body.transp::before{background-image:url("""" +
+        staticAssetUrl(f"lifat/background/gallery/bg${Math.abs(ctx.ip.hashCode % 28) + 1}%02d.webp") +
+        """");}</style>"""
+    ,
     ctx.pref.bg == lila.pref.Pref.Bg.TRANSPARENT option ctx.pref.bgImgOrDefault map: img =>
       raw(s"""<style id="bg-data">body.transp::before{background-image:url("${escapeHtmlRaw(img)
           .replace("&amp;", "&")}");}</style>"""),
@@ -215,6 +220,10 @@ object layout:
   private val spaceRegex              = """\s{2,}+""".r
   private def spaceless(html: String) = raw(spaceRegex.replaceAllIn(html.replace("\\n", ""), ""))
 
+  private def currentBg(using ctx: Context) =
+    if env.security.authLockdown && !ctx.isAuth then "transp"
+    else ctx.pref.currentBg
+
   private val dailyNewsAtom = link(
     href     := routes.Feed.atom,
     st.title := "Lichess Updates Feed",
@@ -292,7 +301,7 @@ object layout:
         st.body(
           cls := {
             val baseClass =
-              s"${pref.currentBg} ${current2dTheme.cssClass} ${pref.currentTheme3d.cssClass} ${pref.currentPieceSet3d.toString} coords-${pref.coordsClass}"
+              s"${currentBg} ${current2dTheme.cssClass} ${pref.currentTheme3d.cssClass} ${pref.currentPieceSet3d.toString} coords-${pref.coordsClass}"
             List(
               baseClass              -> true,
               "dark-board"           -> (pref.bg == lila.pref.Pref.Bg.DARKBOARD),
@@ -316,7 +325,7 @@ object layout:
           dataAssetUrl,
           dataAssetVersion := assetVersion,
           dataNonce        := ctx.nonce.ifTrue(sameAssetDomain).map(_.value),
-          dataTheme        := pref.currentBg,
+          dataTheme        := currentBg,
           dataBoardTheme   := pref.currentTheme.name,
           dataPieceSet     := pref.currentPieceSet.name,
           dataAnnounce     := lila.api.AnnounceStore.get.map(a => safeJsonValue(a.json)),
