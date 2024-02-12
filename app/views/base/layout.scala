@@ -126,7 +126,10 @@ object layout:
   private def anonDasher(using ctx: PageContext) =
     val prefs = trans.preferences.preferences.txt()
     div(cls := "dasher")(
-      a(href := s"${routes.Auth.login.url}?referred=${ctx.req.path}", cls := "signin button button-empty")(
+      !env.security.authLockdown option a(
+        href := s"${routes.Auth.login.url}?referred=${ctx.req.path}",
+        cls  := "signin button button-empty"
+      )(
         trans.signIn.txt()
       ),
       a(cls  := "toggle anon link", title := prefs, aria.label := prefs, dataIcon := licon.Gear),

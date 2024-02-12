@@ -156,4 +156,7 @@ final class Env(
 
   lazy val cli = wire[Cli]
 
+  lazy val authLockdown = // dev setting not in SecurityConfig
+    mode != play.api.Mode.Prod && ~appConfig.getOptional[Boolean]("security.auth_lockdown")
+
 private trait Proxy2faSetting

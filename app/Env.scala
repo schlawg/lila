@@ -129,6 +129,7 @@ final class Env(
     default = false,
     text = "Use external piece images".some
   )
+
   import lila.memo.SettingStore.Regex.given
   import scala.util.matching.Regex
   val credentiallessUaRegex = memo.settingStore[Regex](
