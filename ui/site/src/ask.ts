@@ -164,23 +164,19 @@ function wireRankedChoices(ask: Ask) {
   const [cursorEl, breakEl] = createCursor(vertical);
   const updateCursor = throttle(100, (d: DragContext, e: DragEvent) => {
     // avoid processing a delayed drag event after the drop
-    (e.x as any) = e.clientX;
-    (e.y as any) = e.clientY;
-    if (!d.isDone) vertical ? updateVCursor(d, e) : updateHCursor(d, e);
+    const ePoint = { x: e.clientX, y: e.clientY };
+    if (!d.isDone) vertical ? updateVCursor(d, ePoint) : updateHCursor(d, ePoint);
   });
 
   if (ask.db === 'clean') ask.setSubmitState('dirty');
-  container
-    .on('dragover', (e: DragEvent) => {
-      //alert('dragover');
+  container.on('dragover dragleave', (e: DragEvent) => {
+    e.preventDefault();
+    updateCursor(d, e);
+  });
+  /*.on('dragleave', (e: DragEvent) => {
       e.preventDefault();
       updateCursor(d, e);
-    })
-    .on('dragleave', (e: DragEvent) => {
-      //alert('dragleave');
-      e.preventDefault();
-      updateCursor(d, e);
-    });
+    });*/
 
   $('.choice.rank', ask.el) // wire each draggable
     .on('dragstart', (e: DragEvent) => {
@@ -199,7 +195,6 @@ function wireRankedChoices(ask: Ask) {
       };
     })
     .on('dragend', (e: DragEvent) => {
-      //alert('dragend');
       e.preventDefault();
       d.isDone = true;
       d.dragEl.classList.remove('dragging');
@@ -246,7 +241,7 @@ function clearCursor(d: DragContext) {
   if (d.breakEl?.parentNode) d.parentEl.removeChild(d.breakEl);
 }
 
-function updateHCursor(d: DragContext, e: MouseEvent) {
+function updateHCursor(d: DragContext, e: { x: number; y: number }) {
   if (e.x <= d.box.left || e.x >= d.box.right || e.y <= d.box.top || e.y >= d.box.bottom) {
     clearCursor(d);
     d.data = null;
@@ -280,10 +275,9 @@ function updateHCursor(d: DragContext, e: MouseEvent) {
   } else if (d.breakEl!.parentNode) d.parentEl.removeChild(d.breakEl!);
 }
 
-function updateVCursor(d: DragContext, e: DragEvent) {
+function updateVCursor(d: DragContext, e: { x: number; y: number }) {
   if (e.x <= d.box.left || e.x >= d.box.right || e.y <= d.box.top || e.y >= d.box.bottom) {
     clearCursor(d);
-    console.log('clearCursor return', e.x, e.y, d.box);
     return;
   }
   let target: Element | null = null;
@@ -291,6 +285,5 @@ function updateVCursor(d: DragContext, e: DragEvent) {
     const r = d.choices[i].getBoundingClientRect();
     if (e.y < r.top + r.height / 2) target = d.choices[i];
   }
-  console.log('clearCursor', e.x, e.y, d.box, target);
   d.parentEl.insertBefore(d.cursorEl, target);
 }
