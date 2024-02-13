@@ -43,7 +43,6 @@ case class Pref(
     pieceNotation: Int,
     resizeHandle: Int,
     agreement: Int,
-    stickyNavBar: Boolean,
     boardBrightness: Int,
     boardOpacity: Float,
     tags: Map[String, String] = Map.empty
@@ -468,7 +467,6 @@ object Pref:
     pieceNotation = PieceNotation.SYMBOL,
     resizeHandle = ResizeHandle.INITIAL,
     agreement = Agreement.current,
-    stickyNavBar = true,
     boardBrightness = 100,
     boardOpacity = 1f,
     tags = Map.empty

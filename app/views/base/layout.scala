@@ -407,7 +407,7 @@ object layout:
         )
 
     def apply(zenable: Boolean)(using ctx: PageContext) =
-      header(id := "top", ctx.pref.stickyNavBar option (cls := "sticky"))(
+      header(id := "top")(
         div(cls := "site-title-nav")(
           !ctx.isAppealUser option topnavToggle,
           h1(cls := "site-title")(
@@ -418,10 +418,10 @@ object layout:
             )
           ),
           !ctx.isAppealUser option frag(
+            topnav(),
             ctx.kid.no && !zenable option a(cls := "site-title-nav__donate")(
               href := (if ctx.me.isEmpty then routes.Auth.login else routes.Plan.index)
-            )(trans.patron.donate()),
-            topnav()
+            )(trans.patron.donate())
           ),
           ctx.blind option h2("Navigation")
         ),

@@ -51,7 +51,6 @@ private object PrefHandlers:
         resizeHandle = r.getD("resizeHandle", Pref.default.resizeHandle),
         moveEvent = r.getD("moveEvent", Pref.default.moveEvent),
         agreement = r.getD("agreement", 0),
-        stickyNavBar = r.getD("stickyNavBar", Pref.default.stickyNavBar),
         boardBrightness = r.getD("boardBrightness", Pref.default.boardBrightness),
         boardOpacity = r.getD("boardOpacity", Pref.default.boardOpacity),
         tags = r.getD("tags", Pref.default.tags)
@@ -101,6 +100,5 @@ private object PrefHandlers:
         "agreement"       -> o.agreement,
         "boardBrightness" -> o.boardBrightness,
         "boardOpacity"    -> o.boardOpacity,
-        "stickyNavBar"    -> o.stickyNavBar,
         "tags"            -> o.tags
       )
