@@ -50,15 +50,19 @@ object askAdmin:
         !me.is(ask.creator) option property("creator:", ask.creator),
         property("created at:", showInstant(ask.createdAt)),
         ask.tags.nonEmpty option property("tags:", ask.tags.mkString(", ")),
+        ask.picks.map(p => p.size > 0 option property("responses:", p.size.toString)),
         p,
         renderGraph(ask)
       ),
       frag:
         ask.form.map: fbmap =>
-          div(cls := "inset-box")(
-            fbmap.toSeq map:
-              case (uid, fb) if uid.startsWith("anon-") => p(s"anon: $fb")
-              case (uid, fb)                            => p(s"$uid: $fb")
+          frag(
+            property("form respondents:", fbmap.size.toString),
+            div(cls := "inset-box")(
+              fbmap.toSeq map:
+                case (uid, fb) if uid.startsWith("anon-") => p(s"anon: $fb")
+                case (uid, fb)                            => p(s"$uid: $fb")
+            )
           )
     )
 
