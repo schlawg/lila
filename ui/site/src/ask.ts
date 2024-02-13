@@ -1,9 +1,12 @@
 import * as xhr from 'common/xhr';
 import throttle from 'common/throttle';
+import { isTouchDevice } from 'common/device';
 
 export default function initModule() {
   lichess.load.then(() => $('.ask-container').each((_, e: EleLoose) => new Ask(e.firstElementChild!)));
 }
+
+if (isTouchDevice()) lichess.asset.loadIife('javascripts/vendor/dragdroptouch.js');
 
 class Ask {
   el: Element;
@@ -161,16 +164,20 @@ function wireRankedChoices(ask: Ask) {
   const [cursorEl, breakEl] = createCursor(vertical);
   const updateCursor = throttle(100, (d: DragContext, e: DragEvent) => {
     // avoid processing a delayed drag event after the drop
+    (e.x as any) = e.clientX;
+    (e.y as any) = e.clientY;
     if (!d.isDone) vertical ? updateVCursor(d, e) : updateHCursor(d, e);
   });
 
   if (ask.db === 'clean') ask.setSubmitState('dirty');
   container
     .on('dragover', (e: DragEvent) => {
+      //alert('dragover');
       e.preventDefault();
       updateCursor(d, e);
     })
     .on('dragleave', (e: DragEvent) => {
+      //alert('dragleave');
       e.preventDefault();
       updateCursor(d, e);
     });
@@ -178,7 +185,7 @@ function wireRankedChoices(ask: Ask) {
   $('.choice.rank', ask.el) // wire each draggable
     .on('dragstart', (e: DragEvent) => {
       e.dataTransfer!.effectAllowed = 'move';
-      e.dataTransfer!.setData('text/plain', '');
+      e.dataTransfer!.setData('text/plain', ''); //$('label', e.target as Element).text());
       const dragEl = e.target as Element;
       dragEl.classList.add('dragging');
       d = {
@@ -192,6 +199,7 @@ function wireRankedChoices(ask: Ask) {
       };
     })
     .on('dragend', (e: DragEvent) => {
+      //alert('dragend');
       e.preventDefault();
       d.isDone = true;
       d.dragEl.classList.remove('dragging');
@@ -275,6 +283,7 @@ function updateHCursor(d: DragContext, e: MouseEvent) {
 function updateVCursor(d: DragContext, e: DragEvent) {
   if (e.x <= d.box.left || e.x >= d.box.right || e.y <= d.box.top || e.y >= d.box.bottom) {
     clearCursor(d);
+    console.log('clearCursor return', e.x, e.y, d.box);
     return;
   }
   let target: Element | null = null;
@@ -282,5 +291,6 @@ function updateVCursor(d: DragContext, e: DragEvent) {
     const r = d.choices[i].getBoundingClientRect();
     if (e.y < r.top + r.height / 2) target = d.choices[i];
   }
+  console.log('clearCursor', e.x, e.y, d.box, target);
   d.parentEl.insertBefore(d.cursorEl, target);
 }

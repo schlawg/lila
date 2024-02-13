@@ -277,6 +277,7 @@ div.ask__choices {
     justify-content: space-between;
     align-items: center;
     cursor: move;
+    touch-action: none;
 
     &.dragging {
       opacity: 0.3;
