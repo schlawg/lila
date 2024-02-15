@@ -133,10 +133,8 @@ object layout:
     div(cls := "dasher")(
       !env.security.authLockdown option a(
         href := s"${routes.Auth.login.url}?referred=${ctx.req.path}",
-        cls  := "signin button button-empty"
-      )(
-        trans.signIn.txt()
-      ),
+        cls  := "signin"
+      )(trans.signIn.txt()),
       a(cls  := "toggle anon link", title := prefs, aria.label := prefs, dataIcon := licon.Gear),
       div(id := "dasher_app", cls         := "dropdown")
     )

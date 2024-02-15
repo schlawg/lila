@@ -10,7 +10,7 @@ body {
   }
 }
 
-#top {
+body > header {
   height: $site-header-height;
   display: flex;
   justify-content: space-between;
@@ -19,20 +19,13 @@ body {
   z-index: z('site-header');
   margin: 0 auto;
   user-select: none;
-  margin: 0 auto;
-  user-select: none;
-}
-
-#top.sticky {
+  transition: transform 0.3s ease-in-out;
   @include breakpoint($mq-site-header-tall) {
     max-width: unset;
     position: fixed;
     top: 0;
-    left: 0;
-    right: 0;
-    padding: 0 var(--site-header-padding);
     width: 100%;
-
+    padding: 0 var(--site-header-sticky-padding);
     @if $theme == 'transp' {
       background: linear-gradient(
         to bottom,
@@ -44,6 +37,14 @@ body {
       background: $c-bg-page;
       border-bottom: 1px solid $c-border;
     }
+  }
+
+  &.hide {
+    transform: translateY(-100%);
+  }
+
+  &.show {
+    transform: translateY(0);
   }
 }
 
@@ -66,12 +67,11 @@ body {
   &__donate {
     @extend %flex-center;
     color: $c-brag;
-    margin-#{$start-direction}: 0.5rem;
-    margin-#{$end-direction}: 1rem;
+    margin: 0 1rem;
     text-transform: uppercase;
     line-height: $site-header-height;
     @include breakpoint($mq-not-medium) {
-      margin-#{$start-direction}: 72px;
+      margin-#{$start-direction}: 64px;
     }
     /*@include breakpoint($mq-not-xx-small) {
       display: none;
