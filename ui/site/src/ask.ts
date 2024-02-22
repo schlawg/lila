@@ -3,10 +3,10 @@ import throttle from 'common/throttle';
 import { isTouchDevice } from 'common/device';
 
 export default function initModule() {
-  lichess.load.then(() => $('.ask-container').each((_, e: EleLoose) => new Ask(e.firstElementChild!)));
+  site.load.then(() => $('.ask-container').each((_, e: EleLoose) => new Ask(e.firstElementChild!)));
 }
 
-if (isTouchDevice()) lichess.asset.loadIife('javascripts/vendor/dragdroptouch.js');
+if (isTouchDevice()) site.asset.loadIife('javascripts/vendor/dragdroptouch.js');
 
 class Ask {
   el: Element;

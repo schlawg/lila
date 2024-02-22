@@ -261,6 +261,10 @@ object mon:
     def syncTime(official: Boolean, slug: String)  = timer("relay.sync.time").withTags(relay(official, slug))
     def httpGet(host: String, proxy: Option[String]) =
       future("relay.http.get", tags("host" -> host, "proxy" -> proxy.getOrElse("none")))
+    object fidePlayers:
+      val update = future("relay.fidePlayers.update")
+      val nb     = gauge("relay.fidePlayers.nb").withoutTags()
+
   object bot:
     def moves(username: String)   = counter("bot.moves").withTag("name", username)
     def chats(username: String)   = counter("bot.chats").withTag("name", username)
@@ -298,9 +302,9 @@ object mon:
     def concurrencyLimit(key: String) = counter("security.concurrencyLimit.count").withTag("key", key)
     object dnsApi:
       val mx = future("security.dnsApi.mx.time")
-    object checkMailApi:
+    object verifyMailApi:
       def fetch(success: Boolean, block: Boolean) =
-        timer("checkMail.fetch").withTags(tags("success" -> successTag(success), "block" -> block))
+        timer("verifyMail.fetch").withTags(tags("success" -> successTag(success), "block" -> block))
     def usersAlikeTime(field: String)  = timer("security.usersAlike.time").withTag("field", field)
     def usersAlikeFound(field: String) = histogram("security.usersAlike.found").withTag("field", field)
     object hCaptcha:

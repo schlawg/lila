@@ -43,6 +43,7 @@ case class Pref(
     pieceNotation: Int,
     resizeHandle: Int,
     agreement: Int,
+    usingAltSocket: Option[Boolean],
     boardBrightness: Int,
     boardOpacity: Float,
     tags: Map[String, String] = Map.empty
@@ -97,7 +98,9 @@ case class Pref(
 
   def hasKeyboardMove = keyboardMove == KeyboardMove.YES
 
-  def hasVoice = voice.contains(Voice.YES)
+  def hasVoice = voice.has(Voice.YES)
+
+  def isUsingAltSocket = usingAltSocket.has(true)
 
   // atob("aHR0cDovL2NoZXNzLWNoZWF0LmNvbS9ob3dfdG9fY2hlYXRfYXRfbGljaGVzcy5odG1s")
   def botCompatible =
@@ -467,8 +470,12 @@ object Pref:
     pieceNotation = PieceNotation.SYMBOL,
     resizeHandle = ResizeHandle.INITIAL,
     agreement = Agreement.current,
+<<<<<<< HEAD
     boardBrightness = 100,
     boardOpacity = 1f,
+=======
+    usingAltSocket = none,
+>>>>>>> upstream/master
     tags = Map.empty
   )
 

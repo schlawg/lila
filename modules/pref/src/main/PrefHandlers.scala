@@ -53,6 +53,7 @@ private object PrefHandlers:
         agreement = r.getD("agreement", 0),
         boardBrightness = r.getD("boardBrightness", Pref.default.boardBrightness),
         boardOpacity = r.getD("boardOpacity", Pref.default.boardOpacity),
+        usingAltSocket = r.getO("usingAltSocket"),
         tags = r.getD("tags", Pref.default.tags)
       )
 
@@ -98,6 +99,7 @@ private object PrefHandlers:
         "pieceNotation"   -> o.pieceNotation,
         "resizeHandle"    -> o.resizeHandle,
         "agreement"       -> o.agreement,
+        "usingAltSocket"  -> o.usingAltSocket,
         "boardBrightness" -> o.boardBrightness,
         "boardOpacity"    -> o.boardOpacity,
         "tags"            -> o.tags

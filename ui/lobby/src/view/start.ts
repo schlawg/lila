@@ -10,7 +10,7 @@ export default function buttons(ctrl: LobbyController) {
   const hookDisabled =
     opts.playban || opts.hasUnreadLichessMessage || ctrl.me?.isBot || hasOngoingRealTimeGame;
   return h('div.lobby__start', [
-    ...(lichess.blindMode ? [h('h2', 'Play')] : []),
+    ...(site.blindMode ? [h('h2', 'Play')] : []),
     ...[
       ['hook', 'createAGame', hookDisabled],
       ['friend', 'playAFriend', hasOngoingRealTimeGame],
@@ -24,7 +24,7 @@ export default function buttons(ctrl: LobbyController) {
           hook: disabled
             ? {}
             : bind(
-                lichess.blindMode ? 'click' : 'mousedown',
+                site.blindMode ? 'click' : 'mousedown',
                 () => ctrl.setupCtrl.openModal(gameType),
                 ctrl.redraw,
               ),

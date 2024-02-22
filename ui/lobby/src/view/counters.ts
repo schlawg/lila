@@ -11,10 +11,10 @@ export function countersView(ctrl: LobbyController) {
     'div.lobby__counters',
     () =>
       h('div.lobby__counters', [
-        lichess.blindMode ? h('h2', 'Counters') : null,
+        site.blindMode ? h('h2', 'Counters') : null,
         h(
           'a',
-          { attrs: lichess.blindMode ? {} : { href: '/player' } },
+          { attrs: site.blindMode ? {} : { href: '/player' } },
           trans.vdomPlural(
             'nbPlayers',
             members,
@@ -32,7 +32,7 @@ export function countersView(ctrl: LobbyController) {
         ),
         h(
           'a',
-          lichess.blindMode ? {} : { attrs: { href: '/games' } },
+          site.blindMode ? {} : { attrs: { href: '/games' } },
           trans.vdomPlural(
             'nbGamesInPlay',
             rounds,
