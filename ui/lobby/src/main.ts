@@ -35,6 +35,7 @@ export default function main(opts: LobbyOpts) {
 }
 
 let cols = 0;
+let blogRotateTimer: number | undefined = undefined;
 
 /* Move the timeline to/from the bottom depending on screen width.
  * This must not cause any FOUC or layout shifting on page load. */
@@ -57,5 +58,24 @@ const layoutHacks = () =>
         this.append(tv);
         // fake tv for debugging layout, ui/build with -d flag
       }
+    });
+    $('.lobby__blog').each((_, el: HTMLElement) => {
+      const style = window.getComputedStyle(el);
+      const gridGap = parseFloat(style.columnGap);
+      const kids = el.children as HTMLCollectionOf<HTMLElement>;
+      const visible = Math.floor((el.clientWidth + gridGap) / (180 + gridGap));
+      // 180 from .lobby__blog grid/min in file://./../css/_lobby.scss
+      let iter = 0;
+      const blogRotate = () => {
+        for (let i = 0; i < kids.length; i++) {
+          const kid = kids[(iter * visible + i) % kids.length];
+          kid.style.display = i < visible ? 'block' : 'none';
+          kid.style.order = String(i);
+        }
+        iter++;
+      };
+      blogRotate();
+      clearInterval(blogRotateTimer);
+      blogRotateTimer = setInterval(blogRotate, 15000);
     });
   });

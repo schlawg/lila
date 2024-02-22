@@ -6,6 +6,7 @@ $c-contours: mix($c-brag, $c-shade, 80%);
   background: $c-bg-box;
   overflow-y: auto;
   min-height: 14em;
+  border: 1px solid c-dimmer($c-brag, 60%);
 }
 .daily-feed {
   &__updates {
