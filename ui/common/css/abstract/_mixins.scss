@@ -90,14 +90,41 @@
   #top {
     position: relative;
     max-width: 1800px;
-    --site-header-sticky-padding: 0;
     top: unset;
     padding: 0;
     width: unset;
     background: unset;
     border-bottom: unset;
+    transform: unset;
+    --site-header-sticky-padding: 0px;
+
+    #topnav,
+    .dropdown {
+      opacity: unset;
+      visibility: unset;
+      pointer-events: unset;
+      transition: unset;
+    }
   }
   #main-wrap {
-    margin-top: #{$site-header-margin};
+    margin-top: $site-header-margin;
+  }
+}
+
+@mixin broken-img($aspect-ratio) {
+  display: block;
+  position: relative;
+  aspect-ratio: $aspect-ratio;
+  &::after {
+    @extend %flex-center;
+    justify-content: center;
+    content: attr(alt);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: $c-font-dimmer;
+    color: $c-font-dim;
   }
 }

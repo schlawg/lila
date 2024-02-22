@@ -470,12 +470,9 @@ object Pref:
     pieceNotation = PieceNotation.SYMBOL,
     resizeHandle = ResizeHandle.INITIAL,
     agreement = Agreement.current,
-<<<<<<< HEAD
+    usingAltSocket = none,
     boardBrightness = 100,
     boardOpacity = 1f,
-=======
-    usingAltSocket = none,
->>>>>>> upstream/master
     tags = Map.empty
   )
 
