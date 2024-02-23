@@ -28,13 +28,17 @@
   @include breakpoint($mq-col3) {
     --cols: 3; // ui/lobby/src/main.ts
     grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(6, fit-content(0));
+    grid-template-rows: repeat(
+      7,
+      fit-content(0)
+    ); //auto repeat(3, fit-content(0)); //fit-content(0)) auto repeat(3, fit-content(0));
     grid-template-areas:
       'app     app buttons'
       'app     app side'
-      'blog    blog side'
-      'tv feed    feed'
-      'tours   tours puzzle'
+      'feed feed tv'
+      'blog blog tv'
+      'blog blog puzzle'
+      'tours tours puzzle'
       'about  about   about';
 
     &__counters {
@@ -66,12 +70,18 @@
   @include breakpoint($mq-col4) {
     --cols: 4; // ui/lobby/src/main.ts
     grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(6, fit-content(0)) repeat(4, auto); //repeat(4, fit-content(0));
     grid-template-areas:
       'side   app     app     buttons'
-      'blog   blog    feed    feed'
-      'tv     tours   tours   puzzle'
+      'side     app    app   puzzle'
+      'side       blog    blog   puzzle'
+      'tv     blog blog timeline'
+      'tv      tours tours timeline'
       'about  about   about   about';
 
+    &__feed {
+      margin-top: $block-gap;
+    }
     &__start {
       margin: auto 0;
     }

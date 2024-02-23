@@ -65,14 +65,14 @@ object home:
                 strong(trans.patron.donate()),
                 span(trans.patron.lichessPatron())
               )
-            ),
-            a(href := "https://shop.spreadshirt.com/lichess-org")(
+            )
+            /*a(href := "https://shop.spreadshirt.com/lichess-org")(
               iconTag(licon.Tshirt),
               span(cls := "lobby__support__text")(
                 strong("Store"),
                 span(trans.playChessInStyle())
               )
-            )
+            )*/
           )
         ),
         currentGame
