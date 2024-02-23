@@ -80,8 +80,5 @@ body > header {
     @media (max-width: at-most($xx-small)) {
       display: none;
     }
-    /*@include breakpoint($mq-not-xx-small) {
-      display: none;
-    }*/
   }
 }
