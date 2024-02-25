@@ -1,8 +1,8 @@
 export type Sort = 'rating' | 'time';
 export type Mode = 'list' | 'chart';
-export type LobbyTab = 'feed' | 'pools' | 'custom_games' | 'now_playing';
-export type CustomGameTab = 'real_time' | 'correspondence';
-export type Tab = LobbyTab | CustomGameTab;
+export type AppTab = 'pools' | 'lobby' | 'events' | 'games';
+export type LobbyTab = 'real_time' | 'variant' | 'correspondence';
+export type Tab = AppTab | LobbyTab;
 export type GameType = 'hook' | 'friend' | 'ai';
 export type TimeMode = 'realTime' | 'correspondence' | 'unlimited';
 export type GameMode = 'casual' | 'rated';

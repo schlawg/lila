@@ -22,20 +22,21 @@ export default function (ctrl: LobbyController) {
     isBot = ctrl.me?.isBot;
   return [
     h('div.tabs-horiz', { attrs: { role: 'tablist' } }, [
-      isBot ? undefined : tab(ctrl, 'pools', ctrl.tab, [ctrl.trans.noarg('quickPairing')]),
-      isBot ? undefined : tab(ctrl, 'custom_games', ctrl.tab, ['Lobby']),
-      ctrl.tab === 'now_playing' || nbPlaying || isBot
-        ? tab(ctrl, 'now_playing', ctrl.tab, [
+      isBot ? undefined : tab(ctrl, 'pools', ctrl.tab, ['Quick']),
+      isBot ? undefined : tab(ctrl, 'lobby', ctrl.tab, [ctrl.trans.noarg('Lobby')]),
+      isBot ? undefined : tab(ctrl, 'events', ctrl.tab, ['Events']),
+      ctrl.tab === 'games' || nbPlaying || isBot
+        ? tab(ctrl, 'games', ctrl.tab, [
             'Games',
             myTurnPovsNb > 0 ? h('i.unread', myTurnPovsNb >= 9 ? '9+' : myTurnPovsNb) : null,
           ])
         : null,
     ]),
-    ctrl.tab === 'custom_games'
+    ctrl.tab === 'lobby'
       ? h('div.tabs-horiz.secondary-tabs', { attrs: { role: 'tablist' } }, [
-          tab(ctrl, 'real_time', ctrl.customGameTab, ['Real time']),
-          tab(ctrl, 'correspondence', ctrl.customGameTab, ['Correspondence']),
-          isBot ? undefined : tab(ctrl, 'pools', active, [ctrl.trans.noarg('quickPairing')]),
+          tab(ctrl, 'real_time', ctrl.lobbyTab, ['Real time']),
+          tab(ctrl, 'variant', active, [ctrl.trans.noarg('Variant')]),
+          tab(ctrl, 'correspondence', ctrl.lobbyTab, ['Correspondence']),
         ])
       : null,
   ];

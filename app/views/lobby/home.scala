@@ -58,21 +58,9 @@ object home:
             button(cls := "button button-metal", tpe := "button", trans.playAFriend()),
             button(cls := "button button-metal", tpe := "button", trans.playTheComputer())
           ),
-          div(cls := "lobby__support")(
-            a(href := routes.Plan.index)(
-              iconTag(patronIconChar),
-              span(cls := "lobby__support__text")(
-                strong(trans.patron.donate()),
-                span(trans.patron.lichessPatron())
-              )
-            )
-            /*a(href := "https://shop.spreadshirt.com/lichess-org")(
-              iconTag(licon.Tshirt),
-              span(cls := "lobby__support__text")(
-                strong("Store"),
-                span(trans.playChessInStyle())
-              )
-            )*/
+          a(cls := "lobby__support", href := routes.Plan.index)(
+            iconTag(patronIconChar),
+            div(strong(trans.patron.donate()), span(trans.patron.lichessPatron()))
           )
         ),
         currentGame

@@ -4,8 +4,14 @@ import renderTabs from './tabs';
 import * as renderPools from './pools';
 import renderRealTime from './realTime/main';
 import renderCorrespondence from './correspondence';
+import { renderEvents } from './events';
 import renderPlaying from './playing';
 import LobbyController from '../ctrl';
+
+function renderVariant(ctrl: LobbyController) {
+  ctrl;
+  return h('div.lobby__variant', []);
+}
 
 export default function (ctrl: LobbyController) {
   let body,
@@ -18,11 +24,19 @@ export default function (ctrl: LobbyController) {
         body = renderPools.render(ctrl);
         data = { hook: renderPools.hooks(ctrl) };
         break;
-      case 'custom_games':
-        body = ctrl.customGameTab === 'real_time' ? renderRealTime(ctrl) : renderCorrespondence(ctrl);
-        cls = ctrl.customGameTab;
+      case 'lobby':
+        body =
+          ctrl.lobbyTab === 'real_time'
+            ? renderRealTime(ctrl)
+            : ctrl.lobbyTab === 'variant'
+            ? renderVariant(ctrl)
+            : renderCorrespondence(ctrl);
+        cls = ctrl.lobbyTab;
         break;
-      case 'now_playing':
+      case 'events':
+        body = renderEvents(ctrl);
+        break;
+      case 'games':
         body = renderPlaying(ctrl);
         break;
     }

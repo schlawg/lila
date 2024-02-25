@@ -1,4 +1,4 @@
-import { CustomGameTab, LobbyTab, Mode, Sort } from './interfaces';
+import { LobbyTab, AppTab, Mode, Sort } from './interfaces';
 
 interface Store<A> {
   set(v: string): A;
@@ -6,8 +6,8 @@ interface Store<A> {
 }
 
 export interface Stores {
-  tab: Store<LobbyTab>;
-  customGameTab: Store<CustomGameTab>;
+  tab: Store<AppTab>;
+  lobbyTab: Store<LobbyTab>;
   mode: Store<Mode>;
   sort: Store<Sort>;
 }
@@ -17,34 +17,23 @@ interface Config<A> {
   fix(v: string | null): A;
 }
 
-const tab: Config<LobbyTab> = {
-  key: 'lobby.tab',
-  fix(t: string | null): LobbyTab {
-    if (<LobbyTab>t) return t as LobbyTab; // doesn't fix, it amounts to a runtime null check
-    return 'pools';
-  },
+const tab: Config<AppTab> = {
+  key: 'app.tab',
+  fix: (t: string | null) => (t ? (t as AppTab) : 'pools'),
 };
-const customGameTab: Config<CustomGameTab> = {
-  key: 'customGame.tab',
-  fix(t: string | null): CustomGameTab {
-    if (<CustomGameTab>t) return t as CustomGameTab;
-    return 'real_time';
-  },
+
+const lobbyTab: Config<LobbyTab> = {
+  key: 'lobby.tab',
+  fix: (t: string | null) => (t ? (t as LobbyTab) : 'real_time'),
 };
 
 const mode: Config<Mode> = {
   key: 'lobby.mode',
-  fix(m: string | null): Mode {
-    if (<Mode>m) return m as Mode;
-    return 'list';
-  },
+  fix: (m: string | null) => (m ? (m as Mode) : 'list'),
 };
 const sort: Config<Sort> = {
   key: 'lobby.sort',
-  fix(s: string | null): Sort {
-    if (<Sort>s) return s as Sort;
-    return 'rating';
-  },
+  fix: (s: string | null) => (s ? (s as Sort) : 'rating'),
 };
 
 function makeStore<A>(conf: Config<A>, userId?: string): Store<A> {
@@ -63,8 +52,8 @@ function makeStore<A>(conf: Config<A>, userId?: string): Store<A> {
 
 export function make(userId?: string): Stores {
   return {
-    tab: makeStore<LobbyTab>(tab, userId),
-    customGameTab: makeStore<CustomGameTab>(customGameTab, userId),
+    tab: makeStore<AppTab>(tab, userId),
+    lobbyTab: makeStore<LobbyTab>(lobbyTab, userId),
     mode: makeStore<Mode>(mode, userId),
     sort: makeStore<Sort>(sort, userId),
   };

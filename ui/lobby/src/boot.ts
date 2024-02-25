@@ -60,7 +60,7 @@ export function initModule(opts: LobbyOpts) {
         method: 'post',
       },
     );
-    lobbyCtrl.setTab('custom_games');
+    lobbyCtrl.setTab('lobby');
     lobbyCtrl.redraw();
     history.replaceState(null, '', '/');
   });
