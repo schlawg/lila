@@ -72,7 +72,7 @@ final class Ask(env: Env) extends LilaController(env):
         for
           user <- env.user.lightUser(username.id)
           asks <- env.ask.repo.byUser(username.id)
-          if (me is user) || isGranted(_.ModerateForum)
+          if (me.is(user)) || isGranted(_.ModerateForum)
         yield html.askAdmin.show(asks, user.get)
 
   def json(aid: Ask.ID) = Auth: _ ?=>
@@ -81,7 +81,7 @@ final class Ask(env: Env) extends LilaController(env):
         .getAsync(aid)
         .map:
           case Some(ask) =>
-            if (me is ask.creator) || isGranted(_.ModerateForum) then JsonOk(ask.toJson)
+            if (me.is(ask.creator)) || isGranted(_.ModerateForum) then JsonOk(ask.toJson)
             else JsonBadRequest(jsonError(s"Not authorized to view ask $aid"))
           case _ => JsonBadRequest(jsonError(s"Ask $aid not found"))
 
@@ -91,7 +91,7 @@ final class Ask(env: Env) extends LilaController(env):
         .getAsync(aid)
         .map:
           case Some(ask) =>
-            if (me is ask.creator) || isGranted(_.ModerateForum) then
+            if (me.is(ask.creator)) || isGranted(_.ModerateForum) then
               env.ask.repo.delete(aid)
               Ok(lila.ask.AskEmbed.askNotFoundFrag)
             else Unauthorized
@@ -117,7 +117,7 @@ final class Ask(env: Env) extends LilaController(env):
         .getAsync(aid)
         .flatMap:
           case Some(ask) =>
-            if (me is ask.creator) || isGranted(_.ModerateForum) then
+            if (me.is(ask.creator)) || isGranted(_.ModerateForum) then
               action(ask._id).map:
                 case Some(newAsk) => Ok(html.ask.renderOne(newAsk))
                 case _            => NotFound(s"Ask id ${aid} not found")

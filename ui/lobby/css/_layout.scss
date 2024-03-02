@@ -5,11 +5,11 @@
   grid-template-areas: 'app' 'buttons' 'side' 'blog' 'feed' 'puzzle' 'tv' 'tours' 'timeline' 'about';
   grid-gap: $block-gap;
   grid-auto-rows: auto;
-  &__tournaments,
+  /*&__tournaments,
   &__simuls {
     min-height: 13em;
     max-height: 26em;
-  }
+  }*/
 
   @include breakpoint($mq-col2) {
     --cols: 2; // ui/lobby/src/main.ts

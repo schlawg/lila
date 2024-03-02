@@ -24,7 +24,7 @@ final private class YouTubeApi(
 
   private case class Tuber(streamer: Streamer, youTube: Streamer.YouTube)
 
-  def fetchStreams(streamers: List[Streamer], scheduled: Boolean = true): Fu[List[YouTube.Stream]] =
+  def fetchStreams(streamers: List[Streamer]): Fu[List[YouTube.Stream]] =
     val maxResults = 50
     val tubers     = streamers.flatMap { s => s.youTube.map(Tuber(s, _)) }
     val idPages = tubers
@@ -51,16 +51,25 @@ final private class YouTubeApi(
                   Nil
       .map(_.flatten)
       .addEffect: streams =>
-        if streams != lastResults || !scheduled then
-          if scheduled then
-            val newStreams  = streams.filterNot(s => lastResults.exists(_.videoId == s.videoId))
-            val goneStreams = lastResults.filterNot(s => streams.exists(_.videoId == s.videoId))
-            if newStreams.nonEmpty then
-              logger.info(s"fetchStreams NEW ${newStreams.map(_.channelId).mkString(" ")}")
-            if goneStreams.nonEmpty then
-              logger.info(s"fetchStreams GONE ${goneStreams.map(_.channelId).mkString(" ")}")
-            lastResults = streams
+        if streams != lastResults then
+          val newStreams  = streams.filterNot(s => lastResults.exists(_.videoId == s.videoId))
+          val goneStreams = lastResults.filterNot(s => streams.exists(_.videoId == s.videoId))
+          if newStreams.nonEmpty then
+            logger.info(s"fetchStreams NEW ${newStreams.map(_.channelId).mkString(" ")}")
+          if goneStreams.nonEmpty then
+            logger.info(s"fetchStreams GONE ${goneStreams.map(_.channelId).mkString(" ")}")
           syncDb(tubers, streams)
+          lastResults = streams
+
+  // youtube does not provide a low quota API to check for videos on a known channel id
+  // and they don't provide the rss feed to non-browsers, so we're left to scrape the html.
+  def forceCheckWithHtmlScraping(tuber: Streamer.YouTube) =
+    ws.url(s"https://www.youtube.com/channel/${tuber.channelId}")
+      .get()
+      .map: rsp =>
+        raw""""videoId":"(\S{11})"""".r
+          .findFirstMatchIn(rsp.body)
+          .foreach(m => onVideo(tuber.channelId, m.group(1)))
 
   def onVideoXml(xml: scala.xml.NodeSeq): Funit =
     val channel = (xml \ "entry" \ "channelId").text
@@ -77,11 +86,10 @@ final private class YouTubeApi(
     import BsonHandlers.given
     coll
       .find($doc("youTube.channelId" -> channelId, "approval.granted" -> true))
-      .sort($sort desc "seenAt")
+      .sort($sort.desc("seenAt"))
       .cursor[Streamer]()
-      .list(1)
-      .map(_.headOption)
-      .map:
+      .uno
+      .flatMap:
         case Some(s) =>
           isLiveStream(videoId).map: isLive =>
             // this is the only notification we'll get, so don't filter offline users here.
@@ -90,27 +98,30 @@ final private class YouTubeApi(
               coll.update.one($doc("_id" -> s.id), $set("youTube.pubsubVideoId" -> videoId))
             else logger.debug(s"YouTube: IGNORED ${s.id} vid:$videoId ch:$channelId")
         case None =>
-          logger.info(s"YouTube: UNAPPROVED vid:$videoId ch:$channelId")
+          fuccess:
+            logger.info(s"YouTube: UNAPPROVED vid:$videoId ch:$channelId")
 
   private def isLiveStream(videoId: String): Fu[Boolean] =
-    cfg.googleApiKey.value.nonEmpty so ws
-      .url("https://youtube.googleapis.com/youtube/v3/videos")
-      .withQueryStringParameters(
-        "part" -> "snippet",
-        "id"   -> videoId,
-        "key"  -> cfg.googleApiKey.value
-      )
-      .get()
-      .map { rsp =>
-        rsp.body[JsValue].validate[YouTube.Result] match
-          case JsSuccess(data, _) =>
-            data.items.headOption.fold(false): item =>
-              item.snippet.liveBroadcastContent == "live" && item.snippet.title.value.toLowerCase
-                .contains(keyword.toLowerCase)
-          case JsError(err) =>
-            logger.warn(s"YouTube ERROR: ${rsp.status} $err ${rsp.body[String].take(200)}")
-            false
-      }
+    cfg.googleApiKey.value.nonEmpty.so(
+      ws
+        .url("https://youtube.googleapis.com/youtube/v3/videos")
+        .withQueryStringParameters(
+          "part" -> "snippet",
+          "id"   -> videoId,
+          "key"  -> cfg.googleApiKey.value
+        )
+        .get()
+        .map { rsp =>
+          rsp.body[JsValue].validate[YouTube.Result] match
+            case JsSuccess(data, _) =>
+              data.items.headOption.fold(false): item =>
+                item.snippet.liveBroadcastContent == "live" && item.snippet.title.value.toLowerCase
+                  .contains(keyword.toLowerCase)
+            case JsError(err) =>
+              logger.warn(s"YouTube ERROR: ${rsp.status} $err ${rsp.body[String].take(200)}")
+              false
+        }
+    )
 
   def channelSubscribe(channelId: String, subscribe: Boolean): Funit = ws
     .url("https://pubsubhubbub.appspot.com/subscribe")
@@ -155,12 +166,12 @@ final private class YouTubeApi(
       .parallel
       .map(bulk many _)
 
-  private[streamer] def subscribeAll: Funit = cfg.googleApiKey.value.nonEmpty so {
+  private[streamer] def subscribeAll: Funit = cfg.googleApiKey.value.nonEmpty.so {
     import akka.stream.scaladsl.*
     import reactivemongo.akkastream.cursorProducer
     coll
       .find(
-        $doc("youTube.channelId" $exists true, "approval.granted" -> true),
+        $doc("youTube.channelId".$exists(true), "approval.granted" -> true),
         $doc("youTube.channelId" -> true).some
       )
       .cursor[Bdoc]()

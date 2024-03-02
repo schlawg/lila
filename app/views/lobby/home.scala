@@ -30,9 +30,9 @@ object home:
                 Json.obj("minutes" -> pb.mins, "remainingSeconds" -> (pb.remainingSeconds + 3))
             )
         ),
-        homepage.hasAsks option jsModuleInit("ask")
+        homepage.hasAsks.option(jsModuleInit("ask"))
       ),
-      moreCss = frag(cssTag("lobby"), homepage.hasAsks option cssTag("ask")),
+      moreCss = frag(cssTag("lobby"), homepage.hasAsks.option(cssTag("ask"))),
       openGraph = lila.app.ui
         .OpenGraph(
           image = assetUrl("logo/lichess-tile-wide.png").some,
@@ -73,11 +73,22 @@ object home:
             if ctx.blind then blindLobby(blindGames) else bits.lobbyApp
         ,
         div(cls := "lobby__side")(
-          ctx.blind option h2("Highlights"),
+          /*ctx.blind.option(h2("Highlights")),
+          ctx.kid.no.option(
+            st.section(cls := "lobby__streams")(
+              views.html.streamer.bits.liveStreams(streams),
+              streams.live.streams.nonEmpty.option(
+                a(href := routes.Streamer.index(), cls := "more")(
+                  trans.streamersMenu(),
+                  " »"
+                )
+              )
+            )
+          ),*/
           div(cls := "lobby__spotlights")(
             events.map(bits.spotlight),
             views.html.relay.bits.spotlight(relays),
-            !ctx.isBot option {
+            ctx.noBot.option {
               val nbManual = events.size + relays.size
               val simulBBB = simuls.find(isFeaturable(_) && nbManual < 4)
               val nbForced = nbManual + simulBBB.size.toInt
@@ -86,30 +97,34 @@ object home:
                 lila.tournament.Spotlight.select(tours, tourBBBs).map {
                   views.html.tournament.homepageSpotlight(_)
                 },
-                swiss.ifTrue(nbForced < 3) map views.html.swiss.bits.homepageSpotlight,
-                simulBBB map views.html.simul.bits.homepageSpotlight
+                swiss.ifTrue(nbForced < 3).map(views.html.swiss.bits.homepageSpotlight),
+                simulBBB.map(views.html.simul.bits.homepageSpotlight)
               )
             }
           ),
-          ctx.kid.no && streams.live.streams.nonEmpty option st.section(cls := "lobby__streams")(
-            views.html.streamer.bits liveStreams streams,
-            a(href := routes.Streamer.index(), cls := "more")(
-              trans.streamersMenu(),
-              " »"
+          (ctx.kid.no && streams.live.streams.nonEmpty).option(
+            st.section(cls := "lobby__streams")(
+              views.html.streamer.bits.liveStreams(streams),
+              a(href := routes.Streamer.index(), cls := "more")(
+                trans.streamersMenu(),
+                " »"
+              )
             )
           ),
           if ctx.isAuth then
             div(cls := "lobby__timeline")(
-              ctx.blind option h2("Timeline"),
-              views.html.timeline entries userTimeline,
-              userTimeline.nonEmpty option a(cls := "more", href := routes.Timeline.home)(
-                trans.more(),
-                " »"
+              ctx.blind.option(h2("Timeline")),
+              views.html.timeline.entries(userTimeline),
+              userTimeline.nonEmpty.option(
+                a(cls := "more", href := routes.Timeline.home)(
+                  trans.more(),
+                  " »"
+                )
               )
             )
           else
             div(cls := "about-side")(
-              ctx.blind option h2("About"),
+              ctx.blind.option(h2("About")),
               trans.xIsAFreeYLibreOpenSourceChessServer(
                 "Lichess",
                 a(cls := "blue", href := routes.Plan.features)(trans.really.txt())
@@ -120,21 +135,25 @@ object home:
         ),
         featured.map: g =>
           div(cls := "lobby__tv"):
-            views.html.game.mini(Pov naturalOrientation g, tv = true)
+            views.html.game.mini(Pov.naturalOrientation(g), tv = true)
         ,
         puzzle.map: p =>
           views.html.puzzle.embed.dailyLink(p)(cls := "lobby__puzzle"),
         div(cls := "lobby__blog ublog-post-cards"):
-          ublogPosts.filter(_.isLichess || ctx.kid.no).take(7) map:
-            views.html.ublog.post.card(_, showAuthor = views.html.ublog.post.ShowAt.bottom, showIntro = false)
+          ublogPosts
+            .filter(_.isLichess || ctx.kid.no)
+            .take(9)
+            .map:
+              views.html.ublog.post
+                .card(_, showAuthor = views.html.ublog.post.ShowAt.bottom, showIntro = false)
         ,
         // bits.lastPosts(lastPost, ublogPosts),
-        ctx.noBot option bits.underboards(tours, simuls /*, leaderboard, tournamentWinners*/ ),
+        ctx.noBot.option(bits.underboards(tours, simuls /*, leaderboard, tournamentWinners*/ )),
         div(cls := "lobby__feed"):
           views.html.feed.lobbyUpdates(lastUpdates)
         ,
         div(cls := "lobby__about")(
-          ctx.blind option h2("About"),
+          ctx.blind.option(h2("About")),
           a(href := "/about")(trans.aboutX("Lichess")),
           a(href := "/faq")(trans.faq.faqAbbreviation()),
           a(href := "/contact")(trans.contact.contact()),

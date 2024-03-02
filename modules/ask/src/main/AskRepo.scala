@@ -40,7 +40,7 @@ final class AskRepo(
 
   def preload(text: String*): Fu[Boolean] =
     val ids = text.flatMap(AskEmbed.extractIds)
-    ids.map(getAsync).parallel inject ids.nonEmpty
+    ids.map(getAsync).parallel.inject(ids.nonEmpty)
 
   // vid (voter id) are sometimes anonymous hashes.
   def setPicks(aid: Ask.ID, vid: String, picks: Option[Vector[Int]]): Fu[Option[Ask]] =
@@ -53,7 +53,7 @@ final class AskRepo(
     update(aid, vid, none[Unit], unsetCached, writeUnset)
 
   def delete(aid: Ask.ID): Funit = askDb: coll =>
-    cache invalidate aid
+    cache.invalidate(aid)
     coll.delete.one($id(aid)).void
 
   def conclude(aid: Ask.ID): Fu[Option[Ask]] = askDb: coll =>
@@ -83,7 +83,7 @@ final class AskRepo(
   def byUser(uid: UserId): Fu[List[Ask]] = askDb: coll =>
     coll
       .find($doc("creator" -> uid))
-      .sort($sort desc "createdAt")
+      .sort($sort.desc("createdAt"))
       .cursor[Ask]()
       .list(50)
       .map: asks =>
@@ -99,10 +99,10 @@ final class AskRepo(
   // none values (deleted asks) in these lists are still important for sequencing in renders
   def asksIn(text: String): Fu[List[Option[Ask]]] = askDb: coll =>
     val ids = AskEmbed.extractIds(text)
-    ids.map(getAsync).parallel inject ids.map(get)
+    ids.map(getAsync).parallel.inject(ids.map(get))
 
   def isOpen(aid: Ask.ID): Fu[Boolean] = askDb: coll =>
-    getAsync(aid) map (_ exists (_ isOpen))
+    getAsync(aid).map(_.exists(_ isOpen))
 
   // call this after freezeAsync on form submission for edits
   def setUrl(text: String, url: Option[String]): Funit = askDb: coll =>
@@ -129,9 +129,9 @@ final class AskRepo(
       case Some(ask) =>
         val cachedAsk = cached(ask, vid, value)
         cache.set(aid, cachedAsk.some)
-        writeField(aid, vid, value, false) inject cachedAsk.some
+        writeField(aid, vid, value, false).inject(cachedAsk.some)
       case _ =>
-        writeField(aid, vid, value, true) collect:
+        writeField(aid, vid, value, true).collect:
           case Some(ask) =>
             cache.set(aid, ask.some)
             ask.some
@@ -158,17 +158,21 @@ final class AskRepo(
     updateAsk(aid, $unset(s"picks.$vid", s"form.$vid"), fetchNew)
 
   private def updateAsk(aid: Ask.ID, update: BSONDocument, fetchNew: Boolean) = askDb: coll =>
-    coll.update.one($and($id(aid), $doc("tags" -> $ne("concluded"))), update) flatMap:
-      case _ => if fetchNew then getAsync(aid) else fuccess(none[Ask])
+    coll.update
+      .one($and($id(aid), $doc("tags" -> $ne("concluded"))), update)
+      .flatMap:
+        case _ => if fetchNew then getAsync(aid) else fuccess(none[Ask])
 
   // only preserve votes if important fields haven't been altered
   private[ask] def upsert(ask: Ask): Fu[Ask] = askDb: coll =>
-    coll.byId[Ask](ask._id) flatMap:
-      case Some(dbAsk) =>
-        val mergedAsk = ask merge dbAsk
-        cache.set(ask._id, mergedAsk.some)
-        if dbAsk eq mergedAsk then fuccess(mergedAsk)
-        else coll.update.one($id(ask._id), mergedAsk) inject mergedAsk
-      case _ =>
-        cache.set(ask._id, ask.some)
-        coll.insert.one(ask) inject ask
+    coll
+      .byId[Ask](ask._id)
+      .flatMap:
+        case Some(dbAsk) =>
+          val mergedAsk = ask.merge(dbAsk)
+          cache.set(ask._id, mergedAsk.some)
+          if dbAsk eq mergedAsk then fuccess(mergedAsk)
+          else coll.update.one($id(ask._id), mergedAsk).inject(mergedAsk)
+        case _ =>
+          cache.set(ask._id, ask.some)
+          coll.insert.one(ask).inject(ask)
