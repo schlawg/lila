@@ -16,7 +16,7 @@ final class GameMod(env: Env)(using akka.stream.Materializer) extends LilaContro
   import GameMod.*
 
   def index(username: UserStr) = SecureBody(_.GamesModView) { ctx ?=> _ ?=>
-    Found(env.user.repo byId username): user =>
+    Found(meOrFetch(username)): user =>
       val form   = filterForm.bindFromRequest()
       val filter = form.fold(_ => emptyFilter, identity)
       for
@@ -25,7 +25,7 @@ final class GameMod(env: Env)(using akka.stream.Materializer) extends LilaContro
         povs    <- fetchGames(user, filter)
         games <-
           if isGranted(_.UserEvaluate)
-          then env.mod.assessApi.makeAndGetFullOrBasicsFor(povs) map Right.apply
+          then env.mod.assessApi.makeAndGetFullOrBasicsFor(povs).map(Right.apply)
           else fuccess(Left(povs))
         page <- renderPage(views.html.mod.games(user, form, games, arenas.currentPageResults, swisses))
       yield Ok(page)
@@ -46,7 +46,7 @@ final class GameMod(env: Env)(using akka.stream.Materializer) extends LilaContro
       .map(_.toList)
 
   def post(username: UserStr) = SecureBody(_.GamesModView) { ctx ?=> me ?=>
-    Found(env.user.repo byId username): user =>
+    Found(meOrFetch(username)): user =>
       actionForm
         .bindFromRequest()
         .fold(
@@ -61,21 +61,24 @@ final class GameMod(env: Env)(using akka.stream.Materializer) extends LilaContro
   }
 
   private def multipleAnalysis(me: Me, gameIds: Seq[GameId])(using Context) =
-    env.game.gameRepo.unanalysedGames(gameIds).flatMap { games =>
-      games.map { game =>
-        env.fishnet
-          .analyser(
-            game,
-            lila.fishnet.Work.Sender(
-              userId = me,
-              ip = ctx.ip.some,
-              mod = true,
-              system = false
+    env.game.gameRepo
+      .unanalysedGames(gameIds)
+      .flatMap { games =>
+        games.map { game =>
+          env.fishnet
+            .analyser(
+              game,
+              lila.fishnet.Work.Sender(
+                userId = me,
+                ip = ctx.ip.some,
+                mod = true,
+                system = false
+              )
             )
-          )
-          .void
-      }.parallel >> env.fishnet.awaiter(games.map(_.id), 2 minutes)
-    } inject NoContent
+            .void
+        }.parallel >> env.fishnet.awaiter(games.map(_.id), 2 minutes)
+      }
+      .inject(NoContent)
 
   private def downloadPgn(user: lila.user.User, gameIds: Seq[GameId])(using Option[Me]) =
     Ok.chunked {

@@ -11,7 +11,8 @@ import lila.user.User
 
 final class JsonView(
     studyRepo: StudyRepo,
-    lightUserApi: lila.user.LightUserApi
+    lightUserApi: lila.user.LightUserApi,
+    fidePlayerApi: lila.fide.FidePlayerApi
 )(using Executor):
 
   import JsonView.given
@@ -21,37 +22,40 @@ final class JsonView(
     def allowed(selection: Settings => Settings.UserSelection): Boolean =
       Settings.UserSelection.allows(selection(study.settings), study, me.map(_.id))
 
-    me.so { studyRepo.liked(study, _) } map { liked =>
-      Json.toJsObject(study) ++ Json
-        .obj(
-          "liked" -> liked,
-          "features" -> Json.obj(
-            "cloneable"   -> allowed(_.cloneable),
-            "shareable"   -> allowed(_.shareable),
-            "chat"        -> allowed(_.chat),
-            "sticky"      -> study.settings.sticky,
-            "description" -> study.settings.description
-          ),
-          "topics"   -> study.topicsOrEmpty,
-          "chapters" -> chapters,
-          "chapter" -> Json
-            .obj(
-              "id"      -> currentChapter.id,
-              "ownerId" -> currentChapter.ownerId,
-              "setup"   -> currentChapter.setup,
-              "tags"    -> currentChapter.tags,
-              "features" -> Json.obj(
-                "computer" -> allowed(_.computer),
-                "explorer" -> allowed(_.explorer)
-              )
+    for
+      liked       <- me.so(studyRepo.liked(study, _))
+      fidePlayers <- fidePlayerApi.players(currentChapter.tags.fideIds)
+      feds = fidePlayers.mapList(_.flatMap(_.fed)).some.filter(_.exists(_.isDefined))
+    yield Json.toJsObject(study) ++ Json
+      .obj(
+        "liked" -> liked,
+        "features" -> Json.obj(
+          "cloneable"   -> allowed(_.cloneable),
+          "shareable"   -> allowed(_.shareable),
+          "chat"        -> allowed(_.chat),
+          "sticky"      -> study.settings.sticky,
+          "description" -> study.settings.description
+        ),
+        "topics"   -> study.topicsOrEmpty,
+        "chapters" -> chapters,
+        "chapter" -> Json
+          .obj(
+            "id"      -> currentChapter.id,
+            "ownerId" -> currentChapter.ownerId,
+            "setup"   -> currentChapter.setup,
+            "tags"    -> currentChapter.tags,
+            "features" -> Json.obj(
+              "computer" -> allowed(_.computer),
+              "explorer" -> allowed(_.explorer)
             )
-            .add("description", currentChapter.description)
-            .add("serverEval", currentChapter.serverEval)
-            .add("relay", currentChapter.relay)
-            .pipe(addChapterMode(currentChapter))
-        )
-        .add("description", study.description)
-    }
+          )
+          .add("description", currentChapter.description)
+          .add("serverEval", currentChapter.serverEval)
+          .add("relay", currentChapter.relay)
+          .add("feds" -> feds)
+          .pipe(addChapterMode(currentChapter))
+      )
+      .add("description", study.description)
 
   def chapterConfig(c: Chapter) =
     Json
@@ -60,7 +64,8 @@ final class JsonView(
         "name"        -> c.name,
         "orientation" -> c.setup.orientation
       )
-      .add("description", c.description) pipe addChapterMode(c)
+      .add("description", c.description)
+      .pipe(addChapterMode(c))
 
   def pagerData(s: Study.WithChaptersAndLiked) =
     Json.obj(
@@ -85,7 +90,7 @@ final class JsonView(
     Json.obj("user" -> lightUserApi.syncFallback(m.id), "role" -> m.role)
 
   private[study] given Writes[StudyMembers] = Writes: m =>
-    Json toJson m.members
+    Json.toJson(m.members)
 
   private given OWrites[Study] = OWrites: s =>
     Json
@@ -160,7 +165,7 @@ object JsonView:
     )
 
   private given Reads[Square] = Reads: v =>
-    (v.asOpt[String] flatMap { Square.fromKey(_) }).fold[JsResult[Square]](JsError(Nil))(JsSuccess(_))
+    (v.asOpt[String].flatMap { Square.fromKey(_) }).fold[JsResult[Square]](JsError(Nil))(JsSuccess(_))
   private[study] given Writes[Sri]              = writeAs(_.value)
   private[study] given Writes[Study.Visibility] = writeAs(_.key)
   private[study] given Writes[Study.From] = Writes:
@@ -175,7 +180,7 @@ object JsonView:
     _.asOpt[JsObject]
       .flatMap { o =>
         for
-          brush <- o str "brush"
+          brush <- o.str("brush")
           orig  <- o.get[Square]("orig")
         yield o.get[Square]("dest") match
           case Some(dest) => Shape.Arrow(brush, orig, dest)
@@ -188,7 +193,7 @@ object JsonView:
   given Writes[chess.format.pgn.Tag] = Writes: t =>
     Json.arr(t.name.toString, t.value)
   given Writes[chess.format.pgn.Tags] = Writes: tags =>
-    JsArray(tags.value map Json.toJson)
+    JsArray(tags.value.map(Json.toJson))
   private given OWrites[Chapter.Setup] = Json.writes
 
   given OWrites[Chapter.Metadata] = OWrites: c =>

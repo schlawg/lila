@@ -44,7 +44,7 @@ case class ForumPost(
 
   def canBeEditedByMe(using me: Me): Boolean =
     userId match
-      case Some(userId) if me is userId => true
+      case Some(userId) if me.is(userId) => true
       case None if (Granter(_.PublicMod) || Granter(_.SeeReport)) && isAnonModPost =>
         true
       case _ => false
@@ -125,7 +125,7 @@ object ForumPost:
       modIcon: Option[Boolean] = none
   ): ForumPost =
     ForumPost(
-      _id = ForumPostId(ThreadLocalRandom nextString idSize),
+      _id = ForumPostId(ThreadLocalRandom.nextString(idSize)),
       topicId = topicId,
       author = none,
       userId = userId,

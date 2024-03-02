@@ -9,7 +9,7 @@ object RelayGroup:
 
   opaque type Id = String
   object Id extends OpaqueString[Id]:
-    def make = Id(ThreadLocalRandom nextString 8)
+    def make = Id(ThreadLocalRandom.nextString(8))
 
   opaque type Name = String
   object Name extends OpaqueString[Name]
@@ -58,19 +58,18 @@ final private class RelayGroupRepo(coll: Coll)(using Executor):
   def byTour(tourId: RelayTour.Id): Fu[Option[RelayGroup]] =
     coll.find($doc("tours" -> tourId)).one[RelayGroup]
 
-  def update(tourId: RelayTour.Id, grouping: Option[RelayGroup.form.Data]): Funit =
-    grouping.so: data =>
-      for
-        prev <- byTour(tourId)
-        curId <- prev match
-          case Some(prev) if data.tours.isEmpty => coll.delete.one($id(prev.id)) inject none
-          case Some(prev) => coll.update.one($id(prev.id), data.update(prev)) inject prev.id.some
-          case None =>
-            val newGroup = data.make
-            coll.insert.one(newGroup) inject newGroup.id.some
-        // make sure the tours of this group are not in other groups
-        _ <- curId.so: id =>
-          data.tours.map(_.id) traverse_ { tourId =>
-            coll.update.one($doc("_id" $ne id, "tours" -> tourId), $pull("tours" -> tourId), multi = true)
-          }
-      yield ()
+  def update(tourId: RelayTour.Id, data: RelayGroup.form.Data): Funit =
+    for
+      prev <- byTour(tourId)
+      curId <- prev match
+        case Some(prev) if data.tours.isEmpty => coll.delete.one($id(prev.id)).inject(none)
+        case Some(prev) => coll.update.one($id(prev.id), data.update(prev)).inject(prev.id.some)
+        case None =>
+          val newGroup = data.make
+          coll.insert.one(newGroup).inject(newGroup.id.some)
+      // make sure the tours of this group are not in other groups
+      _ <- curId.so: id =>
+        data.tours.map(_.id).traverse_ { tourId =>
+          coll.update.one($doc("_id".$ne(id), "tours" -> tourId), $pull("tours" -> tourId), multi = true)
+        }
+    yield ()

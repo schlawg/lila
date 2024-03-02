@@ -6,6 +6,7 @@ import renderRealTime from './realTime/main';
 import renderCorrespondence from './correspondence';
 import { renderEvents } from './events';
 import renderPlaying from './playing';
+import { renderFinished } from './finished';
 import LobbyController from '../ctrl';
 
 function renderVariant(ctrl: LobbyController) {
@@ -37,7 +38,7 @@ export default function (ctrl: LobbyController) {
         body = renderEvents(ctrl);
         break;
       case 'games':
-        body = renderPlaying(ctrl);
+        body = h('div.your-games', [renderPlaying(ctrl), renderFinished(ctrl)]);
         break;
     }
   return h('div.lobby__app.lobby__app-' + ctrl.tab, [

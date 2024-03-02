@@ -55,7 +55,7 @@ object ZipInputStreamSource:
   ): Source[(ZipEntryData, ByteString), Future[Long]] =
     Source
       .fromGraph(new ZipInputStreamSource(in, chunkSize, allowedZipExtensions))
-      .withAttributes(name("zipInputStreamSource") and IODispatcher)
+      .withAttributes(name("zipInputStreamSource").and(IODispatcher))
 
   /** Java API: Factory for [[ZipInputStreamSource]] instances wrapped into [[Source]].
     *
@@ -76,7 +76,7 @@ object ZipInputStreamSource:
   ): Source[(ZipEntryData, ByteString), Future[Long]] =
     Source
       .fromGraph(new ZipInputStreamSource(in, chunkSize, allowedZipExtensions))
-      .withAttributes(name("zipInputStreamSource") and IODispatcher)
+      .withAttributes(name("zipInputStreamSource").and(IODispatcher))
 
 /** A stage that works as a [[Source]] of data chunks extracted from zip files. In addition to regular files,
   * the zip file might contain directories and other zip files. Every chunk is a tuple of [[ZipEntryData]] and
@@ -149,11 +149,11 @@ final class ZipInputStreamSource private (
                 matValue.success(readBytesTotal)
                 complete(out)
 
-          override def onDownstreamFinish(): Unit =
+          override def onDownstreamFinish(cause: Throwable): Unit =
             try is.close()
             finally
               matValue.success(readBytesTotal)
-              super.onDownstreamFinish()
+              super.onDownstreamFinish(cause)
       ) // end of handler
 
       @tailrec private def nextEntry(streams: Seq[ZipInputStream]): (Option[ZipEntry], Seq[ZipInputStream]) =

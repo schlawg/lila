@@ -29,7 +29,7 @@ case class Ask(
 
   def merge(dbAsk: Ask): Ask =
     if this.compatible(dbAsk) then // keep votes & form
-      if tags equals dbAsk.tags then dbAsk
+      if tags.equals(dbAsk.tags) then dbAsk
       else dbAsk.copy(tags = tags)
     else copy(url = dbAsk.url) // discard votes & form
 
@@ -37,55 +37,59 @@ case class Ask(
     case Some(p) => p.keys.filter(!_.startsWith("anon-")).toSeq
     case None    => Nil
 
-  lazy val isOpen      = tags contains "open"              // allow votes from anyone (no acct reqired)
-  lazy val isTraceable = tags.exists(_ startsWith "trace") // everyone can see who voted for what
-  lazy val isAnon = !isTraceable && tags.exists(_ startsWith "anon") // hide voters from creator/mods
+  lazy val isOpen      = tags contains "open"               // allow votes from anyone (no acct reqired)
+  lazy val isTraceable = tags.exists(_.startsWith("trace")) // everyone can see who voted for what
+  lazy val isAnon = !isTraceable && tags.exists(_.startsWith("anon")) // hide voters from creator/mods
   lazy val isTally     = isTraceable || tags.contains("tally") // partial results viewable before conclusion
   lazy val isConcluded = tags contains "concluded"             // closed poll
-  lazy val isRandom    = tags.exists(_ startsWith "random")    // randomize order of choices
-  lazy val isMulti    = !isRanked && tags.exists(_ startsWith "multi") // multiple choices allowed
-  lazy val isRanked   = tags.exists(_ startsWith "rank")               // drag to sort
-  lazy val isForm     = tags.exists(_ startsWith "form")               // has a form/submit form
-  lazy val isStretch  = tags.exists(_ startsWith "stretch")            // stretch to fill width
-  lazy val isVertical = tags.exists(_ startsWith "vert")               // one choice per row
-  lazy val isCheckbox = !isRanked && isVertical                        // use checkboxes
-  lazy val isSubmit   = isForm || isRanked || tags.contains("submit")  // has a submit button
+  lazy val isRandom    = tags.exists(_.startsWith("random"))   // randomize order of choices
+  lazy val isMulti    = !isRanked && tags.exists(_.startsWith("multi")) // multiple choices allowed
+  lazy val isRanked   = tags.exists(_.startsWith("rank"))               // drag to sort
+  lazy val isForm     = tags.exists(_.startsWith("form"))               // has a form/submit form
+  lazy val isStretch  = tags.exists(_.startsWith("stretch"))            // stretch to fill width
+  lazy val isVertical = tags.exists(_.startsWith("vert"))               // one choice per row
+  lazy val isCheckbox = !isRanked && isVertical                         // use checkboxes
+  lazy val isSubmit   = isForm || isRanked || tags.contains("submit")   // has a submit button
 
   def toAnon(user: UserId): Option[String] =
     Some(if isAnon then Ask.anonHash(user.value, _id) else user.value)
 
   def toAnon(ip: IpAddress): Option[String] =
-    isOpen option Ask.anonHash(ip.toString, _id)
+    isOpen.option(Ask.anonHash(ip.toString, _id))
 
   // eid = effective id, either a user id or an anonymous hash
   def hasPickFor(o: Option[String]): Boolean =
-    o so (eid => picks.exists(_ contains eid))
+    o.so(eid => picks.exists(_ contains eid))
 
   def picksFor(o: Option[String]): Option[Vector[Int]] =
-    o.flatMap(eid => picks.flatMap(_ get eid))
+    o.flatMap(eid => picks.flatMap(_.get(eid)))
 
   def firstPickFor(o: Option[String]): Option[Int] =
-    picksFor(o) flatMap (_ headOption)
+    picksFor(o).flatMap(_ headOption)
 
   def hasFormFor(o: Option[String]): Boolean =
-    o so (eid => form.exists(_ contains eid))
+    o.so(eid => form.exists(_ contains eid))
 
   def formFor(o: Option[String]): Option[String] =
-    o so (eid => form flatMap (_ get eid))
+    o.so(eid => form.flatMap(_.get(eid)))
 
   def count(choice: Int): Int    = picks.fold(0)(_.values.count(_ contains choice))
-  def count(choice: String): Int = count(choices indexOf choice)
+  def count(choice: String): Int = count(choices.indexOf(choice))
 
-  def whoPicked(choice: String): List[String] = whoPicked(choices indexOf choice)
-  def whoPicked(choice: Int): List[String] = picks getOrElse (Nil) collect {
-    case (uid, ls) if ls contains choice => uid
-  } toList
+  def whoPicked(choice: String): List[String] = whoPicked(choices.indexOf(choice))
+  def whoPicked(choice: Int): List[String] = picks
+    .getOrElse(Nil)
+    .collect {
+      case (uid, ls) if ls contains choice => uid
+    } toList
 
-  def whoPickedAt(choice: Int, rank: Int): List[String] = picks getOrElse (Nil) collect {
-    case (uid, ls) if ls.indexOf(choice) == rank => uid
-  } toList
+  def whoPickedAt(choice: Int, rank: Int): List[String] = picks
+    .getOrElse(Nil)
+    .collect {
+      case (uid, ls) if ls.indexOf(choice) == rank => uid
+    } toList
 
-  @inline private def constrain(index: Int) = index atMost (choices.size - 1) atLeast 0
+  @inline private def constrain(index: Int) = index.atMost(choices.size - 1).atLeast(0)
 
   def totals: Vector[Int] = picks match
     case Some(pmap) if choices.nonEmpty && pmap.nonEmpty =>
@@ -151,7 +155,7 @@ object Ask:
       footer: Option[String],
       url: Option[String]
   ) = Ask(
-    _id = _id getOrElse (ornicar.scalalib.ThreadLocalRandom nextString 8),
+    _id = _id.getOrElse(ornicar.scalalib.ThreadLocalRandom.nextString(8)),
     question = question,
     choices = choices,
     tags = tags,

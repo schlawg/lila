@@ -57,7 +57,7 @@ object Theme extends ThemeObject:
     new Theme("ic", "svg/ic.svg")
   )
 
-  val default = allByName get "brown" err "Can't find default theme D:"
+  val default = allByName.get("brown").err("Can't find default theme D:")
 
 object Theme3d extends ThemeObject:
 
@@ -83,4 +83,4 @@ object Theme3d extends ThemeObject:
     new Theme("Woodi", "Woodi.png")
   )
 
-  val default = allByName get "Woodi" err "Can't find default theme D:"
+  val default = allByName.get("Woodi").err("Can't find default theme D:")

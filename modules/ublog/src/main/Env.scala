@@ -44,16 +44,21 @@ final class Env(
     cacheApi.unit[List[UblogPost.PreviewPost]]:
       _.refreshAfterWrite(10 seconds).buildAsyncFuture: _ =>
         import ornicar.scalalib.ThreadLocalRandom
-        val lookInto = 10
-        val keep     = 7
-        api.pinnedPosts(2) zip api
-          .latestPosts(lookInto)
+        val lookInto = 15
+        val keep     = 9
+        api
+          .pinnedPosts(2)
+          .zip(
+            api
+              .latestPosts(lookInto)
+              .map:
+                _.groupBy(_.blog)
+                  .flatMap(_._2.headOption)
+              .map(ThreadLocalRandom.shuffle)
+              .map(_.take(keep).toList)
+          )
           .map:
-            _.groupBy(_.blog)
-              .flatMap(_._2.headOption)
-          .map(ThreadLocalRandom.shuffle)
-          .map(_.take(keep).toList) map:
-          case (pinned, shuffled) => pinned ++ shuffled
+            case (pinned, shuffled) => pinned ++ shuffled
 
   lila.common.Bus.subscribeFun("shadowban"):
     case lila.hub.actorApi.mod.Shadowban(userId, v) =>

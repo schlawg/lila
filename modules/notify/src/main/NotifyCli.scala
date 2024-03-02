@@ -12,7 +12,7 @@ final private class NotifyCli(api: NotifyApi, userRepo: UserRepo)(using Material
 
   def process =
     case "notify" :: "url" :: "users" :: users :: url :: words =>
-      val userIds = users.split(',').flatMap(UserStr.read).map(_.id)
+      val userIds = users.split(',').flatMap(UserStr.read).map(_.id).toIndexedSeq
       notifyUrlTo(Source(userIds), url, words)
     case "notify" :: "url" :: "titled" :: url :: words =>
       val userIds = userRepo
@@ -28,7 +28,7 @@ final private class NotifyCli(api: NotifyApi, userRepo: UserRepo)(using Material
     userIds
       .grouped(20)
       .mapAsyncUnordered(1): uids =>
-        api.notifyManyIgnoringPrefs(uids, notification) inject uids.size
+        api.notifyManyIgnoringPrefs(uids, notification).inject(uids.size)
       .runWith(Sink.fold(0)(_ + _))
       .map: nb =>
         s"Notified $nb users"

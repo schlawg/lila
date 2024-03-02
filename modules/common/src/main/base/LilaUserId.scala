@@ -11,7 +11,9 @@ trait LilaUserId:
       inline def is[T: UserIdOf](other: T)         = u.id == other.id
       inline def isnt[T: UserIdOf](other: T)       = u.id != other.id
       inline def is[T: UserIdOf](other: Option[T]) = other.exists(_.id == u.id)
+      inline def isMe: Boolean                     = u.id == "me"
 
+  // the id of a user, always lowercased
   opaque type UserId = String
   object UserId extends OpaqueString[UserId]:
     given UserIdOf[UserId] = _.value
@@ -19,7 +21,7 @@ trait LilaUserId:
   // specialized UserIds like Coach.Id
   trait OpaqueUserId[A] extends OpaqueString[A]:
     given UserIdOf[A]                          = _.value
-    extension (a: A) inline def userId: UserId = a into UserId
+    extension (a: A) inline def userId: UserId = a.into(UserId)
 
   // Properly cased for display
   opaque type UserName = String
