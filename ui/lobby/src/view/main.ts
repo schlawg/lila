@@ -6,7 +6,7 @@ import renderRealTime from './realTime/main';
 import renderCorrespondence from './correspondence';
 import { renderEvents } from './events';
 import renderPlaying from './playing';
-import { renderFinished } from './finished';
+import { renderRecent } from './recent';
 import LobbyController from '../ctrl';
 
 function renderVariant(ctrl: LobbyController) {
@@ -17,31 +17,34 @@ function renderVariant(ctrl: LobbyController) {
 export default function (ctrl: LobbyController) {
   let body,
     data: VNodeData = {},
-    cls: string = ctrl.tab;
+    cls: string = String(ctrl.tab.primary);
   if (ctrl.redirecting) body = spinner();
   else
-    switch (ctrl.tab) {
+    switch (ctrl.tab.primary) {
       case 'pools':
         body = renderPools.render(ctrl);
         data = { hook: renderPools.hooks(ctrl) };
         break;
       case 'lobby':
         body =
-          ctrl.lobbyTab === 'real_time'
+          ctrl.tab.active === 'real_time'
             ? renderRealTime(ctrl)
-            : ctrl.lobbyTab === 'variant'
+            : ctrl.tab.active === 'variant'
             ? renderVariant(ctrl)
             : renderCorrespondence(ctrl);
-        cls = ctrl.lobbyTab;
+        cls = String(ctrl.tab.active);
         break;
       case 'events':
         body = renderEvents(ctrl);
         break;
       case 'games':
-        body = h('div.your-games', [renderPlaying(ctrl), renderFinished(ctrl)]);
+        body =
+          ctrl.tab.active === 'playing' && ctrl.data.nbNowPlaying > 0
+            ? renderPlaying(ctrl)
+            : renderRecent(ctrl);
         break;
     }
-  return h('div.lobby__app.lobby__app-' + ctrl.tab, [
+  return h('div.lobby__app.lobby__app-' + ctrl.tab.primary, [
     ...renderTabs(ctrl),
     h('div.lobby__app__content.l' + (ctrl.redirecting ? 'redir' : cls), data, body),
   ]);

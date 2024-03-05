@@ -15,7 +15,7 @@ import { unload, redirect, reload } from './reload';
 import announce from './announce';
 import { trans } from './trans';
 import sound from './sound';
-import { mic } from './mic';
+import { Microphone } from './mic';
 import * as miniBoard from 'common/miniBoard';
 import * as miniGame from './miniGame';
 import { format as timeago, formatter as dateFormat } from './timeago';
@@ -55,7 +55,7 @@ export default () => {
   s.announce = announce;
   s.trans = trans;
   s.sound = sound;
-  s.mic = mic;
+  s.mic = new Microphone();
   s.miniBoard = miniBoard;
   s.miniGame = miniGame;
   s.timeago = timeago;

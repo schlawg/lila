@@ -148,7 +148,7 @@ object home:
                 .card(_, showAuthor = views.html.ublog.post.ShowAt.bottom, showIntro = false)
         ,
         // bits.lastPosts(lastPost, ublogPosts),
-        ctx.noBot.option(bits.underboards(tours, simuls /*, leaderboard, tournamentWinners*/ )),
+        ctx.noBot.option(bits.underboards(tours, simuls, leaderboard, tournamentWinners)),
         div(cls := "lobby__feed"):
           views.html.feed.lobbyUpdates(lastUpdates)
         ,

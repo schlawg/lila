@@ -110,14 +110,15 @@
   span.header {
     display: flex;
     align-items: center;
-    font-size: 24px;
+    text-transform: uppercase;
     width: 100%;
     > span {
       flex: 1 0 auto;
-      border-top: 1px solid $c-brag;
+      border-top: 1px solid $c-border;
     }
     > h2 {
-      color: $c-brag;
+      color: $c-font-dimmer;
+      font-size: 1.5em;
       padding: 0.5em;
       flex: initial;
     }

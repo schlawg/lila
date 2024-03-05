@@ -1,5 +1,4 @@
 import { numberFormat } from 'common/number';
-//import { storedIntProp, Prop } from 'common/storage';
 import variantConfirm from './variant';
 import * as hookRepo from './hookRepo';
 import * as seekRepo from './seekRepo';
@@ -9,8 +8,7 @@ import * as poolRangeStorage from './poolRangeStorage';
 import {
   LobbyOpts,
   LobbyData,
-  AppTab,
-  LobbyTab,
+  Tab,
   Mode,
   Sort,
   Hook,
@@ -25,6 +23,7 @@ import LobbySocket from './socket';
 import Filter from './filter';
 import SetupController from './setupCtrl';
 import disableDarkBoard from './disableDarkBoard';
+import { TabCtrl } from './tabCtrl';
 
 export default class LobbyController {
   data: LobbyData;
@@ -32,8 +31,7 @@ export default class LobbyController {
   me?: LobbyMe;
   socket: LobbySocket;
   stores: Stores;
-  tab: AppTab;
-  lobbyTab: LobbyTab;
+  tab: TabCtrl;
   mode: Mode;
   sort: Sort;
   stepHooks: Hook[] = [];
@@ -66,11 +64,7 @@ export default class LobbyController {
     this.socket = new LobbySocket(opts.socketSend, this);
 
     this.stores = makeStores(this.me?.username.toLowerCase());
-    if (!this.me?.isBot && this.stores.tab.get() == 'games' && this.data.nbNowPlaying == 0) {
-      this.stores.tab.set('pools');
-    }
-    this.tab = this.me?.isBot ? 'games' : this.stores.tab.get();
-    this.lobbyTab = this.stores.lobbyTab.get();
+    this.tab = new TabCtrl(this);
     this.mode = this.stores.mode.get();
     this.sort = this.stores.sort.get();
     this.trans = opts.trans;
@@ -82,12 +76,10 @@ export default class LobbyController {
       const friendUser = urlParams.get('user') ?? undefined;
       if (locationHash === 'hook') {
         if (urlParams.get('time') === 'realTime') {
-          this.tab = 'lobby';
-          this.lobbyTab = 'real_time';
+          this.setTab('real_time');
           forceOptions.timeMode = 'realTime';
         } else if (urlParams.get('time') === 'correspondence') {
-          this.tab = 'lobby';
-          this.lobbyTab = 'correspondence';
+          this.setTab('correspondence');
           forceOptions.timeMode = 'correspondence';
         }
       } else if (urlParams.get('fen')) {
@@ -118,17 +110,16 @@ export default class LobbyController {
     } else {
       setInterval(() => {
         if (this.poolMember) this.poolIn();
-        else if (this.tab === 'lobby' && this.lobbyTab === 'real_time' && !this.data.hooks.length)
-          this.socket.realTimeIn();
+        else if (this.tab.showingHooks && !this.data.hooks.length) this.socket.realTimeIn();
       }, 10 * 1000);
       this.joinPoolFromLocationHash();
     }
 
     site.pubsub.on('socket.open', () => {
-      if (this.tab === 'lobby' && this.lobbyTab === 'real_time') {
+      if (this.tab.showingHooks) {
         this.data.hooks = [];
         this.socket.realTimeIn();
-      } else if (this.tab === 'pools' && this.poolMember) this.poolIn();
+      } else if (this.tab.active === 'pools' && this.poolMember) this.poolIn();
       disableDarkBoard();
     });
 
@@ -157,7 +148,7 @@ export default class LobbyController {
 
   private doFlushHooks() {
     this.stepHooks = this.data.hooks.slice(0);
-    if (this.tab === 'lobby' && this.lobbyTab === 'real_time') this.redraw();
+    if (this.tab.primary === 'lobby') this.redraw();
   }
 
   flushHooks = (now: boolean) => {
@@ -165,7 +156,7 @@ export default class LobbyController {
     if (now) this.doFlushHooks();
     else {
       this.stepping = true;
-      if (this.tab === 'lobby' && this.lobbyTab === 'real_time') this.redraw();
+      if (this.tab.primary === 'lobby') this.redraw();
       setTimeout(() => {
         this.stepping = false;
         this.doFlushHooks();
@@ -175,20 +166,9 @@ export default class LobbyController {
   };
 
   private flushHooksSchedule = (): number => setTimeout(this.flushHooks, 8000);
-  setTab = (tab: AppTab | LobbyTab) => {
-    if (this.tab === tab || (this.tab === 'lobby' && this.lobbyTab === tab)) return;
-    if (this.lobbyTab === 'real_time' && this.tab === 'lobby') {
-      this.socket.realTimeOut();
-      this.data.hooks = [];
-    }
-    const newLobbyTab = tab === 'correspondence' || tab === 'real_time' ? tab : this.lobbyTab;
-    if (newLobbyTab === 'correspondence') xhr.seeks().then(this.setSeeks);
-    else if (newLobbyTab === 'real_time') this.socket.realTimeIn();
 
-    this.tab = ['correspondence', 'real_time', 'variant'].includes(tab) ? 'lobby' : (tab as AppTab);
-    this.lobbyTab = newLobbyTab;
-    this.stores.tab.set(this.tab);
-    this.stores.lobbyTab.set(this.lobbyTab);
+  setTab = (tab: Tab) => {
+    this.tab.set(tab);
     this.filter.open = false;
   };
 
@@ -282,9 +262,8 @@ export default class LobbyController {
   };
 
   awake = () => {
-    if (this.tab !== 'lobby') return;
-    if (this.lobbyTab === 'correspondence') xhr.seeks().then(this.setSeeks);
-    else if (this.lobbyTab === 'real_time') {
+    if (this.tab.active === 'correspondence') xhr.seeks().then(this.setSeeks);
+    else if (this.tab.showingHooks) {
       this.data.hooks = [];
       this.socket.realTimeIn();
     }

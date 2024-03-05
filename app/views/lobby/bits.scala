@@ -13,30 +13,27 @@ object bits:
     div(cls := "lobby__app__content")
   )
 
-  def underboards(tours: List[lila.tournament.Tournament], simuls: List[lila.simul.Simul])(using
-      ctx: Context
-  ) =
-    div(cls := "lobby__tournaments-simuls")(
-      div(cls := "lobby__tournaments lobby__box")(
-        a(cls := "lobby__box__top", href := routes.Tournament.home)(
-          h2(cls := "title text", dataIcon := licon.Trophy)(trans.openTournaments()),
-          span(cls := "more")(trans.more(), " »")
-        ),
-        div(cls := "enterable_list"): // lobby__box__content"):
-          views.html.tournament.bits.enterable(tours)
+  def tournaments(tours: List[lila.tournament.Tournament])(using ctx: Context) =
+    div(cls := "lobby__tournaments lobby__box")(
+      a(cls := "lobby__box__top", href := routes.Tournament.home)(
+        h2(cls := "title text", dataIcon := licon.Trophy)(trans.openTournaments()),
+        span(cls := "more")(trans.more(), " »")
       ),
-      simuls.nonEmpty.option(
-        div(cls := "lobby__simuls lobby__box")(
-          a(cls := "lobby__box__top", href := routes.Simul.home)(
-            h2(cls := "title text", dataIcon := licon.Group)(trans.simultaneousExhibitions()),
-            span(cls := "more")(trans.more(), " »")
-          ),
-          div(cls := "enterable_list):// lobby__box__content"):
-            views.html.simul.bits.allCreated(simuls, withName = false)
-        )
-      )
-    )
-  /*def underboards(
+      div(cls := "enterable_list"):
+        views.html.tournament.bits.enterable(tours)
+    ) // TODO - move to views/tournament
+
+  def simuls(simuls: List[lila.simul.Simul])(using ctx: Context) =
+    div(cls := "lobby__simuls lobby__box")(
+      a(cls := "lobby__box__top", href := routes.Simul.home)(
+        h2(cls := "title text", dataIcon := licon.Group)(trans.simultaneousExhibitions()),
+        span(cls := "more")(trans.more(), " »")
+      ),
+      div(cls := "enterable_list"):
+        views.html.simul.bits.allCreated(simuls, withName = false)
+    ) // TODO - move to views/simul
+
+  def underboards(
       tours: List[lila.tournament.Tournament],
       simuls: List[lila.simul.Simul],
       leaderboard: List[lila.user.User.LightPerf],
@@ -80,28 +77,25 @@ object bits:
                         scheduledTournamentNameShortHtml(w.tourName)
                   )
       ),
-      div(cls := "lobby__tournaments-simuls")(
-        div(cls := "lobby__tournaments lobby__box")(
-          a(cls := "lobby__box__top", href := routes.Tournament.home)(
-            h2(cls := "title text", dataIcon := licon.Trophy)(trans.openTournaments()),
+      div(cls := "lobby__tournaments lobby__box")(
+        a(cls := "lobby__box__top", href := routes.Tournament.home)(
+          h2(cls := "title text", dataIcon := licon.Trophy)(trans.openTournaments()),
+          span(cls := "more")(trans.more(), " »")
+        ),
+        div(cls := "enterable_list"):
+          views.html.tournament.bits.enterable(tours)
+      ),
+      simuls.nonEmpty.option(
+        div(cls := "lobby__simuls lobby__box")(
+          a(cls := "lobby__box__top", href := routes.Simul.home)(
+            h2(cls := "title text", dataIcon := licon.Group)(trans.simultaneousExhibitions()),
             span(cls := "more")(trans.more(), " »")
           ),
-          div(cls := "enterable_list lobby__box__content"):
-            views.html.tournament.bits.enterable(tours)
-        ),
-        simuls.nonEmpty.option(
-          div(cls := "lobby__simuls lobby__box")(
-            a(cls := "lobby__box__top", href := routes.Simul.home)(
-              h2(cls := "title text", dataIcon := licon.Group)(trans.simultaneousExhibitions()),
-              span(cls := "more")(trans.more(), " »")
-            ),
-            div(cls := "enterable_list lobby__box__content"):
-              views.html.simul.bits.allCreated(simuls, withName = false)
-          )
+          div(cls := "enterable_list"):
+            views.html.simul.bits.allCreated(simuls, withName = false)
         )
       )
     )
-   */
   /*def lastPosts(
       lichess: Option[lila.blog.MiniPost],
       uposts: List[lila.ublog.UblogPost.PreviewPost]

@@ -19,41 +19,31 @@ function timer(pov: NowPlaying) {
 
 export default function (ctrl: LobbyController) {
   return h(
-    'div',
-    ctrl.data.nowPlaying.length > 0 && [
-      h('span.header', [h('span'), h('h2', 'Playing'), h('span')]),
-      h(
-        'div.now-playing',
-        ctrl.data.nowPlaying.map(pov =>
+    'div.now-playing',
+    ctrl.data.nowPlaying.map(pov =>
+      h('a.' + pov.variant.key, { key: `${pov.gameId}${pov.lastMove}`, attrs: { href: '/' + pov.fullId } }, [
+        h('span.mini-board.cg-wrap.is2d', {
+          attrs: { 'data-state': `${pov.fen},${pov.orientation || pov.color},${pov.lastMove}` },
+          hook: {
+            insert(vnode) {
+              site.miniBoard.init(vnode.elm as HTMLElement);
+            },
+          },
+        }),
+        h('span.meta', [
+          pov.opponent.ai
+            ? ctrl.trans('aiNameLevelAiLevel', 'Stockfish', pov.opponent.ai)
+            : pov.opponent.username,
           h(
-            'a.' + pov.variant.key,
-            { key: `${pov.gameId}${pov.lastMove}`, attrs: { href: '/' + pov.fullId } },
-            [
-              h('span.mini-board.cg-wrap.is2d', {
-                attrs: { 'data-state': `${pov.fen},${pov.orientation || pov.color},${pov.lastMove}` },
-                hook: {
-                  insert(vnode) {
-                    site.miniBoard.init(vnode.elm as HTMLElement);
-                  },
-                },
-              }),
-              h('span.meta', [
-                pov.opponent.ai
-                  ? ctrl.trans('aiNameLevelAiLevel', 'Stockfish', pov.opponent.ai)
-                  : pov.opponent.username,
-                h(
-                  'span.indicator',
-                  pov.isMyTurn
-                    ? pov.secondsLeft && pov.hasMoved
-                      ? timer(pov)
-                      : [ctrl.trans.noarg('yourTurn')]
-                    : h('span', '\xa0'),
-                ), // &nbsp;
-              ]),
-            ],
-          ),
-        ),
-      ),
-    ],
+            'span.indicator',
+            pov.isMyTurn
+              ? pov.secondsLeft && pov.hasMoved
+                ? timer(pov)
+                : [ctrl.trans.noarg('yourTurn')]
+              : h('span', '\xa0'),
+          ), // &nbsp;
+        ]),
+      ]),
+    ),
   );
 }

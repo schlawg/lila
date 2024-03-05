@@ -94,19 +94,10 @@ body {
   }
 }
 
-.lobby__tournaments,
-.lobby__simuls,
-.ublog-post-card,
-.lobby__feed,
-.lobby__app__content {
-  //border: 1px solid c-dimmer($c-brag, 80%);
-}
-
 .lobby__blog {
   column-gap: $block-gap;
+  row-gap: 0;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); // 180px in sync with file://./../src/main.ts
-
-  //row-gap: 0;
   overflow: hidden;
   grid-template-rows: auto;
   grid-auto-rows: 0;
