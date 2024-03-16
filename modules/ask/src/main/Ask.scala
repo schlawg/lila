@@ -79,16 +79,14 @@ case class Ask(
   def whoPicked(choice: String): List[String] = whoPicked(choices.indexOf(choice))
   def whoPicked(choice: Int): List[String] = picks
     .getOrElse(Nil)
-    .collect {
+    .collect:
       case (uid, ls) if ls contains choice => uid
-    }
     .toList
 
   def whoPickedAt(choice: Int, rank: Int): List[String] = picks
     .getOrElse(Nil)
-    .collect {
+    .collect:
       case (uid, ls) if ls.indexOf(choice) == rank => uid
-    }
     .toList
 
   @inline private def constrain(index: Int) = index.atMost(choices.size - 1).atLeast(0)

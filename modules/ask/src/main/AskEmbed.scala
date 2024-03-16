@@ -152,7 +152,7 @@ object AskEmbed:
   // assemble a list of magic ids within a frozen text that look like: ﷖﷔﷒﷐{8 char id}
   // this is called quite often so it's optimized and ugly
   private def frozenOffsets(t: String): Intervals =
-    var i = t indexOf frozenIdMagic
+    var i = t `indexOf` frozenIdMagic
     if i == -1 then List.empty
     else
       val ids = scala.collection.mutable.ListBuffer[Interval]()
@@ -173,7 +173,7 @@ object AskEmbed:
   private def extractTagList(o: Option[String]): Ask.Tags =
     o.fold(Set.empty[String])(
       tagListRe findAllMatchIn _ collect (_ group 1) toSet
-    ) filterNot (_ startsWith "id{")
+    ) filterNot (_ `startsWith` "id{")
 
   private def extractChoices(t: String): Ask.Choices =
     (choiceInAskRe findAllMatchIn t map (_ group 1 trim) distinct) toVector
