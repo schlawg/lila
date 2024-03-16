@@ -26,7 +26,7 @@ final class AskEmbed(val repo: lila.ask.AskRepo)(using scala.concurrent.Executio
 
   // commit flushes the asks to repo and optionally sets the timeline entry link (for poll conclusion)
   def commit(frozen: Frozen, url: Option[String] = none[String]): Fu[Iterable[Ask]] =
-    frozen.asks map { ask => repo.upsert(ask.copy(url = url)) } parallel
+    frozen.asks.map { ask => repo.upsert(ask.copy(url = url)) } parallel
 
   def freezeAndCommit(text: String, creator: UserId, url: Option[String] = none[String]): Fu[String] =
     val askIntervals = getMarkupIntervals(text)
@@ -94,7 +94,7 @@ object AskEmbed:
   def tag(html: String) = html.slice(1, html.indexOf(">"))
 
   def extractIds(t: String): List[Ask.ID] =
-    frozenOffsets(t) map (off => t.substring(off._1 + 5, off._2 - 1))
+    frozenOffsets(t).map(off => t.substring(off._1 + 5, off._2 - 1))
 
   // render ask as markup text
   private def askToText(ask: Ask): String =
@@ -126,7 +126,7 @@ object AskEmbed:
       _id = extractIdFromTagString(tagString),
       question = extractQuestion(segment),
       choices = extractChoices(segment),
-      tags = extractTagList(tagString map (_ toLowerCase)),
+      tags = extractTagList(tagString.map(_ toLowerCase)),
       creator = creator,
       footer = extractFooter(segment),
       url = url
@@ -138,12 +138,12 @@ object AskEmbed:
   // return list of (start, end) indices of any ask markups in text.
   private def getMarkupIntervals(t: String): Intervals =
     if !t.contains("/poll") then List.empty[Interval]
-    else askRe findAllMatchIn t map (m => (m.start, m.end)) toList
+    else askRe.findAllMatchIn(t).map(m => (m.start, m.end)).toList
 
   // return intervals and their complement in [0, upper)
   private def intervalClosure(intervals: Intervals, upper: Int): Intervals =
     val points = (0 :: intervals.flatten(i => List(i._1, i._2)) ::: upper :: Nil).distinct.sorted
-    points zip (points tail)
+    points.zip(points.tail)
 
   // https://www.unicode.org/faq/private_use.html
   private val frozenIdMagic = "\ufdd6\ufdd4\ufdd2\ufdd0"
@@ -152,34 +152,34 @@ object AskEmbed:
   // assemble a list of magic ids within a frozen text that look like: ﷖﷔﷒﷐{8 char id}
   // this is called quite often so it's optimized and ugly
   private def frozenOffsets(t: String): Intervals =
-    var i = t `indexOf` frozenIdMagic
+    var i = t.`indexOf`(frozenIdMagic)
     if i == -1 then List.empty
     else
       val ids = scala.collection.mutable.ListBuffer[Interval]()
       while i != -1 && i <= t.length - 14 do // 14 is total magic length
-        ids addOne (i, i + 14)               // (5, 13) delimit id within magic
+        ids.addOne(i, i + 14)                // (5, 13) delimit id within magic
         i = t.indexOf(frozenIdMagic, i + 14)
       ids toList
 
   private def extractQuestion(t: String): String =
-    questionInAskRe.findFirstMatchIn(t).fold("")(_ group 1) trim
+    questionInAskRe.findFirstMatchIn(t).fold("")(_.group(1)).trim
 
   private def extractTagString(t: String): Option[String] =
-    tagsInAskRe findFirstMatchIn t map (_ group 1) filter (_.nonEmpty)
+    tagsInAskRe.findFirstMatchIn(t).map(_.group(1)).filter(_.nonEmpty)
 
   private def extractIdFromTagString(o: Option[String]): Option[String] =
-    o flatMap (idInTagsRe findFirstMatchIn _ map (_ group 1))
+    o.flatMap(idInTagsRe.findFirstMatchIn(_).map(_.group(1)))
 
   private def extractTagList(o: Option[String]): Ask.Tags =
     o.fold(Set.empty[String])(
-      tagListRe findAllMatchIn _ collect (_ group 1) toSet
-    ) filterNot (_ `startsWith` "id{")
+      tagListRe.findAllMatchIn(_).collect(_.group(1)).toSet
+    ).filterNot(_.startsWith("id{"))
 
   private def extractChoices(t: String): Ask.Choices =
-    (choiceInAskRe findAllMatchIn t map (_ group 1 trim) distinct) toVector
+    (choiceInAskRe.findAllMatchIn(t).map(_.group(1).trim).distinct).toVector
 
   private def extractFooter(t: String): Option[String] =
-    footerInAskRe findFirstMatchIn t map (_ group 1 trim) filter (_.nonEmpty)
+    footerInAskRe.findFirstMatchIn(t).map(_.group(1).trim).filter(_.nonEmpty)
 
   private val askRe           = raw"(?m)^/poll\h+\S.*\R^(?:/.*(?:\R|$$))?(?:(?!/).*\S.*(?:\R|$$))*(?:\?.*)?".r
   private val questionInAskRe = raw"^/poll\h+(\S.*)".r
