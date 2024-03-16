@@ -59,11 +59,11 @@ private case class RenderAsk(
     fieldset(
       cls                                   := s"ask${ask.isAnon so " anon"}",
       id                                    := ask._id,
-      ask.hasPickFor(voterId) option (value := "")
+      ask.hasPickFor(voterId).option((value := ""))
     )(
       header,
-      ask.isConcluded option label(s"${ask.form.so(_ size) max ask.picks.so(_ size)} responses"),
-      ask.choices.nonEmpty option (
+      ask.isConcluded.option(label(s"${ask.form.so(_.size).max(ask.picks.so(_.size))} responses")),
+      ask.choices.nonEmpty.option(
         if ask.isRanked then
           if ask.isConcluded || tallyView then rankGraphBody
           else rankBody
@@ -79,7 +79,7 @@ private case class RenderAsk(
       span(cls := "ask__header")(
         label(
           ask.question,
-          !tallyView option (
+          (!tallyView).option(
             if ask.isConcluded then span("(Results)")
             else if ask.isRanked then span("(Drag to sort)")
             else if ask.isMulti then span("(Choose all that apply)")
@@ -88,34 +88,34 @@ private case class RenderAsk(
         ),
         maybeDiv(
           "url-actions",
-          ask.isTally option button(
+          ask.isTally.option(button(
             cls        := (if tallyView then "view" else "tally"),
             formmethod := "GET",
             formaction := routes.Ask.view(ask._id, viewParam.some, !tallyView)
-          ),
-          ctx.myId.contains(ask.creator) || isGranted(_.ModerateForum) option button(
+          )),
+          (ctx.myId.contains(ask.creator) || isGranted(_.ModerateForum)).option(button(
             cls        := "admin",
             formmethod := "GET",
             formaction := routes.Ask.admin(ask._id),
             title      := trans.edit.txt()
-          ),
-          (ask.hasPickFor(voterId) || ask.hasFormFor(voterId)) && !ask.isConcluded option button(
+          )),
+          ((ask.hasPickFor(voterId) || ask.hasFormFor(voterId)) && !ask.isConcluded).option(button(
             cls        := "unset",
             formaction := routes.Ask.unset(ask._id, viewParam.some, ask.isAnon),
             title      := trans.delete.txt()
-          )
+          ))
         ),
         maybeDiv(
           "properties",
-          ask.isTraceable option button(
+          ask.isTraceable.option(button(
             cls   := "property trace",
             title := "Participants can see who voted for what"
-          ),
-          ask.isAnon option button(
+          )),
+          ask.isAnon.option(button(
             cls   := "property anon",
             title := "Your identity is anonymized and secure"
-          ),
-          ask.isOpen option button(cls := "property open", title := "Anyone can participate")
+          )),
+          ask.isOpen.option(button(cls := "property open", title := "Anyone can participate"))
         )
       )
     )
@@ -123,23 +123,24 @@ private case class RenderAsk(
   def footer =
     div(cls := "ask__footer")(
       ask.footer map (label(_)),
-      ask.isSubmit && !ask.isConcluded && voterId.nonEmpty option frag(
-        ask.isForm option input(
+      (ask.isSubmit && !ask.isConcluded && voterId.nonEmpty).option(frag(
+        ask.isForm.option(input(
           cls         := "form-text",
           tpe         := "text",
           maxlength   := 80,
           placeholder := "80 characters max",
           value       := ~ask.formFor(voterId)
-        ),
+        )),
         div(cls := "form-submit")(input(cls := "button", tpe := "button", value := "Submit"))
-      ),
-      ask.isConcluded && ask.form.exists(_.size > 0) option frag:
+      )),
+      (ask.isConcluded && ask.form.exists(_.size > 0)).option(frag:
         ask.form.map: fmap =>
           div(cls := "form-results")(
-            ask.footer map (label(_)),
-            fmap.toSeq flatMap:
+            ask.footer.map(label(_)),
+            fmap.toSeq.flatMap:
               case (user, text) => Seq(div(ask.isTraceable so s"$user:"), div(text))
           )
+      )
     )
 
   def pollBody = choiceContainer:
@@ -156,7 +157,7 @@ private case class RenderAsk(
             cls   := sb.toString + (if selected then "selected" else "enabled"),
             title := tooltip(choice),
             value := choice
-          )(input(tpe := "checkbox", selected option checked), choiceText)
+          )(input(tpe := "checkbox", selected.option(checked)), choiceText)
         else
           button(
             cls   := sb.toString + (if selected then "selected" else "enabled"),
@@ -236,7 +237,7 @@ private case class RenderAsk(
     if sb.isEmpty then choiceText else sb.toString
 
   def rankedTooltips =
-    val respondents = ask.picks so (picks => picks.size)
+    val respondents = ask.picks.so(picks => picks.size)
     val rankM       = ask.rankMatrix
     val notables = List(
       0 -> "ranked this first",
@@ -248,7 +249,7 @@ private case class RenderAsk(
     ask.choices.zipWithIndex map:
       case (choiceText, choice) =>
         val sb = StringBuilder(s"$choiceText:\n\n")
-        notables filter (_._1 < rankM.length - 1) map:
+        notables.filter(_._1 < rankM.length - 1).map:
           case (i, text) =>
             sb ++= s"  ${rankM(choice)(i)} $text\n"
         sb.toString
@@ -269,6 +270,6 @@ private case class RenderAsk(
       .picksFor(voterId)
       .fold(initialOrder): r =>
         if r == Vector.empty || r.distinct.sorted != initialOrder.sorted then
-          voterId so (id => env.ask.repo.setPicks(ask._id, id, Vector.empty[Int].some))
+          voterId.so(id => env.ask.repo.setPicks(ask._id, id, Vector.empty[Int].some))
           initialOrder
         else r

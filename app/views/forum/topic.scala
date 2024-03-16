@@ -74,9 +74,9 @@ object topic:
       formWithCaptcha: Option[FormWithCaptcha],
       unsub: Option[Boolean],
       canModCateg: Boolean,
-      hasAsks: Boolean = false,
       formText: Option[String] = None,
-      replyBlocked: Boolean = false
+      replyBlocked: Boolean = false,
+      hasAsks: Boolean = false
   )(using ctx: PageContext) =
     views.html.base.layout(
       title = s"${topic.name} • page ${posts.currentPage}/${posts.nbPages} • ${categ.name}",

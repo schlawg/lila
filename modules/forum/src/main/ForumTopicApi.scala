@@ -90,7 +90,8 @@ final private class ForumTopicApi(
   )(using me: Me): Fu[ForumTopic] =
     topicRepo
       .nextSlug(categ, data.name)
-      .zip(detectLanguage(data.post.text).flatMap { case (slug, lang) =>
+      .zip(detectLanguage(data.post.text))
+      .flatMap { case (slug, lang) =>
         val frozen = askEmbed.freeze(spam.replace(data.post.text), me)
         val topic = ForumTopic.make(
           categId = categ.slug,
@@ -134,7 +135,7 @@ final private class ForumTopicApi(
               Bus.publish(CreatePost(post), "forumPost")
               topic
         }
-      })
+      }
 
   def makeUblogDiscuss(
       slug: String,

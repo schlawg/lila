@@ -18,7 +18,7 @@ object askAdmin:
       val askmap = asks.sortBy(_.createdAt).groupBy(_.url)
       main(cls := "page-small box box-pad")(
         h1(s"${user.titleName} polls"),
-        askmap.keys.map(url => showAsks(url, askmap.get(url).get)) toSeq
+        askmap.keys.map(url => showAsks(url, askmap.get(url).get)).toSeq
       )
 
   def showAsks(urlopt: Option[String], asks: List[Ask])(using Me, Context) =
@@ -30,7 +30,7 @@ object askAdmin:
           case None      => "no url"
       ),
       br,
-      asks map renderOne
+      asks.map(renderOne)
     )
 
   def renderOne(ask: Ask)(using Context)(using me: Me) =
@@ -41,16 +41,16 @@ object askAdmin:
         div(cls := "url-actions")(
           button(formaction := routes.Ask.delete(ask._id))("Delete"),
           button(formaction := routes.Ask.reset(ask._id))("Reset"),
-          !ask.isConcluded option button(formaction := routes.Ask.conclude(ask._id))("Conclude"),
+          (!ask.isConcluded).option(button(formaction := routes.Ask.conclude(ask._id))("Conclude")),
           a(href := routes.Ask.json(ask._id))("JSON")
         )
       ),
       div(cls := "inset")(
-        isGranted(_.ModerateForum) option property("id:", ask._id),
-        !me.is(ask.creator) option property("creator:", ask.creator),
+        isGranted(_.ModerateForum).option(property("id:", ask._id)),
+        (!me.is(ask.creator)).option(property("creator:", ask.creator)),
         property("created at:", showInstant(ask.createdAt)),
-        ask.tags.nonEmpty option property("tags:", ask.tags.mkString(", ")),
-        ask.picks.map(p => p.size > 0 option property("responses:", p.size.toString)),
+        ask.tags.nonEmpty.option(property("tags:", ask.tags.mkString(", "))),
+        ask.picks.map(p => (p.size > 0).option(property("responses:", p.size.toString))),
         p,
         renderGraph(ask)
       ),

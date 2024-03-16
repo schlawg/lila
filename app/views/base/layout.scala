@@ -71,14 +71,17 @@ object layout:
         crossorigin = false
       )
     ),
-    env.security.authLockdown && (!ctx.isAuth).option.raw:
-      """<style id="bg-data">body.transp::before{background-image:url("""" +
-        staticAssetUrl(f"lifat/background/gallery/bg${Math.abs(ctx.ip.hashCode % 28) + 1}%02d.webp") +
-        """");}</style>"""
-    ,
-    (ctx.pref.bg == lila.pref.Pref.Bg.TRANSPARENT).option(ctx.pref.bgImgOrDefault.map: img =>
-      raw(s"""<style id="bg-data">body.transp::before{background-image:url("${escapeHtmlRaw(img)
-          .replace("&amp;", "&")}");}</style>""")),
+    (env.security.authLockdown && !ctx.isAuth).option {
+      raw:
+        """<style id="bg-data">body.transp::before{background-image:url("""" +
+          staticAssetUrl(f"lifat/background/gallery/bg${Math.abs(ctx.ip.hashCode % 28) + 1}%02d.webp") +
+          """");}</style>"""
+    },
+    (ctx.pref.bg == lila.pref.Pref.Bg.TRANSPARENT)
+      .option(ctx.pref.bgImgOrDefault)
+      .map: img =>
+        raw(s"""<style id="bg-data">body.transp::before{background-image:url("${escapeHtmlRaw(img)
+            .replace("&amp;", "&")}");}</style>"""),
     raw(
       s"""<style>body{--board-brightness:${ctx.pref.boardBrightness}%;--board-opacity:${ctx.pref.boardOpacity};</style>"""
     )
@@ -428,7 +431,7 @@ object layout:
     def apply(zenable: Boolean)(using ctx: PageContext) =
       header(id := "top")(
         div(cls := "site-title-nav")(
-          !ctx.isAppealUser.option(topnavToggle),
+          (!ctx.isAppealUser).option(topnavToggle),
           a(cls := "site-title", href := langHref("/"))(
             if ctx.kid.yes then span(title := trans.kidMode.txt(), cls := "kiddo")(":)")
             else ctx.isBot.option(botImage),

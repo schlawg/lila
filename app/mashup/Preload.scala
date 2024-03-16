@@ -66,7 +66,7 @@ final class Preload(
         ),
         lichessMsg
       ),
-      lichessMsg
+      hasAsks
     ) <- lobbyApi.apply
       .mon(_.lobby.segment("lobbyApi"))
       .zip(tours.mon(_.lobby.segment("tours")))

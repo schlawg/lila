@@ -141,8 +141,8 @@ final class ForumTopic(env: Env) extends LilaController(env) with ForumControlle
             form.some,
             unsub = None,
             canModCateg = true,
-            hasAsks = false,
-            formText.some
+            formText.some,
+            hasAsks = true
           )
         )
       yield res
