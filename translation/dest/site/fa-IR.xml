@@ -52,7 +52,7 @@
   <string name="blackLeftTheGame">سیاه بازی را ترک کرد</string>
   <string name="whiteDidntMove">سفید تکان نخورد</string>
   <string name="blackDidntMove">مشکی تکان نخورد</string>
-  <string name="requestAComputerAnalysis">یک تحلیل رایانه‌ای درخواست بدهید</string>
+  <string name="requestAComputerAnalysis">درخواست تحلیل رایانه‌ای</string>
   <string name="computerAnalysis">تحليل رایانه‌ای</string>
   <string name="computerAnalysisAvailable">تحلیل رایانه‌ای موجود است</string>
   <string name="computerAnalysisDisabled">تحلیل رایانه‌ای غیرفعال شد</string>
@@ -98,10 +98,10 @@
   <string name="maxDepthReached">عمق به حداکثر رسیده!</string>
   <string name="maybeIncludeMoreGamesFromThePreferencesMenu">شاید بازی‌های بیشتری با توجه به گزینگان ترجیحات، وجود داشته باشه؟</string>
   <string name="openings">گشایش</string>
-  <string name="openingExplorer">جویشگر حرکت گشاینده بازی</string>
-  <string name="openingEndgameExplorer">جویشگر حرکت گشاینده/پایان‌دهنده بازی</string>
+  <string name="openingExplorer">جستجوگر گشایش‌</string>
+  <string name="openingEndgameExplorer">جستجوگر گشایش/آخربازی</string>
   <string name="xOpeningExplorer">جستجوگر گشایش %s</string>
-  <string name="playFirstOpeningEndgameExplorerMove">اولین حرکت اکسپلورر شروع/آخر بازی را بازی کن</string>
+  <string name="playFirstOpeningEndgameExplorerMove">اولین حرکت گشایش/آخربازی را برو</string>
   <string name="winPreventedBy50MoveRule">قانون پنجاه حرکت از پیروزی جلوگیری کرد</string>
   <string name="lossSavedBy50MoveRule">قانون ۵۰ حرکت از شکست جلوگیری کرد</string>
   <string name="winOr50MovesByPriorMistake">برد یا ۵٠ حرکت بعد از اشتباه قبلی</string>
@@ -276,6 +276,7 @@
   <string name="abortGame">انصراف از بازی</string>
   <string name="gameAborted">بازی لغو شد</string>
   <string name="standard">استاندارد</string>
+  <string name="customPosition">وضعیت به‌دلخواه</string>
   <string name="unlimited">نامحدود</string>
   <string name="mode">نوع</string>
   <string name="casual">غیر رسمی</string>
@@ -329,7 +330,7 @@
     <item quantity="other">%s ثانیه اضافه کن</item>
   </plurals>
   <string name="thisAccountViolatedTos">این حساب قوانین را نقض کرده است</string>
-  <string name="openingExplorerAndTablebase">جستجوگر گشایش ها و جدول های مرجع آخربازی</string>
+  <string name="openingExplorerAndTablebase">جستجوگر گشایش و آخربازی</string>
   <string name="takeback">پس گرفتن حرکت</string>
   <string name="proposeATakeback">پیشنهاد پس گرفتن حرکت</string>
   <string name="takebackPropositionSent">پیشنهاد پس گرفتن حرکت فرستاده شد</string>
@@ -362,8 +363,8 @@
     <item quantity="other">بیشتر از %s بازی رسمی</item>
   </plurals>
   <plurals name="moreThanNbPerfRatedGames">
-    <item quantity="one">بیشتر از%1$s بازی رسمی%2$s</item>
-    <item quantity="other">بیشتر از%1$s بازی رسمی%2$s</item>
+    <item quantity="one">بیشتر از %1$s بازی رسمی %2$s</item>
+    <item quantity="other">بیشتر از %1$s بازی رسمی %2$s</item>
   </plurals>
   <plurals name="needNbMorePerfGames">
     <item quantity="one">شما باید%1$s بازی رسمی%2$s انجام دهید.</item>
@@ -379,8 +380,8 @@
   <string name="yourPerfRatingIsTooLow">درجه‌بندی %1$s شما (%2$s) بیش از حد پایین است</string>
   <string name="ratedMoreThanInPerf">امتیاز %2$s بالاتر از %1$s لازم است.</string>
   <string name="ratedLessThanInPerf">برای ورود،امتیاز%2$s شما باید کمتر از%1$s باشد.</string>
-  <string name="mustBeInTeam">باید در تیمه %s باشید</string>
-  <string name="youAreNotInTeam">شما در تیمه %s نیستید</string>
+  <string name="mustBeInTeam">باید در تیم %s باشید</string>
+  <string name="youAreNotInTeam">شما در تیم %s نیستید</string>
   <string name="backToGame">بازگشت به بازی</string>
   <string name="siteDescription">شطرنج آنلاین رایگان. همین حالا شطرنج بازی کنید. بدون نیاز به ثبت نام، بدون تبلیغات، بدون نیاز به افزونه. بازی با کامپیوتر، دوستان و یا حریفان تصادفی.</string>
   <string name="xJoinedTeamY">%1$s به تیم %2$s پیوست</string>
@@ -394,7 +395,7 @@
   <string name="apply">تایید</string>
   <string name="save">ذخیره</string>
   <string name="leaderboard">جدول رده‌بندی</string>
-  <string name="screenshotCurrentPosition">عکس گرفتن از تخته‌</string>
+  <string name="screenshotCurrentPosition">از وضعیت فعلی نماگرفت بگیرید</string>
   <string name="gameAsGIF">دانلود گیف بازی</string>
   <string name="pasteTheFenStringHere">پوزیشن دلخواه(FEN) را در این قسمت وارد کنید</string>
   <string name="pasteThePgnStringHere">متن PGN را در این قسمت وارد کنید</string>
@@ -494,7 +495,7 @@
   <string name="boardEditor">مُهره‌چینی</string>
   <string name="setTheBoard">مهره‌ها را بچینید</string>
   <string name="popularOpenings">گشایش‌های محبوب</string>
-  <string name="endgamePositions">موقعیتهای پایان‌بخش بازی</string>
+  <string name="endgamePositions">آخربازی</string>
   <string name="chess960StartPosition">پوزیشن ابتدایی شطرنج960: %s</string>
   <string name="startPosition">موقعیت شروع</string>
   <string name="clearBoard">پاک کردن صفحه</string>
@@ -503,7 +504,7 @@
   <string name="reportXToModerators">گزارش %s به مدیران سایت</string>
   <string name="profileCompletion">میزان تکمیل نمایه: %s</string>
   <string name="xRating">درجه‌‏بندی %s</string>
-  <string name="ifNoneLeaveEmpty">اگر ندارید،خالی بگذارید</string>
+  <string name="ifNoneLeaveEmpty">اگر ندارید، خالی گذارید</string>
   <string name="profile">نمایه</string>
   <string name="editProfile">ویرایش نمایه</string>
   <string name="firstName">نام</string>
@@ -531,7 +532,7 @@
   <string name="automaticallyProceedToNextGameAfterMoving">حرکت کردن اتوماتیک برای بازی بعدی بعد از حرکت کردن</string>
   <string name="autoSwitch">تعویض خودکار</string>
   <string name="puzzles">معماها</string>
-  <string name="tournamentWinners">برندگان مسابقات</string>
+  <string name="onlineBots">ربات‌های بَرخط</string>
   <string name="name">نام</string>
   <string name="description">شرح</string>
   <string name="descPrivate">توضیحات خصوصی</string>
@@ -582,7 +583,7 @@
   <string name="privacy">حریم شخصی</string>
   <string name="privacyPolicy">سیاست حریم شخصی</string>
   <string name="letOtherPlayersFollowYou">بقیه بازیکنان شما را دنبال کنند</string>
-  <string name="letOtherPlayersChallengeYou">بقیه بازیکنان با شما بازی کنند</string>
+  <string name="letOtherPlayersChallengeYou">اجازه دهید بازیکنان دیگر به شما پیشنهاد بازی دهند</string>
   <string name="letOtherPlayersInviteYouToStudy">اجازه دهید دیگر بازیکن شما را به مطالعه دعوت کنند</string>
   <string name="sound">صدا</string>
   <string name="none">هیچ کدام</string>
@@ -635,7 +636,7 @@
   <string name="error.min">باید حداقل %s باشد</string>
   <string name="error.max">باید حداکثر %s باشد</string>
   <string name="ifRatingIsPlusMinusX">اگر درجه‌بندی‌شان %s± است</string>
-  <string name="ifRegistered">در صورت ثبت نام</string>
+  <string name="ifRegistered">اگر نام‌نویسی‌کرده</string>
   <string name="onlyExistingConversations">تنها مکالمات موجود</string>
   <string name="onlyFriends">فقط دوستان</string>
   <string name="menu">فهرست</string>
@@ -717,8 +718,8 @@
   <string name="returnToTournamentsHomepage">بازگشت به صفحه اصلی مسابقات</string>
   <string name="weeklyPerfTypeRatingDistribution">توزیع درجه‌بندی %s هفتگی</string>
   <plurals name="nbPerfTypePlayersThisWeek">
-    <item quantity="one">در هفته گذشته،%1$s بازیکن در واریانت %2$s فعال بود.</item>
-    <item quantity="other">در هفته گذشته،%1$s بازیکن در واریانت %2$s فعال بودند.</item>
+    <item quantity="one">%1$s بازیکن %2$s این هفته فعالیت داشته‌ است.</item>
+    <item quantity="other">%1$s بازیکن %2$s این هفته فعالیت داشته‌اند.</item>
   </plurals>
   <string name="yourPerfTypeRatingIsRating">درجه‌بندی %1$s شما %2$s است.</string>
   <string name="youAreBetterThanPercentOfPerfTypePlayers">شما بهتر از %1$s بازیکن ها در %2$s هستید.</string>
@@ -739,7 +740,7 @@
   <string name="downloadAnnotated">بارگیری حرکت‌نویسی</string>
   <string name="downloadRaw">دانلود خام</string>
   <string name="downloadImported">دانلود جایگذاری شده</string>
-  <string name="crosstable">تابلو امتیازات</string>
+  <string name="crosstable">نتایج رودررو</string>
   <string name="youCanAlsoScrollOverTheBoardToMoveInTheGame">شما  می توانید برای حرکت در بازی از صفحه استفاده کنید</string>
   <string name="scrollOverComputerVariationsToPreviewThem">برای مشاهده آن ها اسکرول کنید.</string>
   <string name="analysisShapesHowTo">و کلیک کنید یا راست کلیک کنید تا دایره یا فلش در صفحه بکشید shift</string>
@@ -770,7 +771,7 @@
   <string name="correspondenceChess">شطرنج مکاتبه ای</string>
   <string name="onlineAndOfflinePlay">بازی کردن بَرخط و بُرون‌خط</string>
   <string name="viewTheSolution">دیدن راهِ حل</string>
-  <string name="followAndChallengeFriends">دنبال کردن و به مبارزه طلبیدنِ دوستان</string>
+  <string name="followAndChallengeFriends">دنبال کردن و پیشنهاد بازی دادن به دوستان</string>
   <plurals name="availableInNbLanguages">
     <item quantity="one">در %s  زبان‌ها موجود است</item>
     <item quantity="other">در %s  زبان‌ها موجود است</item>
@@ -854,7 +855,7 @@
   </plurals>
   <string name="opening">گشایش</string>
   <string name="middlegame">وسط بازی</string>
-  <string name="endgame">آخر بازی</string>
+  <string name="endgame">آخربازی</string>
   <string name="conditionalPremoves">پیش حرکت های شرطی</string>
   <string name="addCurrentVariation">اضافه کردن این نوع حرکات</string>
   <string name="playVariationToCreateConditionalPremoves">یک نوع حرکات را بازی کنید تا پیش حرکت های شرطی را بسازید</string>
@@ -940,8 +941,6 @@
   <string name="minimumRatedGames">حداقل بازی های ریتد</string>
   <string name="minimumRating">حداقل درجه‌بندی</string>
   <string name="maximumWeeklyRating">حداکثر درجه‌بندی هفتگی</string>
-  <string name="onlyTitled">تنها بازیکنان عنوان دار</string>
-  <string name="onlyTitledHelp">نیاز به یک عنوان رسمی برای پیوستن به مسابقه است</string>
   <string name="positionInputHelp">برای شروع هر بازی از یک پوزیشن مشخص یک FEN معتبر را جایگذاری کنید.
 این عمل فقط برای بازی های استاندارد امکان پذیر است، نه با واریانت ها.
 شما می توانید %s را جهت ساخت یک پوزیشن FEN استفاده کنید و سپس اینجا جایگذاری کنید.
@@ -989,4 +988,5 @@
   <string name="instructions">راهنما</string>
   <string name="showMeEverything">همه چیز را به من نشان بده</string>
   <string name="lichessPatronInfo">لایچس یک خیریه و کاملا رایگان و نرم افزاری متن باز است. تمام هزینه های اجرا، توسعه و محتوا تنها بر پایه هدایای کاربران بنا شده است.</string>
+  <string name="nothingToSeeHere">فعلا هیچی اینجا نیست.</string>
 </resources>

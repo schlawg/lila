@@ -1,10 +1,12 @@
 package lila.hub
 package actorApi
 
-import lila.common.LpvEmbed
-import chess.format.{ Uci, Fen }
-import java.time.Duration
+import chess.format.{ Fen, Uci }
 import play.api.libs.json.*
+
+import java.time.Duration
+
+import lila.common.LpvEmbed
 
 // announce something to all clients
 case class Announce(msg: String, date: Instant, json: JsObject)
@@ -27,7 +29,7 @@ package socket:
     def apply[A: Writes](userId: UserId, typ: String, data: A): SendTo =
       SendTo(userId, Json.obj("t" -> typ, "d" -> data))
     def onlineUser[A: Writes](userId: UserId, typ: String, data: () => Fu[A]): SendToOnlineUser =
-      SendToOnlineUser(userId, () => data() dmap { d => Json.obj("t" -> typ, "d" -> d) })
+      SendToOnlineUser(userId, () => data().dmap { d => Json.obj("t" -> typ, "d" -> d) })
   case class SendTos(userIds: Set[UserId], message: JsObject)
   object SendTos:
     def apply[A: Writes](userIds: Set[UserId], typ: String, data: A): SendTos =
@@ -184,9 +186,6 @@ package timeline:
     def exceptUser(id: UserId)           = add(ExceptUser(id))
     def modsOnly(value: Boolean)         = add(ModsOnly(value))
     private def add(p: Propagation)      = copy(propagations = p :: propagations)
-
-package tv:
-  case class TvSelect(gameId: GameId, speed: chess.Speed, data: JsObject)
 
 package notify:
   case class NotifiedBatch(userIds: Iterable[UserId])

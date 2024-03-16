@@ -3,8 +3,8 @@ package lila.ublog
 import play.api.data.*
 import play.api.data.Forms.*
 
-import lila.common.Form.{ cleanNonEmptyText, stringIn, into, given }
-import lila.i18n.{ defaultLanguage, LangList, Language, LangForm }
+import lila.common.Form.{ cleanNonEmptyText, into, given }
+import lila.i18n.{ LangForm, Language, defaultLanguage }
 import lila.user.User
 
 final class UblogForm(val captcher: lila.hub.actors.Captcher) extends lila.hub.CaptchedForm:
@@ -68,7 +68,7 @@ object UblogForm:
         intro = intro,
         markdown = updated,
         language = language.orElse(user.language) | defaultLanguage,
-        topics = topics so UblogTopic.fromStrList,
+        topics = topics.so(UblogTopic.fromStrList),
         image = none,
         live = false,
         discuss = Option(false),
@@ -89,11 +89,11 @@ object UblogForm:
         image = prev.image.map: i =>
           i.copy(alt = imageAlt, credit = imageCredit),
         language = language | prev.language,
-        topics = topics so UblogTopic.fromStrList,
+        topics = topics.so(UblogTopic.fromStrList),
         live = live,
         discuss = Option(discuss),
         updated = UblogPost.Recorded(user.id, nowInstant).some,
-        lived = prev.lived orElse live.option(UblogPost.Recorded(user.id, nowInstant))
+        lived = prev.lived.orElse(live.option(UblogPost.Recorded(user.id, nowInstant)))
       )
 
   private val tierMapping =

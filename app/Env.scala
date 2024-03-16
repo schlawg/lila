@@ -71,6 +71,7 @@ final class Env(
     val practice: lila.practice.Env,
     val irwin: lila.irwin.Env,
     val activity: lila.activity.Env,
+    val fide: lila.fide.Env,
     val relay: lila.relay.Env,
     val streamer: lila.streamer.Env,
     val oAuth: lila.oauth.Env,
@@ -129,6 +130,7 @@ final class Env(
     default = false,
     text = "Use external piece images".some
   )
+<<<<<<< HEAD
 
   import lila.memo.SettingStore.Regex.given
   import scala.util.matching.Regex
@@ -137,6 +139,8 @@ final class Env(
     default = """Chrome/(?:11[3-9]|1[2-9]\d)""".r,
     text = "UA regex for credentialless (see #13030)".some
   )
+=======
+>>>>>>> upstream/master
 
   lazy val preloader     = wire[mashup.Preload]
   lazy val socialInfo    = wire[mashup.UserInfo.SocialApi]
@@ -150,10 +154,11 @@ final class Env(
     Future {
       puzzle.daily.get
     }.flatMap(identity)
-      .withTimeoutDefault(50.millis, none) recover { case e: Exception =>
-      lila.log("preloader").warn("daily puzzle", e)
-      none
-    }
+      .withTimeoutDefault(50.millis, none)
+      .recover { case e: Exception =>
+        lila.log("preloader").warn("daily puzzle", e)
+        none
+      }
 
   system.actorOf(Props(new templating.RendererActor), name = config.get[String]("hub.actor.renderer"))
 end Env
@@ -237,6 +242,7 @@ final class EnvBoot(
   lazy val practice: lila.practice.Env       = wire[lila.practice.Env]
   lazy val irwin: lila.irwin.Env             = wire[lila.irwin.Env]
   lazy val activity: lila.activity.Env       = wire[lila.activity.Env]
+  lazy val fide: lila.fide.Env               = wire[lila.fide.Env]
   lazy val relay: lila.relay.Env             = wire[lila.relay.Env]
   lazy val streamer: lila.streamer.Env       = wire[lila.streamer.Env]
   lazy val oAuth: lila.oauth.Env             = wire[lila.oauth.Env]
@@ -258,4 +264,4 @@ final class EnvBoot(
     lila.log("boot").info(s"Loaded lila modules in ${c.showDuration}")
     c.result
 
-  templating.Environment setEnv env
+  templating.Environment.setEnv(env)

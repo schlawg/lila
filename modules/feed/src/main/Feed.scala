@@ -1,12 +1,17 @@
 package lila.feed
 
-import lila.Lila.{ *, given }
+import play.api.data.Form
 import reactivemongo.api.bson.*
 import reactivemongo.api.bson.Macros.Annotations.Key
+
 import java.time.format.{ DateTimeFormatter, FormatStyle }
 import lila.ask.{ Ask, AskEmbed }
 import lila.db.dsl.{ *, given }
+
+import lila.Lila.*
+import lila.common.config.{ Max, MaxPerPage }
 import lila.common.paginator.Paginator
+import lila.db.dsl.{ *, given }
 import lila.db.paginator.Adapter
 import lila.memo.CacheApi
 import lila.common.config.{ Max, BaseUrl, MaxPerPage }
@@ -25,7 +30,7 @@ object Feed:
       flair: Option[Flair]
   ):
     lazy val rendered: Html = renderer(s"dailyFeed:${id}")(content)
-    lazy val dateStr        = dateFormatter print at
+    lazy val dateStr        = dateFormatter.print(at)
     lazy val title          = "Daily update - " + dateStr
     def published           = public && at.isBeforeNow
     def future              = at.isAfterNow
@@ -37,7 +42,7 @@ object Feed:
   type GetLastUpdates = () => List[Update]
 
   import ornicar.scalalib.ThreadLocalRandom
-  def makeId = ThreadLocalRandom nextString 6
+  def makeId = ThreadLocalRandom.nextString(6)
 
 final class FeedApi(coll: Coll, cacheApi: CacheApi, askEmbed: AskEmbed)(using Executor):
 
@@ -72,23 +77,11 @@ final class FeedApi(coll: Coll, cacheApi: CacheApi, askEmbed: AskEmbed)(using Ex
     case Some(up) => askEmbed.repo.preload(up.content.value) inject up.some
     case _        => fuccess(none[Update])
 
-  def edit(id: ID): Fu[Option[Update]] = get(id) flatMap:
-    case Some(up) =>
-      askEmbed.unfreezeAndLoad(up.content.value) map: text =>
-        up.copy(content = Markdown(text)).some
-    case _ => fuccess(none[Update])
-
-  def set(update: Update)(using me: Me): Funit =
-    askEmbed
-      .freezeAndCommit(update.content.value, me, s"/feed#${update.id}".some)
-      .flatMap: text =>
-        coll.update
-          .one($id(update.id), update.copy(content = Markdown(text)), upsert = true)
-          .void
-          .andDo(cache.clear())
+  def set(update: Update): Funit =
+    coll.update.one($id(update.id), update, upsert = true).void.andDo(cache.clear())
 
   def delete(id: ID): Funit =
-    coll.delete.one($id(id)).void andDo cache.clear()
+    coll.delete.one($id(id)).void.andDo(cache.clear())
 
   case class UpdateData(content: Markdown, public: Boolean, at: Instant, flair: Option[Flair]):
     def toUpdate(id: Option[ID]) = Update(id | makeId, content, public, at, flair)
@@ -115,7 +108,7 @@ final class FeedPaginatorBuilder(coll: Coll)(using Executor):
         collection = coll,
         selector =
           if includeAll then $empty
-          else $doc("public" -> true, "at" $lt nowInstant),
+          else $doc("public" -> true, "at".$lt(nowInstant)),
         projection = none,
         sort = $sort.desc("at")
       ),

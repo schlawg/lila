@@ -1,14 +1,13 @@
 package views.html
 
 import controllers.routes
-
-import java.time.Instant
-import lila.app.templating.Environment.{ given, * }
-import lila.app.ui.ScalatagsTemplate.{ *, given }
-import lila.feed.Feed.Update
 import play.api.data.Form
 import play.api.i18n.Lang
+
+import lila.app.templating.Environment.{ *, given }
+import lila.app.ui.ScalatagsTemplate.{ *, given }
 import lila.common.paginator.Paginator
+import lila.feed.Feed.Update
 
 object feed:
 
@@ -16,11 +15,11 @@ object feed:
     views.html.site.page.layout(
       title = title,
       active = "news",
-      moreCss = frag(cssTag("dailyFeed"), hasAsks option cssTag("ask")),
+      moreCss = frag(cssTag("dailyFeed"), hasAsks.option(cssTag("ask"))),
       moreJs = frag(
-        hasAsks option jsModuleInit("ask"),
-        edit option jsModule("flatpickr"),
-        edit option jsModule("dailyFeed")
+        hasAsks.option(jsModuleInit("ask")),
+        edit.option(jsModule("flatpickr")),
+        edit.option(jsModule("dailyFeed"))
       )
     )
 
@@ -30,10 +29,12 @@ object feed:
         boxTop(
           h1("Lichess updates"),
           div(cls := "box__top__actions")(
-            isGranted(_.Feed) option a(
-              href     := routes.Feed.createForm,
-              cls      := "button button-green",
-              dataIcon := licon.PlusButton
+            isGranted(_.Feed).option(
+              a(
+                href     := routes.Feed.createForm,
+                cls      := "button button-green",
+                dataIcon := licon.PlusButton
+              )
             ),
             views.html.site.bits.atomLink(routes.Feed.atom)
           )
@@ -52,14 +53,16 @@ object feed:
             div(cls := "daily-feed__update__content")(
               st.section(cls := "daily-feed__update__day")(
                 h2(a(href := s"#${update.id}")(absClientInstant(update.at))),
-                editor option frag(
-                  a(
-                    href     := routes.Feed.edit(update.id),
-                    cls      := "button button-green button-empty button-thin text",
-                    dataIcon := licon.Pencil
-                  ),
-                  !update.public option badTag(nbsp, "[Draft]"),
-                  update.future option goodTag(nbsp, "[Future]")
+                editor.option(
+                  frag(
+                    a(
+                      href     := routes.Feed.edit(update.id),
+                      cls      := "button button-green button-empty button-thin text",
+                      dataIcon := licon.Pencil
+                    ),
+                    (!update.public).option(badTag(nbsp, "[Draft]")),
+                    update.future.option(goodTag(nbsp, "[Future]"))
+                  )
                 )
               ),
               div(cls := "daily-feed__update__markup")(
@@ -142,7 +145,7 @@ object feed:
       )(form3.textarea(_)(rows := 10)),
       form3.group(form("flair"), "Icon", half = false): field =>
         form3
-          .flairPicker(field, Flair from form("flair").value, label = frag("Update icon"), anyFlair = true):
+          .flairPicker(field, Flair.from(form("flair").value), label = frag("Update icon"), anyFlair = true):
             span(cls := "flair-container"):
               Flair.from(form("flair").value).map(f => marker(f.some, "uflair".some))
       ,
@@ -151,12 +154,12 @@ object feed:
 
   private def marker(flair: Option[Flair] = none, customClass: Option[String] = none) =
     img(
-      src := flairSrc(flair getOrElse Flair("symbols.white-star")),
-      cls := customClass getOrElse s"daily-feed__update__marker ${flair.nonEmpty so " nobg"}"
+      src := flairSrc(flair.getOrElse(Flair("symbols.white-star"))),
+      cls := customClass.getOrElse(s"daily-feed__update__marker ${flair.nonEmpty.so(" nobg")}")
     )
 
   def atom(ups: List[Update])(using Lang) =
-    import views.html.base.atom.{ atomDate, category }
+    import views.html.base.atom.atomDate
     views.html.base.atom(
       elems = ups,
       htmlCall = routes.Feed.index(1),

@@ -46,14 +46,14 @@ final class Env(
         import ornicar.scalalib.ThreadLocalRandom
         val lookInto = 10
         val keep     = 7
-        api.pinnedPosts(2) zip api
-          .latestPosts(lookInto)
-          .map:
-            _.groupBy(_.blog)
-              .flatMap(_._2.headOption)
-          .map(ThreadLocalRandom.shuffle)
-          .map(_.take(keep).toList) map:
-          case (pinned, shuffled) => pinned ++ shuffled
+        api
+          .pinnedPosts(2)
+          .zip(
+            api
+              .latestPosts(lookInto)
+              .map:
+                case (pinned, shuffled) => pinned ++ shuffled
+          )
 
   lila.common.Bus.subscribeFun("shadowban"):
     case lila.hub.actorApi.mod.Shadowban(userId, v) =>
