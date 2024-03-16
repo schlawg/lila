@@ -34,7 +34,7 @@ final class Feed(env: Env) extends LilaController(env):
   }
 
   def edit(id: String) = Secure(_.Feed) { _ ?=> _ ?=>
-    Found(api.get(id)): up =>
+    Found(api.edit(id)): up =>
       Ok.pageAsync(html.feed.edit(api.form(up.some), up))
   }
 
