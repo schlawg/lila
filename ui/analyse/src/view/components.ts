@@ -77,6 +77,7 @@ export function viewContext(ctrl: AnalyseCtrl, deps?: typeof studyDeps): ViewCon
 
 export function renderMain(
   { ctrl, playerBars, gaugeOn, gamebookPlayView, needsInnerCoords, tourUi }: ViewContext,
+  classes: { [key: string]: boolean },
   kids: VNodeKids,
 ): VNode {
   return h(
@@ -86,11 +87,8 @@ export function renderMain(
         insert: vn => {
           const elm = vn.elm as HTMLElement;
           forceInnerCoords(ctrl, needsInnerCoords);
-          if (!!playerBars != $('body').hasClass('header-margin')) {
-            requestAnimationFrame(() => {
-              $('body').toggleClass('header-margin', !!playerBars);
-              ctrl.redraw();
-            });
+          if (!!playerBars != document.body.classList.contains('header-margin')) {
+            $('body').toggleClass('header-margin', !!playerBars);
           }
           !tourUi && makeChat(ctrl, c => elm.appendChild(c));
           gridHacks.start(elm);
@@ -104,6 +102,7 @@ export function renderMain(
         },
       },
       class: {
+        ...classes,
         'comp-off': !ctrl.showComputer(),
         'gauge-on': gaugeOn,
         'has-players': !!playerBars,
@@ -118,11 +117,12 @@ export function renderMain(
   );
 }
 
-export function renderTools({ ctrl, deps, concealOf }: ViewContext, videoPlayer?: VNode) {
+export function renderTools({ ctrl, deps, concealOf }: ViewContext, firstKid?: VNode) {
   return h(addChapterId(ctrl.study, 'div.analyse__tools'), [
-    videoPlayer,
+    h('div.spacer'), // prevent grid container from sizing action menu and move list differently in wide mode
+    firstKid,
     ...(ctrl.actionMenu()
-      ? [actionMenu(ctrl)]
+      ? [...cevalView.renderCeval(ctrl), h('div'), actionMenu(ctrl)]
       : [
           ...cevalView.renderCeval(ctrl),
           !ctrl.retro?.isSolving() && !ctrl.practice && cevalView.renderPvs(ctrl),
@@ -380,7 +380,7 @@ export function makeChat(ctrl: AnalyseCtrl, insert: (chat: HTMLElement) => void)
     insert(chatEl);
     const chatOpts = ctrl.opts.chat;
     chatOpts.instance?.then(c => c.destroy());
-    chatOpts.parseMoves = true;
+    chatOpts.enhance = { plies: true, boards: !!ctrl.study?.relay };
     chatOpts.instance = site.makeChat(chatOpts);
   }
 }

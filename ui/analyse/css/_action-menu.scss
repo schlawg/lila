@@ -6,15 +6,18 @@
   // 0 size forces vertical scrollbar
   display: flex;
   flex-flow: column;
-  overflow: auto;
-  padding: $block-gap;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: $analyse-block-gap;
+  align-items: stretch;
+  width: 100%;
 
   h2 {
     font-size: 1em;
     text-transform: uppercase;
     text-align: center;
     white-space: nowrap;
-    margin: $block-gap 0 3px 0;
+    margin: $analyse-block-gap 0 3px 0;
     display: table;
     padding: 0 10px;
 
@@ -86,9 +89,8 @@
 
   .setting {
     @extend %flex-center-nowrap;
-
     flex: 0 0 auto;
-    margin-top: $block-gap;
+    margin-top: $analyse-block-gap;
 
     label {
       flex: 4 1 auto;
@@ -116,7 +118,7 @@
     }
   }
 
-  @include breakpoint($mq-col1) {
+  @include mq-is-col1 {
     .abset-inline {
       display: none;
     }

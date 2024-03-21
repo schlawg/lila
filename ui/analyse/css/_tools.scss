@@ -127,20 +127,13 @@
       transition: visibility 0s;
     }
 
-    .persistence {
-      color: $c-good;
-      @include breakpoint($mq-not-xx-small) {
-        display: none;
-      }
-    }
-
     .active {
       margin-top: -3px;
       padding-top: 3px;
       color: $c-good-over;
     }
 
-    @include breakpoint($mq-col1) {
+    @include mq-is-col1 {
       height: $col1-uniboard-controls;
 
       .fbt {

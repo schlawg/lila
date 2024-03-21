@@ -99,8 +99,10 @@ final class RelayRound(
         html = WithRoundAndTour(ts, rs, id): rt =>
           val sc = env.study.preview
             .firstId(rt.round.studyId)
-            .flatMapz:
-              env.study.api.byIdWithChapterOrFallback(rt.round.studyId, _)
+            .flatMap:
+              // there might be no chapter after a round reset, let a new one be created
+              case None              => env.study.api.byIdWithChapter(rt.round.studyId)
+              case Some(firstChapId) => env.study.api.byIdWithChapterOrFallback(rt.round.studyId, firstChapId)
           sc.orNotFound { doShow(rt, _, embed) }
         ,
         json = doApiShow(id)
@@ -200,7 +202,12 @@ final class RelayRound(
           env.relay.api.isSubscribed(rt.tour.id, me.userId)
         streamer <- embed.so(env.streamer.api.find)
         stream   <- streamer.soFu(env.streamer.liveStreamApi.of)
-        videoUrls          = stream.flatMap(_.stream).map(_.urls(netDomain))
+        videoUrls =
+          if embed.contains("fake") then
+            lila.streamer.Stream
+              .Urls(s"https://www.youtube.com/embed/zeo3AmLAuZc?autoplay=1&disablekb=1&color=white", "")
+              .some
+          else stream.flatMap(_.stream).map(_.urls(netDomain))
         crossSiteIsolation = videoUrls.isEmpty
         data = env.relay.jsonView.makeData(
           rt.tour.withRounds(rounds.map(_.round)),
@@ -211,11 +218,10 @@ final class RelayRound(
           isSubscribed,
           videoUrls.map(_.toPair)
         )
-        chat      <- NoCrawlers(studyC.chatOf(sc.study))
-        sVersion  <- NoCrawlers(env.study.version(sc.study.id))
-        streamers <- NoCrawlers(studyC.streamersOf(sc.study.id))
+        chat     <- NoCrawlers(studyC.chatOf(sc.study))
+        sVersion <- NoCrawlers(env.study.version(sc.study.id))
         page <- renderPage:
-          html.relay.show(rt.withStudy(sc.study), data, chat, sVersion, streamers, crossSiteIsolation)
+          html.relay.show(rt.withStudy(sc.study), data, chat, sVersion, crossSiteIsolation)
         _ = if HTTPRequest.isHuman(req) then lila.mon.http.path(rt.tour.path).increment()
       yield if crossSiteIsolation then Ok(page).enforceCrossSiteIsolation else Ok(page)
     )(

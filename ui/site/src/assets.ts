@@ -67,21 +67,21 @@ export async function loadEsm<T, ModuleOpts = any>(
   return module.initModule ? module.initModule(opts?.init) : module.default(opts?.init);
 }
 
+export const loadPageEsm = async (name: string) => {
+  const modulePromise = import(url(jsModule(name)));
+  const dataScript = document.getElementById('page-init-data');
+  const opts = dataScript && JSON.parse(dataScript.innerHTML);
+  dataScript?.remove();
+  const module = await modulePromise;
+  module.initModule ? module.initModule(opts) : module.default(opts);
+};
+
 export const userComplete = async (opts: UserCompleteOpts): Promise<UserComplete> => {
   const [userComplete] = await Promise.all([
     loadEsm('userComplete', { init: opts }),
     loadCssPath('complete'),
   ]);
   return userComplete as UserComplete;
-};
-
-export const hopscotch = () => {
-  return Promise.all([
-    loadCss('npm/hopscotch/dist/css/hopscotch.min.css'),
-    loadIife('npm/hopscotch/dist/js/hopscotch.min.js', {
-      noVersion: true,
-    }),
-  ]);
 };
 
 export function embedChessground() {

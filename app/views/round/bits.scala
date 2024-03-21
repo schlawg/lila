@@ -17,6 +17,7 @@ object bits:
   def layout(
       variant: Variant,
       title: String,
+      pageModule: Option[PageModule],
       moreJs: Frag = emptyFrag,
       openGraph: Option[lila.app.ui.OpenGraph] = None,
       moreCss: Frag = emptyFrag,
@@ -36,6 +37,7 @@ object bits:
         ctx.blind.option(cssTag("round.nvui")),
         moreCss
       ),
+      pageModule = pageModule,
       playing = playing,
       zenable = zenable,
       robots = robots,

@@ -9,6 +9,8 @@ import lila.common.String.html.safeJsonValue
 trait AssetHelper extends HasEnv:
   self: I18nHelper & SecurityHelper =>
 
+  case class PageModule(name: String, data: JsValue)
+
   private lazy val netDomain      = env.net.domain
   private lazy val assetDomain    = env.net.assetDomain
   private lazy val assetBaseUrl   = env.net.assetBaseUrl
@@ -58,6 +60,9 @@ trait AssetHelper extends HasEnv:
   private def cssAt(path: String): Tag =
     link(href := assetUrl(path), rel := "stylesheet")
 
+  def jsonScript(json: JsValue, id: String = "page-init-data") =
+    script(tpe := "application/json", st.id := id)(raw(safeJsonValue(json)))
+
   val systemThemePolyfillJs = """
 if (window.matchMedia('(prefers-color-scheme: dark)').media === 'not all')
     document.querySelectorAll('[media="(prefers-color-scheme: dark)"]').forEach(e=>e.media='')
@@ -83,6 +88,10 @@ if (window.matchMedia('(prefers-color-scheme: dark)').media === 'not all')
     jsModule(name),
     embedJsUnsafeLoadThen(s"$loadEsmFunction('$name',{init:${safeJsonValue(json)}})", nonce)
   )
+
+  def jsPageModule(name: String)(using PageContext) =
+    frag(jsModule(name), embedJsUnsafeLoadThen(s"site.asset.loadPageEsm('$name')"))
+
   def analyseInit(mode: String, json: JsValue)(using ctx: PageContext) =
     jsModuleInit("analysisBoard", Json.obj("mode" -> mode, "cfg" -> json))
 

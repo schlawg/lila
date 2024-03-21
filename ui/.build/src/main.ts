@@ -60,7 +60,7 @@ export function main() {
 
   if (args.length === 1 && (args[0] === '--help' || args[0] === '-h')) {
     console.log(fs.readFileSync(path.resolve(__dirname, '../readme'), 'utf8'));
-  } else if (args.length === 1 && (args[0] === '--clean' || args[0] === '-c')) {
+  } else if (args.length === 1 && (args[0].startsWith('--clean') || args[0] === '-c')) {
     clean();
   } else {
     build(args.filter(x => !x.startsWith('-')));

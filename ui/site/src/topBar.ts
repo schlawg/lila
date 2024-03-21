@@ -1,8 +1,10 @@
 import pubsub from './pubsub';
 import { loadCssPath, loadEsm } from './assets';
-import { memoize } from 'common';
+import { memoize, clamp } from 'common';
 
 export default function () {
+  const top = document.getElementById('top')!;
+
   const initiatingHtml = `<div class="initiating">${site.spinnerHtml}</div>`,
     isVisible = (selector: string) => {
       const el = document.querySelector(selector),
@@ -11,20 +13,20 @@ export default function () {
     };
 
   // On touchscreens, clicking the top menu element expands it. There's no top link.
-  // Only for $show-topnav in ui/common/css/abstract/_media-queries.scss
+  // Only for mq-topnav-visible in ui/common/css/abstract/_media-queries.scss
   if ('ontouchstart' in window && window.matchMedia('(min-width: 1020px)').matches)
-    $('#topnav > section > a').removeAttr('href');
+    $('#topnav section > a').removeAttr('href');
 
   $('#tn-tg').on('change', e => {
     const menuOpen = (e.target as HTMLInputElement).checked;
-    const header = $as<HTMLElement>('#top');
     document.body.classList.toggle('masked', menuOpen);
+    const header = $as<HTMLElement>('#top');
     // transp #top's blur filter creates a stacking context. turn it off so 'bottom: 0' matches screen height
     if (menuOpen) header.style.backdropFilter = 'unset';
     else setTimeout(() => (header.style.backdropFilter = ''), 200); // 200ms is slide transition duration
   });
 
-  $('#top').on('click', '.toggle', function (this: HTMLElement) {
+  $(top).on('click', '.toggle', function (this: HTMLElement) {
     const $p = $(this).parent().toggleClass('shown');
     $p.siblings('.shown').removeClass('shown');
     setTimeout(() => {
@@ -177,21 +179,18 @@ export default function () {
 
   {
     // stick top bar
-    let lastScrollY = 0;
-    const header = document.getElementById('top')!;
+    let lastY = window.scrollY;
+    if (lastY > 0) top.classList.add('scrolled');
 
-    window.addEventListener(
-      'scroll',
-      () => {
-        const y = window.scrollY;
-        if (y > lastScrollY + 10) header.classList.add('hide');
-        else if (y <= Math.max(lastScrollY - 20, 0) && y < document.body.scrollHeight - window.innerHeight)
-          header.classList.remove('hide');
-        else return;
+    window.addEventListener('scroll', () => {
+      const y = window.scrollY;
+      top.classList.toggle('scrolled', y > 0);
+      if (y > lastY + 10) top.classList.add('hide');
+      else if (y <= clamp(lastY - 20, { min: 0, max: document.body.scrollHeight - window.innerHeight }))
+        top.classList.remove('hide');
+      else return;
 
-        lastScrollY = Math.max(0, y);
-      },
-      { passive: true },
-    );
+      lastY = Math.max(0, y);
+    });
   }
 }

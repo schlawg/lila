@@ -1,7 +1,7 @@
 #friend_box {
   display: none;
 
-  @include breakpoint($mq-topnav-visible $mq-tall) {
+  @include mq-topnav-visible-and-tall {
     display: block;
   }
 

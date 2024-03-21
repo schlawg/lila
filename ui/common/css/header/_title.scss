@@ -8,11 +8,11 @@
   text-shadow: $text-shadow;
   color: $c-font;
 
-  @media (max-width: at-most($show-topnav)) {
+  @include mq-topnav-hidden {
     margin-#{$start-direction}: calc(0.5rem + $site-header-height);
   }
 
-  @media (min-height: at-least($tall)) {
+  @include mq-site-header-tall {
     font-size: 30px;
   }
 
@@ -42,7 +42,7 @@
     }
   }
 
-  @media (min-width: at-least($show-hostname)) {
+  @media (min-width: at-least(1180px)) {
     .site-name {
       display: block;
     }

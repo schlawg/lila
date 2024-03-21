@@ -1,14 +1,10 @@
-body {
-  @include fluid-size('--gauge-gap', 8px, 17px);
-}
-
 .eval-gauge {
-  width: var(--gauge-gap);
+  width: $block-gap;
   position: relative;
   background: if($theme-light, #fff, #a0a0a0);
   overflow: hidden;
 
-  @include breakpoint($mq-col1-uniboard) {
+  @include mq-is-col1 {
     display: none;
   }
 

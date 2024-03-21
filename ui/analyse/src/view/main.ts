@@ -32,7 +32,7 @@ function analyseView(ctrl: AnalyseCtrl, deps?: typeof studyDeps): VNode {
   const ctx = viewContext(ctrl, deps);
   const { study, menuIsOpen, gamebookPlayView, gaugeOn } = ctx;
 
-  return renderMain(ctx, [
+  return renderMain(ctx, {}, [
     ctrl.keyboardHelp && keyboardView(ctrl),
     study && deps?.studyView.overboard(study),
     renderBoard(ctx),
@@ -75,5 +75,6 @@ function analyseView(ctrl: AnalyseCtrl, deps?: typeof studyDeps): VNode {
                   ),
               ],
         ),
+    h('div.chat__members.none', { hook: onInsert(site.watchers) }),
   ]);
 }

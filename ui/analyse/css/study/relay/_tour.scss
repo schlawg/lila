@@ -5,6 +5,11 @@ $hover-bg: mix($c-primary, $c-bg-box, 30%);
   background: $c-bg-box;
   &__side {
     @extend %flex-column;
+    &__preload {
+      @extend %box-neat;
+      flex: 1;
+      background: $c-bg-box;
+    }
     &__header {
       @extend %flex-center-nowrap, %box-radius-top;
       user-select: none;
@@ -41,7 +46,7 @@ $hover-bg: mix($c-primary, $c-bg-box, 30%);
         font-size: 1.2em;
         color: $c-font-dim;
       }
-      @include breakpoint($mq-col2) {
+      @include mq-at-least-col2 {
         display: flex;
       }
     }
@@ -108,7 +113,6 @@ $hover-bg: mix($c-primary, $c-bg-box, 30%);
       line-height: 0;
       img {
         width: 100%;
-        aspect-ratio: 2/1;
         @include broken-img(2 / 1);
       }
       text-align: center;
@@ -118,7 +122,7 @@ $hover-bg: mix($c-primary, $c-bg-box, 30%);
       line-height: 2em;
     }
 
-    @include breakpoint($mq-x-small) {
+    @media (min-width: at-least($x-small)) {
       &__image {
         display: block;
       }
@@ -134,7 +138,7 @@ $hover-bg: mix($c-primary, $c-bg-box, 30%);
       @extend %flex-column;
       flex: 1;
       gap: 1em;
-      @include breakpoint($mq-col3) {
+      @include mq-at-least-col3 {
         gap: calc(var(--box-padding) / 3);
       }
       margin: 1em 2em;
@@ -310,7 +314,7 @@ $hover-bg: mix($c-primary, $c-bg-box, 30%);
   }
 
   .study__multiboard {
-    @include breakpoint($mq-xx-large) {
+    @media (min-width: at-least($xx-large)) {
       margin: 0 calc(var(--box-padding) - 1em);
       .now-playing a {
         padding: 0.8em;

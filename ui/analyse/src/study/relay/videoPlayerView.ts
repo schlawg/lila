@@ -1,7 +1,7 @@
 import RelayCtrl from './relayCtrl';
-import { looseH as h, Redraw, VNode } from 'common/snabbdom';
+import { looseH as h, VNode } from 'common/snabbdom';
 
-let player: VideoPlayer;
+export let player: VideoPlayer;
 
 export function renderVideoPlayer(relay: RelayCtrl): VNode | undefined {
   if (!relay.data.videoUrls) return undefined;
@@ -12,21 +12,6 @@ export function renderVideoPlayer(relay: RelayCtrl): VNode | undefined {
       update: (_, vnode: VNode) => player.cover(vnode.elm as HTMLElement),
     },
   });
-}
-
-export function onWindowResize(redraw: Redraw) {
-  let cols = 0;
-  window.addEventListener(
-    'resize',
-    () => {
-      player?.cover(document.getElementById('video-player-placeholder') ?? undefined);
-      const newCols = Number(window.getComputedStyle(document.body).getPropertyValue('--cols'));
-      if (newCols === cols) return;
-      cols = newCols;
-      redraw();
-    },
-    { passive: true },
-  );
 }
 
 class VideoPlayer {
@@ -47,18 +32,12 @@ class VideoPlayer {
       if (document.body.contains(this.iframe)) document.body.removeChild(this.iframe);
       return;
     }
-    const placement = {
-      left: el.offsetLeft,
-      top: el.offsetTop,
-      width: el.offsetWidth,
-      height: el.offsetHeight,
-    };
     this.animationFrameId = requestAnimationFrame(() => {
       this.iframe.style.display = 'block';
-      this.iframe.style.left = `${placement.left}px`;
-      this.iframe.style.top = `${placement.top}px`;
-      this.iframe.style.width = `${placement.width}px`;
-      this.iframe.style.height = `${placement.height}px`;
+      this.iframe.style.left = `${el!.offsetLeft}px`;
+      this.iframe.style.top = `${el!.offsetTop}px`;
+      this.iframe.style.width = `${el!.offsetWidth}px`;
+      this.iframe.style.height = `${el!.offsetHeight}px`;
       if (!document.body.contains(this.iframe)) document.body.appendChild(this.iframe);
     });
   }
