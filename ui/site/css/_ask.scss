@@ -48,14 +48,14 @@ span.ask__header {
 
   label {
     flex: auto;
-    margin-#{$start-direction}: $gap;
+    margin-inline-start: $gap;
     padding-bottom: $gap;
     font-size: 1.3em;
   }
 
   label span {
     white-space: nowrap;
-    margin-#{$start-direction}: $gap;
+    margin-inline-start: $gap;
     font-size: 0.6em;
   }
 
@@ -234,7 +234,7 @@ div.ask__choices {
       min-width: 24px;
       min-height: 24px;
       cursor: pointer;
-      margin-#{$end-direction}: $gap;
+      margin-inline-end: $gap;
     }
   }
 
@@ -288,8 +288,8 @@ div.ask__choices {
 
     // rank badge
     > div {
-      margin-#{$start-direction}: -$gap;
-      margin-#{$end-direction}: $gap;
+      margin-inline-start: -$gap;
+      margin-inline-end: $gap;
       width: 1.7em;
       height: 1.7em;
       border-radius: 100%;
@@ -335,7 +335,7 @@ div.ask__choices {
     // I-beam icon
     &::after {
       @extend %data-icon;
-      margin-#{$start-direction}: -$gap;
+      margin-inline-start: -$gap;
       font-size: 2.1em;
       color: if($theme-light, #bbb, $c-font);
       text-align: center;

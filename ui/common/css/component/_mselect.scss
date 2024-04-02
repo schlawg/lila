@@ -89,9 +89,25 @@ $c-mselect: $c-primary;
       }
     }
 
-    &:hover {
-      background: $c-mselect;
-      color: #fff;
+    > * {
+      white-space: nowrap;
+      display: block;
+      padding: 0.3em 1em;
+
+      @include transition;
+
+      color: $c-mselect;
+
+      &:hover {
+        background: $c-mselect;
+        color: #fff;
+      }
+
+      &::before {
+        margin-inline-end: 0.4em;
+      }
+
+      opacity: 0;
     }
 
     &::before {

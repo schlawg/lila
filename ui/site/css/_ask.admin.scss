@@ -48,7 +48,7 @@ div.ask-admin {
     border: solid 1px $c-box-border;
     background: $c-bg-box;
     > p {
-      margin-#{$start-direction}: 2em;
+      margin-inline-start: 2em;
       font-size: 0.8em;
       text-indent: -2em;
     }
