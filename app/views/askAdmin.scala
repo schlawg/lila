@@ -8,7 +8,7 @@ import views.html.ask.*
 
 object askAdmin:
 
-  def show(asks: List[Ask], user: lila.common.LightUser)(using Me, PageContext) =
+  def show(asks: List[Ask], user: lila.core.LightUser)(using Me, PageContext) =
     views.html.base.layout(
       title = s"${user.titleName} polls",
       moreJs = jsModuleInit("ask"),

@@ -2,14 +2,14 @@ package lila.forum
 
 import scalatags.Text.all.{ Frag, raw }
 
-import lila.base.RawHtml
-import lila.common.config
+import lila.common.RawHtml
+import lila.core.config.NetDomain
 
 final class ForumTextExpand(askEmbed: lila.ask.AskEmbed)(using Executor, Scheduler):
 
-  private def one(post: ForumPost)(using config.NetDomain): Fu[ForumPost.WithFrag] =
+  private def one(post: ForumPost)(using NetDomain): Fu[ForumPost.WithFrag] =
     lila.common.Bus
-      .ask("lpv")(lila.hub.actorApi.lpv.LpvLinkRenderFromText(post.text, _))
+      .ask("lpv")(lila.core.actorApi.lpv.LpvLinkRenderFromText(post.text, _))
       .map: linkRender =>
         raw:
           RawHtml.nl2br {
@@ -19,5 +19,5 @@ final class ForumTextExpand(askEmbed: lila.ask.AskEmbed)(using Executor, Schedul
       .map: (body, _) =>
         ForumPost.WithFrag(post, body)
 
-  def manyPosts(posts: Seq[ForumPost])(using config.NetDomain): Fu[Seq[ForumPost.WithFrag]] =
+  def manyPosts(posts: Seq[ForumPost])(using NetDomain): Fu[Seq[ForumPost.WithFrag]] =
     posts.traverse(one)

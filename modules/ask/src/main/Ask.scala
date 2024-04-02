@@ -1,7 +1,5 @@
 package lila.ask
 
-import lila.common.IpAddress
-
 case class Ask(
     _id: Ask.ID,
     question: String,
@@ -54,7 +52,7 @@ case class Ask(
   def toAnon(user: UserId): Option[String] =
     Some(if isAnon then Ask.anonHash(user.value, _id) else user.value)
 
-  def toAnon(ip: IpAddress): Option[String] =
+  def toAnon(ip: lila.core.IpAddress): Option[String] =
     isOpen.option(Ask.anonHash(ip.toString, _id))
 
   // eid = effective id, either a user id or an anonymous hash
@@ -155,7 +153,7 @@ object Ask:
       footer: Option[String],
       url: Option[String]
   ) = Ask(
-    _id = _id.getOrElse(ornicar.scalalib.ThreadLocalRandom.nextString(8)),
+    _id = _id.getOrElse(scalalib.ThreadLocalRandom.nextString(8)),
     question = question,
     choices = choices,
     tags = tags,

@@ -2,15 +2,16 @@ package lila.forum
 
 import lila.common.Bus
 import lila.common.String.noShouting
-import lila.common.config.NetDomain
-import lila.common.paginator.*
+import lila.core.config.NetDomain
+import scalalib.paginator.*
 import lila.db.dsl.{ *, given }
-import lila.hub.actorApi.shutup.{ PublicSource, RecordPublicText, RecordTeamForumMessage }
-import lila.hub.actorApi.timeline.{ ForumPost as TimelinePost, Propagate }
+import lila.core.shutup.{ ShutupApi, PublicSource }
+import lila.core.timeline.{ ForumPost as TimelinePost, Propagate }
+import lila.core.forum.CreatePost
 import lila.memo.CacheApi
 import lila.mon.forum.topic
 import lila.security.Granter as MasterGranter
-import lila.user.{ Me, User }
+import lila.user.{ Me, User, given }
 
 final private class ForumTopicApi(
     postRepo: ForumPostRepo,
@@ -18,16 +19,14 @@ final private class ForumTopicApi(
     categRepo: ForumCategRepo,
     mentionNotifier: MentionNotifier,
     paginator: ForumPaginator,
-    indexer: lila.hub.actors.ForumSearch,
+    modLog: lila.core.mod.LogApi,
     config: ForumConfig,
-    modLog: lila.mod.ModlogApi,
     spam: lila.security.Spam,
     promotion: lila.security.PromotionApi,
-    timeline: lila.hub.actors.Timeline,
-    shutup: lila.hub.actors.Shutup,
+    shutupApi: lila.core.shutup.ShutupApi,
     detectLanguage: DetectLanguage,
     cacheApi: CacheApi,
-    relationApi: lila.relation.RelationApi,
+    relationApi: lila.core.relation.RelationApi,
     askEmbed: lila.ask.AskEmbed
 )(using Executor):
 
@@ -88,54 +87,50 @@ final private class ForumTopicApi(
       categ: ForumCateg,
       data: ForumForm.TopicData
   )(using me: Me): Fu[ForumTopic] =
-    topicRepo
-      .nextSlug(categ, data.name)
-      .zip(detectLanguage(data.post.text))
-      .flatMap { case (slug, lang) =>
-        val frozen = askEmbed.freeze(spam.replace(data.post.text), me)
-        val topic = ForumTopic.make(
-          categId = categ.slug,
-          slug = slug,
-          name = noShouting(data.name),
-          userId = me,
-          troll = me.marks.troll
-        )
-        val post = ForumPost.make(
-          topicId = topic.id,
-          userId = me.some,
-          troll = me.marks.troll,
-          text = frozen.text,
-          lang = lang.map(_.language),
-          number = 1,
-          categId = categ.id,
-          modIcon = (~data.post.modIcon && MasterGranter(_.PublicMod)).option(true)
-        )
-        findDuplicate(topic).flatMap {
-          case Some(dup) => fuccess(dup)
-          case None =>
-            for
-              _ <- postRepo.coll.insert.one(post)
-              _ <- topicRepo.coll.insert.one(topic.withPost(post))
-              _ <- categRepo.coll.update.one($id(categ.id), categ.withPost(topic, post))
-              _ <- askEmbed.commit(frozen, s"/forum/redirect/post/${post._id}".some)
-            yield
-              (!categ.quiet).so(indexer ! InsertPost(post))
-              promotion.save(post.text)
-              shutup ! {
-                val text = s"${topic.name} ${post.text}"
-                if post.isTeam then RecordTeamForumMessage(me, text)
-                else RecordPublicText(me, text, PublicSource.Forum(post.id))
-              }
-              if !post.troll && !categ.quiet then
-                timeline ! Propagate(TimelinePost(me, topic.id, topic.name, post.id))
+    topicRepo.nextSlug(categ, data.name).zip(detectLanguage(data.post.text)).flatMap { (slug, lang) =>
+      val frozen = askEmbed.freeze(spam.replace(data.post.text), me)
+      val topic = ForumTopic.make(
+        categId = categ.slug,
+        slug = slug,
+        name = noShouting(data.name),
+        userId = me,
+        troll = me.marks.troll
+      )
+      val post = ForumPost.make(
+        topicId = topic.id,
+        userId = me.some,
+        troll = me.marks.troll,
+        text = spam.replace(data.post.text),
+        lang = lang.map(_.language),
+        number = 1,
+        categId = categ.id,
+        modIcon = (~data.post.modIcon && MasterGranter(_.PublicMod)).option(true)
+      )
+      findDuplicate(topic).flatMap {
+        case Some(dup) => fuccess(dup)
+        case None =>
+          for
+            _ <- postRepo.coll.insert.one(post)
+            _ <- topicRepo.coll.insert.one(topic.withPost(post))
+            _ <- categRepo.coll.update.one($id(categ.id), categ.withPost(topic, post))
+            _ <- askEmbed.commit(frozen, s"/forum/redirect/post/${post.id}".some)
+          yield
+            promotion.save(post.text)
+            val text = s"${topic.name} ${post.text}"
+            if post.isTeam then shutupApi.teamForumMessage(me, text)
+            else shutupApi.publicText(me, text, PublicSource.Forum(post.id))
+            if !post.troll && !categ.quiet then
+              lila.common.Bus.named.timeline(
+                Propagate(TimelinePost(me, topic.id, topic.name, post.id))
                   .toFollowersOf(me)
                   .withTeam(categ.team)
-              lila.mon.forum.post.create.increment()
-              mentionNotifier.notifyMentionedUsers(post, topic)
-              Bus.publish(CreatePost(post), "forumPost")
-              topic
-        }
+              )
+            lila.mon.forum.post.create.increment()
+            mentionNotifier.notifyMentionedUsers(post, topic)
+            Bus.publish(CreatePost(post.mini), "forumPost")
+            topic
       }
+    }
 
   def makeUblogDiscuss(
       slug: String,
@@ -168,9 +163,7 @@ final private class ForumTopicApi(
     _ <- postRepo.coll.insert.one(post)
     _ <- topicRepo.coll.insert.one(topic.withPost(post))
     _ <- categRepo.coll.update.one($id(categ.id), categ.withPost(topic, post))
-  yield
-    indexer ! InsertPost(post)
-    Bus.publish(CreatePost(post), "forumPost")
+  yield Bus.publish(CreatePost(post.mini), "forumPost")
 
   def getSticky(categ: ForumCateg, forUser: Option[User]): Fu[List[TopicView]] =
     topicRepo.stickyByCateg(categ).flatMap { topics =>

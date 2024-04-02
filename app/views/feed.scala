@@ -6,7 +6,7 @@ import play.api.i18n.Lang
 
 import lila.app.templating.Environment.{ *, given }
 import lila.app.ui.ScalatagsTemplate.{ *, given }
-import lila.common.paginator.Paginator
+import scalalib.paginator.Paginator
 import lila.feed.Feed.Update
 
 object feed:
@@ -158,7 +158,7 @@ object feed:
       cls := customClass.getOrElse(s"daily-feed__update__marker ${flair.nonEmpty.so(" nobg")}")
     )
 
-  def atom(ups: List[Update])(using Lang) =
+  def atom(ups: List[Update])(using Translate) =
     import views.html.base.atom.atomDate
     views.html.base.atom(
       elems = ups,

@@ -64,7 +64,7 @@ export interface LobbyOpts {
   pools: Pool[];
   hasUnreadLichessMessage: boolean;
   playban: boolean;
-  hideRatings: boolean;
+  showRatings: boolean;
   data: LobbyData;
   i18n: I18nDict;
   trans: Trans;

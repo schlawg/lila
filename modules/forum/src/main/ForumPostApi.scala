@@ -5,26 +5,26 @@ import scala.util.chaining.*
 import lila.ask.AskEmbed
 import lila.common.Bus
 import lila.db.dsl.{ *, given }
-import lila.hub.actorApi.shutup.{ PublicSource, RecordPublicText, RecordTeamForumMessage }
-import lila.hub.actorApi.timeline.{ ForumPost as TimelinePost, Propagate }
+import lila.core.shutup.{ ShutupApi, PublicSource }
+import lila.core.timeline.{ ForumPost as TimelinePost, Propagate }
 import lila.security.Granter as MasterGranter
-import lila.user.{ Me, User }
+import lila.user.{ Me, User, given }
+import lila.core.forum.{ ForumPost as _, ForumCateg as _, * }
 
 final class ForumPostApi(
     postRepo: ForumPostRepo,
     topicRepo: ForumTopicRepo,
     categRepo: ForumCategRepo,
     mentionNotifier: MentionNotifier,
-    indexer: lila.hub.actors.ForumSearch,
+    modLog: lila.core.mod.LogApi,
     config: ForumConfig,
-    modLog: lila.mod.ModlogApi,
     spam: lila.security.Spam,
     promotion: lila.security.PromotionApi,
-    timeline: lila.hub.actors.Timeline,
-    shutup: lila.hub.actors.Shutup,
+    shutupApi: lila.core.shutup.ShutupApi,
     detectLanguage: DetectLanguage,
     askEmbed: AskEmbed
-)(using Executor)(using scheduler: Scheduler):
+)(using Executor)(using scheduler: Scheduler)
+    extends lila.core.forum.ForumPostApi:
 
   import BSONHandlers.given
 
@@ -55,26 +55,24 @@ final class ForumPostApi(
             _ <- postRepo.coll.insert.one(post)
             _ <- topicRepo.coll.update.one($id(topic.id), topic.withPost(post))
             _ <- categRepo.coll.update.one($id(categ.id), categ.withPost(topic, post))
-            _ <- askEmbed.commit(frozen, s"/forum/redirect/post/${post._id}".some)
+            _ <- askEmbed.commit(frozen, s"/forum/redirect/post/${post.id}".some)
           yield
-            (!categ.quiet).so(indexer ! InsertPost(post))
             promotion.save(post.text)
-            shutup ! {
-              if post.isTeam
-              then RecordTeamForumMessage(me, post.text)
-              else RecordPublicText(me, post.text, PublicSource.Forum(post.id))
-            }
+            if post.isTeam
+            then shutupApi.teamForumMessage(me, post.text)
+            else shutupApi.publicText(me, post.text, PublicSource.Forum(post.id))
             if anonMod
             then logAnonPost(post, edit = false)
             else if !post.troll && !categ.quiet then
-              timeline ! Propagate(TimelinePost(me, topic.id, topic.name, post.id)).pipe {
+              lila.common.Bus.named.timeline(Propagate(TimelinePost(me, topic.id, topic.name, post.id)).pipe {
                 _.toFollowersOf(me).toUsers(topicUserIds).exceptUser(me).withTeam(categ.team)
-              }
+              })
             else if categ.id == ForumCateg.diagnosticId then
-              timeline ! Propagate(TimelinePost(me, topic.id, topic.name, post.id)).toUsers(topicUserIds)
+              lila.common.Bus.named
+                .timeline(Propagate(TimelinePost(me, topic.id, topic.name, post.id)).toUsers(topicUserIds))
             lila.mon.forum.post.create.increment()
             mentionNotifier.notifyMentionedUsers(post, topic)
-            Bus.publish(CreatePost(post), "forumPost")
+            Bus.publish(CreatePost(post.mini), "forumPost")
             post
       }
     }
@@ -91,15 +89,13 @@ final class ForumPostApi(
             .freezeAndCommit(spam.replace(newText), me, s"/forum/redirect/post/${postId}".some)
             .flatMap: frozen =>
               val newPost = post.editPost(nowInstant, frozen)
-              (newPost.text != post.text)
-                .so {
-                  postRepo.coll.update.one($id(post.id), newPost) >> newPost.isAnonModPost
-                    .so {
-                      logAnonPost(newPost, edit = true)
-                    }
-                    .andDo(promotion.save(newPost.text))
-                }
-                .inject(newPost)
+              val save = (newPost.text != post.text)
+                .so:
+                  for
+                    _ <- postRepo.coll.update.one($id(post.id), newPost)
+                    _ <- newPost.isAnonModPost.so(logAnonPost(newPost, edit = true))
+                  yield promotion.save(newPost.text)
+              save.inject(newPost)
       }
 
   def urlData(postId: ForumPostId, forUser: Option[User]): Fu[Option[PostUrlData]] =
@@ -157,31 +153,35 @@ final class ForumPostApi(
   def viewOf(post: ForumPost): Fu[Option[PostView]] =
     views(List(post)).dmap(_.headOption)
 
-  def liteViews(posts: Seq[ForumPost]): Fu[Seq[PostLiteView]] =
-    topicRepo.coll.byStringIds[ForumTopic](posts.map(_.topicId.value).distinct).map { topics =>
-      posts.flatMap: post =>
-        topics.find(_.id == post.topicId).map { PostLiteView(post, _) }
-    }
-  def liteViewsByIds(postIds: Seq[ForumPostId]): Fu[Seq[PostLiteView]] =
-    postRepo.byIds(postIds).flatMap(liteViews)
+  def miniViews(postIds: List[ForumPostId]): Fu[List[ForumPostMiniView]] = postIds.nonEmpty.so:
+    for
+      posts  <- postRepo.miniByIds(postIds)
+      topics <- topicRepo.coll.byStringIds[ForumTopicMini](posts.map(_.topicId.value).distinct)
+    yield posts.flatMap: post =>
+      topics.find(_.id == post.topicId).map { ForumPostMiniView(post, _) }
 
-  def liteView(post: ForumPost): Fu[Option[PostLiteView]] =
-    liteViews(List(post)).dmap(_.headOption)
+  def toMiniViews(posts: List[ForumPostMini]): Fu[List[ForumPostMiniView]] = posts.nonEmpty.so:
+    topicRepo
+      .byIds(posts.map(_.topicId))
+      .map: topics =>
+        posts.flatMap: post =>
+          topics.find(_.id == post.topicId).map { ForumPostMiniView(post, _) }
 
-  def miniPosts(posts: List[ForumPost]): Fu[List[MiniForumPost]] =
-    topicRepo.coll.byStringIds[ForumTopic](posts.map(_.topicId.value).distinct).map { topics =>
-      posts.flatMap: post =>
-        topics.find(_.id == post.topicId).map { topic =>
-          MiniForumPost(
-            isTeam = post.isTeam,
-            postId = post.id,
-            topicName = topic.name,
-            userId = post.userId,
-            text = post.cleanTake(200),
-            createdAt = post.createdAt
-          )
-        }
-    }
+  def toMiniView(post: ForumPost): Fu[Option[ForumPostMiniView]] =
+    toMiniViews(List(post.mini)).dmap(_.headOption)
+
+  def toMiniView(post: ForumPostMini): Fu[Option[ForumPostMiniView]] =
+    miniViews(List(post.id)).dmap(_.headOption)
+
+  def miniPosts(posts: List[ForumPost]): Fu[List[ForumPostMiniView]] =
+    topicRepo
+      .byIds(posts.map(_.topicId))
+      .map: topics =>
+        posts.flatMap: post =>
+          topics
+            .find(_.id == post.topicId)
+            .map: topic =>
+              ForumPostMiniView(post = post.mini, topic = topic)
 
   def allUserIds(topicId: ForumTopicId) = postRepo.allUserIdsByTopicId(topicId)
 
@@ -226,13 +226,17 @@ final class ForumPostApi(
       )
 
   def erasePost(post: ForumPost) =
-    postRepo.coll.update.one($id(post.id), post.erase).void.andDo(indexer ! RemovePost(post.id))
+    postRepo.coll.update
+      .one($id(post.id), post.erase)
+      .void
+      .andDo:
+        Bus.publish(ErasePost(post.id), "forumPost")
 
   def eraseFromSearchIndex(user: User): Funit =
     postRepo.coll
       .distinctEasy[ForumPostId, List]("_id", $doc("userId" -> user.id), _.sec)
       .map: ids =>
-        indexer ! RemovePosts(ids)
+        Bus.publish(ErasePosts(ids), "forumPost")
 
   def teamIdOfPostId(postId: ForumPostId): Fu[Option[TeamId]] =
     postRepo.coll.byId[ForumPost](postId).flatMapz { post =>
@@ -249,3 +253,5 @@ final class ForumPostApi(
         edit
       )
     }
+
+  export postRepo.nonGhostCursor

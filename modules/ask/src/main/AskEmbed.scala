@@ -1,12 +1,14 @@
 package lila.ask
 
+import lila.db.dsl.{ *, given }
+
 /* the freeze process transforms form text prior to database storage and creates/updates collection
  * objects with data from ask markup. freeze methods return replacement text with magic id tags in place
  * of any Ask markup found. unfreeze methods allow editing by doing the inverse, replacing magic
  * tags in a previously frozen text with their markup. ids in magic tags correspond to db.ask._id
  */
 
-final class AskEmbed(val repo: lila.ask.AskRepo)(using scala.concurrent.ExecutionContext):
+final class AskEmbed(val repo: lila.ask.AskRepo)(using Executor):
 
   import AskEmbed.*
   import Ask.*
@@ -26,7 +28,7 @@ final class AskEmbed(val repo: lila.ask.AskRepo)(using scala.concurrent.Executio
 
   // commit flushes the asks to repo and optionally sets the timeline entry link (for poll conclusion)
   def commit(frozen: Frozen, url: Option[String] = none[String]): Fu[Iterable[Ask]] =
-    frozen.asks.map { ask => repo.upsert(ask.copy(url = url)) } parallel
+    frozen.asks.map(ask => repo.upsert(ask.copy(url = url))).parallel
 
   def freezeAndCommit(text: String, creator: UserId, url: Option[String] = none[String]): Fu[String] =
     val askIntervals = getMarkupIntervals(text)

@@ -5,7 +5,7 @@ import scala.collection.concurrent.TrieMap
 import reactivemongo.api.bson.*
 
 import lila.db.dsl.{ *, given }
-import lila.hub.actorApi.timeline.{ AskConcluded, Propagate }
+import lila.core.timeline.{ AskConcluded, Propagate }
 
 /*
  * who really cares if big polls drift a bit over time? i say make shitty cache coherence a goal!
@@ -15,10 +15,10 @@ import lila.hub.actorApi.timeline.{ AskConcluded, Propagate }
 
 final class AskRepo(
     askDb: lila.db.AsyncColl,
-    timeline: lila.hub.actors.Timeline,
+    //timeline: lila.timeline.Timeline,
     cacheApi: lila.memo.CacheApi
 )(using
-    scala.concurrent.ExecutionContext
+    Executor
 ):
   import Ask.*
   import AskEmbed.*
@@ -61,11 +61,11 @@ final class AskRepo(
       .findAndUpdateSimplified[Ask]($id(aid), $addToSet("tags" -> "concluded"), fetchNewObject = true)
       .collect:
         case Some(ask) =>
-          cache.set(aid, ask.some)
-          if ask.url.nonEmpty && !ask.isAnon then
+          cache.set(aid, ask.some) // TODO fix timeline
+          /*if ask.url.nonEmpty && !ask.isAnon then
             timeline ! Propagate(AskConcluded(ask.creator, ask.question, ~ask.url))
               .toUsers(ask.participants.map(UserId(_)).toList)
-              .exceptUser(ask.creator)
+              .exceptUser(ask.creator)*/
           ask.some
 
   def reset(aid: Ask.ID): Fu[Option[Ask]] = askDb: coll =>
