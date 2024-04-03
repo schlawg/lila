@@ -157,7 +157,7 @@ lazy val feed = module("feed",
 )
 
 lazy val ublog = module("ublog",
-  Seq(irc, security, ask),
+  Seq(security),
   Seq(bloomFilter) ++ reactivemongo.bundle
 )
 
@@ -232,7 +232,7 @@ lazy val tv = module("tv",
 )
 
 lazy val bot = module("bot",
-  Seq(lobby),
+  Seq(chat, game),
   reactivemongo.bundle
 )
 
@@ -247,7 +247,7 @@ lazy val round = module("round",
 )
 
 lazy val pool = module("pool",
-  Seq(playban),
+  Seq(game, user),
   reactivemongo.bundle
 )
 
@@ -257,7 +257,7 @@ lazy val activity = module("activity",
 )
 
 lazy val lobby = module("lobby",
-  Seq(game, relation, playban),
+  Seq(game, relation),
   Seq(lettuce) ++ reactivemongo.bundle
 )
 
@@ -322,7 +322,7 @@ lazy val oauth = module("oauth",
 )
 
 lazy val security = module("security",
-  Seq(irc, oauth, mailer),
+  Seq(oauth, mailer),
   Seq(maxmind, hasher, uaparser) ++ tests.bundle ++ reactivemongo.bundle
 )
 
@@ -397,7 +397,7 @@ lazy val plan = module("plan",
 )
 
 lazy val relation = module("relation",
-  Seq(game, pref),
+  Seq(user, pref),
   reactivemongo.bundle
 )
 
