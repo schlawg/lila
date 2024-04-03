@@ -1,38 +1,40 @@
-import { h } from 'snabbdom';
-import { bind, MaybeVNodes } from 'common/snabbdom';
+import { looseH as h, bind } from 'common/snabbdom';
 import LobbyController from '../ctrl';
 import { Tab } from '../interfaces';
 
-function tab(ctrl: LobbyController, key: Tab, active: Tab, content: MaybeVNodes) {
+function tab(ctrl: LobbyController, key: Tab, v: { name?: string }) {
+  const myTurnPovsNb = ctrl.data.nowPlaying.filter(p => p.isMyTurn).length;
   return h(
     'span',
     {
       attrs: { role: 'tab' },
-      class: { active: key === active, glowing: key !== active && key === 'pools' && !!ctrl.poolMember },
+      class: {
+        active: ctrl.tab.isShowing(key),
+        glowing: ctrl.tab.active !== 'pools' && key === 'pools' && !!ctrl.poolMember,
+      },
       hook: bind('mousedown', _ => ctrl.setTab(key), ctrl.redraw),
     },
-    content,
+    [
+      v.name,
+      key === 'games' && myTurnPovsNb > 0 && h('i.unread', myTurnPovsNb >= 99 ? '99+' : String(myTurnPovsNb)),
+    ],
   );
 }
 
 export default function (ctrl: LobbyController) {
-  const nbPlaying = ctrl.data.nbNowPlaying,
-    myTurnPovsNb = ctrl.data.nowPlaying.filter(p => p.isMyTurn).length,
-    active = ctrl.tab,
-    isBot = ctrl.me?.isBot;
+  console.log(ctrl.tab.active);
   return [
-    isBot ? undefined : tab(ctrl, 'pools', active, [ctrl.trans.noarg('quickPairing')]),
-    isBot ? undefined : tab(ctrl, 'real_time', active, [ctrl.trans.noarg('lobby')]),
-    isBot ? undefined : tab(ctrl, 'seeks', active, [ctrl.trans.noarg('correspondence')]),
-    active === 'now_playing' || nbPlaying || isBot
-      ? tab(ctrl, 'now_playing', active, [
-          ...ctrl.trans.vdomPlural(
-            'nbGamesInPlay',
-            nbPlaying,
-            nbPlaying >= 100 ? '100+' : nbPlaying.toString(),
-          ),
-          myTurnPovsNb > 0 ? h('i.unread', myTurnPovsNb >= 9 ? '9+' : myTurnPovsNb) : null,
-        ])
-      : null,
+    h(
+      'div.tabs-horiz',
+      { attrs: { role: 'tablist' } },
+      ctrl.tab.primaries.map(([k, v]) => tab(ctrl, k, v)),
+    ),
+    ctrl.tab.active === 'pools' || (ctrl.tab.primary === 'games' && ctrl.data.nbNowPlaying === 0)
+      ? null
+      : h(
+          'div.tabs-horiz.secondary-tabs',
+          { attrs: { role: 'tablist' } },
+          ctrl.tab.secondaries.map(([k, v]) => tab(ctrl, k, v)),
+        ),
   ];
 }

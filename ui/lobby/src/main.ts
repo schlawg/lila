@@ -45,11 +45,15 @@ const layoutHacks = () => {
   cancelAnimationFrame(animationFrameId); // avoid more than one call per frame
   animationFrameId = requestAnimationFrame(() => {
     $('main.lobby').each(function (this: HTMLElement) {
+      //$('.lobby__tournaments-simuls').detach();
       const newCols = Number(window.getComputedStyle(this).getPropertyValue('--cols'));
       if (newCols != cols) {
         cols = newCols;
-        if (cols > 2) $('.lobby .lobby__timeline').appendTo('.lobby__side');
-        else $('.lobby__side .lobby__timeline').appendTo('.lobby');
+        if (cols === 3) {
+          $('.lobby .lobby__timeline').appendTo('.lobby__side');
+        } else $('.lobby__side .lobby__timeline').appendTo('.lobby');
+        if (cols === 4) $('.lobby .lobby__feed').appendTo('.lobby__side');
+        else $('.lobby__side .lobby__feed').appendTo('.lobby');
       }
     });
     $('.lobby__blog').each((_, el: HTMLElement) => {
@@ -57,19 +61,29 @@ const layoutHacks = () => {
       const gridGap = parseFloat(style.columnGap);
       const kids = el.children as HTMLCollectionOf<HTMLElement>;
       const visible = Math.floor((el.clientWidth + gridGap) / (180 + gridGap));
-      // 180 from .lobby__blog grid/min in file://./../css/_lobby.scss
-      let iter = 0;
+      const colW = (el.clientWidth - gridGap * (visible - 1)) / visible;
+      el.style.gridTemplateColumns = `repeat(7, ${colW}px)`;
       const blogRotate = () => {
         for (let i = 0; i < kids.length; i++) {
-          const kid = kids[(iter * visible + i) % kids.length];
-          kid.style.display = i < visible ? 'block' : 'none';
-          kid.style.order = String(i);
+          kids[i].style.transition = 'transform 0.3s ease';
+          kids[i].style.transform = `translateX(-${Math.floor(colW + gridGap)}px)`;
         }
-        iter++;
+        setTimeout(() => {
+          el.append(el.firstChild!);
+          fix();
+        }, 500);
       };
-      blogRotate();
+
+      const fix = () => {
+        for (let i = 0; i < kids.length; i++) {
+          const kid = kids[i % kids.length];
+          kid.style.transition = '';
+          kid.style.transform = 'translateX(0)';
+        }
+      };
+      fix();
       clearInterval(blogRotateTimer);
-      blogRotateTimer = setInterval(blogRotate, 15000);
+      blogRotateTimer = setInterval(blogRotate, 10000);
     });
   });
 };

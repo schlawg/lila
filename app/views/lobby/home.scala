@@ -58,21 +58,9 @@ object home:
             button(cls := "button button-metal", tpe := "button", trans.site.playWithAFriend()),
             button(cls := "button button-metal", tpe := "button", trans.site.playWithTheMachine())
           ),
-          div(cls := "lobby__support")(
-            a(href := routes.Plan.index)(
-              iconTag(patronIconChar),
-              span(cls := "lobby__support__text")(
-                strong(trans.patron.donate()),
-                span(trans.patron.lichessPatron())
-              )
-            ),
-            a(href := "https://shop.spreadshirt.com/lichess-org")(
-              iconTag(licon.Tshirt),
-              span(cls := "lobby__support__text")(
-                strong("Store"),
-                span(trans.site.playChessInStyle())
-              )
-            )
+          a(cls := "lobby__support", href := routes.Plan.index)(
+            iconTag(patronIconChar),
+            div(strong(trans.patron.donate()), span(trans.patron.lichessPatron()))
           )
         ),
         currentGame
@@ -86,17 +74,6 @@ object home:
         ,
         div(cls := "lobby__side")(
           ctx.blind.option(h2("Highlights")),
-          ctx.kid.no.option(
-            st.section(cls := "lobby__streams")(
-              views.html.streamer.bits.liveStreams(streams),
-              streams.live.streams.nonEmpty.option(
-                a(href := routes.Streamer.index(), cls := "more")(
-                  trans.site.streamersMenu(),
-                  " »"
-                )
-              )
-            )
-          ),
           div(cls := "lobby__spotlights")(
             events.map(bits.spotlight),
             views.html.relay.bits.spotlight(relays),
@@ -113,6 +90,15 @@ object home:
                 simulBBB.map(views.html.simul.bits.homepageSpotlight)
               )
             }
+          ),
+          (ctx.kid.no && streams.live.streams.nonEmpty).option(
+            st.section(cls := "lobby__streams")(
+              views.html.streamer.bits.liveStreams(streams),
+              a(href := routes.Streamer.index(), cls := "more")(
+                trans.streamersMenu(),
+                " »"
+              )
+            )
           ),
           if ctx.isAuth then
             div(cls := "lobby__timeline")(
@@ -145,11 +131,12 @@ object home:
         div(cls := "lobby__blog ublog-post-cards"):
           ublogPosts
             .filter(_.isLichess || ctx.kid.no)
-            .take(7)
+            .take(9)
             .map:
               views.html.ublog.post
                 .card(_, showAuthor = views.html.ublog.post.ShowAt.bottom, showIntro = false)
         ,
+        // bits.lastPosts(lastPost, ublogPosts),
         ctx.noBot.option(bits.underboards(tours, simuls, leaderboard, tournamentWinners)),
         div(cls := "lobby__feed"):
           views.html.feed.lobbyUpdates(lastUpdates)

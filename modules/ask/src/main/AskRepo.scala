@@ -158,8 +158,10 @@ final class AskRepo(
     updateAsk(aid, $unset(s"picks.$vid", s"form.$vid"), fetchNew)
 
   private def updateAsk(aid: Ask.ID, update: BSONDocument, fetchNew: Boolean) = askDb: coll =>
-    coll.update.one($and($id(aid), $doc("tags" -> $ne("concluded"))), update) flatMap:
-      case _ => if fetchNew then getAsync(aid) else fuccess(none[Ask])
+    coll.update
+      .one($and($id(aid), $doc("tags" -> $ne("concluded"))), update)
+      .flatMap:
+        case _ => if fetchNew then getAsync(aid) else fuccess(none[Ask])
 
   // only preserve votes if important fields haven't been altered
   private[ask] def upsert(ask: Ask): Fu[Ask] = askDb: coll =>

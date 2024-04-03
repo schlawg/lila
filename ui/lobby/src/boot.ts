@@ -60,7 +60,7 @@ export function initModule(opts: LobbyOpts) {
         method: 'post',
       },
     );
-    lobbyCtrl.setTab('real_time');
+    lobbyCtrl.setTab('lobby');
     lobbyCtrl.redraw();
     history.replaceState(null, '', '/');
   });

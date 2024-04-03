@@ -154,7 +154,7 @@ object AskEmbed:
   // assemble a list of magic ids within a frozen text that look like: ﷖﷔﷒﷐{8 char id}
   // this is called quite often so it's optimized and ugly
   private def frozenOffsets(t: String): Intervals =
-    var i = t.`indexOf`(frozenIdMagic)
+    var i = t.indexOf(frozenIdMagic)
     if i == -1 then List.empty
     else
       val ids = scala.collection.mutable.ListBuffer[Interval]()

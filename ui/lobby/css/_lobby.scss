@@ -5,7 +5,6 @@
 @import 'spotlight';
 @import 'timeline';
 @import 'box';
-@import 'support';
 @import 'about';
 @import 'feed';
 @import 'table';
@@ -96,19 +95,11 @@ body {
   }
 }
 
-.lobby__tournaments,
-.lobby__simuls,
-.ublog-post-card,
-.lobby__feed,
-.lobby__app__content {
-  border: 1px solid c-dimmer($c-brag, 80%);
-}
-
 .lobby__blog {
   column-gap: $block-gap;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); // 180px in sync with file://./../src/main.ts
-
   row-gap: 0;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); // 180px in sync with file://./../src/main.ts
+  overflow: hidden;
   grid-template-rows: auto;
   grid-auto-rows: 0;
   font-size: 0.9em;
@@ -116,8 +107,10 @@ body {
     @extend %page-text-shadow !optional;
     font-size: 1.2em;
   }
-  .ublog-post-card:hover {
-    box-shadow: none;
+  .ublog-post-card {
+    &:hover {
+      box-shadow: none;
+    }
   }
 }
 

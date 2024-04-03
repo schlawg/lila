@@ -100,7 +100,7 @@ final private class ForumTopicApi(
         topicId = topic.id,
         userId = me.some,
         troll = me.marks.troll,
-        text = spam.replace(data.post.text),
+        text = frozen.text,
         lang = lang.map(_.language),
         number = 1,
         categId = categ.id,

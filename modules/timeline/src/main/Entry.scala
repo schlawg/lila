@@ -113,6 +113,7 @@ object Entry:
       case d: TeamJoin      => teamJoinWrite.writes(d)
       case d: TeamCreate    => teamCreateWrite.writes(d)
       case d: ForumPost     => forumPostWrite.writes(d)
+      case d: AskConcluded  => askConcludedWrite.writes(d)
       case d: UblogPost     => ublogPostWrite.writes(d)
       case d: AskConcluded  => askConcludedWrite.writes(d)
       case d: TourJoin      => tourJoinWrite.writes(d)

@@ -19,6 +19,48 @@
   }
 }
 
+.lobby__support {
+  @extend %box-neat, %metal;
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  font-size: 1.3em;
+  padding: 0.5em;
+
+  &:hover {
+    @extend %metal-hover;
+
+    *:not(span) {
+      color: $c-font-clear;
+    }
+  }
+
+  > i {
+    margin: 0 0.3em;
+
+    &::before {
+      color: $c-font;
+      font-size: 2.2em;
+    }
+  }
+
+  > div {
+    @extend %flex-column;
+    align-items: center;
+    justify-content: center;
+    color: $c-font;
+
+    > strong {
+      font-weight: normal;
+      text-transform: uppercase;
+    }
+
+    > span {
+      color: $c-font-dim;
+      font-size: 0.8em;
+    }
+  }
+}
+
 .lobby__counters {
   display: none;
   margin-top: 3em;

@@ -2,7 +2,11 @@ import { FEN } from 'chessground/types';
 
 export type Sort = 'rating' | 'time';
 export type Mode = 'list' | 'chart';
-export type Tab = 'pools' | 'real_time' | 'seeks' | 'now_playing';
+export type AppTab = 'pools' | 'lobby' | 'events' | 'games';
+export type LobbyTab = 'real_time' | 'variant' | 'correspondence';
+export type GamesTab = 'playing' | 'recent';
+export type EventsTab = 'simuls' | 'tournaments';
+export type Tab = AppTab | LobbyTab | GamesTab | EventsTab;
 export type GameType = 'hook' | 'friend' | 'ai';
 export type TimeMode = 'realTime' | 'correspondence' | 'unlimited';
 export type GameMode = 'casual' | 'rated';

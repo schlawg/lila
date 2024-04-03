@@ -3,11 +3,10 @@ $c-contours: mix($c-brag, $c-shade, 80%);
 .lobby__feed {
   @extend %box-neat;
   @include hoverflow;
-  background: $c-bg-box;
   overflow-y: auto;
-  min-height: 14em;
-  border: 1px solid c-dimmer($c-brag, 60%);
+  min-height: 17em;
 }
+
 .daily-feed {
   &__updates {
     margin-inline-start: 24px;

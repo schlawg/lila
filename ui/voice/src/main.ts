@@ -8,7 +8,7 @@ export * from './move/interfaces';
 export { makeVoiceMove } from './move/moveCtrl';
 export { renderVoiceBar } from './view';
 
-export const VOSK_TS_VERSION = '_____1'; // this versions the wasm asset (see vosk.ts)
+export const VOSK_TS_VERSION = '_____2'; // this versions the wasm asset (see vosk.ts)
 export const supportedLangs = [
   ['en', 'English'],
   ['fr', 'Français'],

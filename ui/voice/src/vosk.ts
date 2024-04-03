@@ -9,7 +9,7 @@ import { RecognizerOpts, VoskModule } from './interfaces';
 const LOG_LEVEL = -1; // -1 errors only. 0 includes warnings, 3 is just insane
 
 export function initModule(): VoskModule {
-  const recs = new Selector<KaldiRec>();
+  const recs = new Selector<string, KaldiRec>();
   let voiceModel: Model;
   let lang: string;
 
@@ -17,19 +17,19 @@ export function initModule(): VoskModule {
     initModel,
     initRecognizer,
     isLoaded,
-    select,
+    set,
   };
 
   async function initModel(url: string, language: string): Promise<void> {
     voiceModel?.terminate();
-    recs.delete();
+    recs.remove();
     voiceModel = await createModel(url, LOG_LEVEL);
     lang = language;
   }
 
   function initRecognizer(opts: RecognizerOpts): AudioNode | undefined {
     if (!opts.words?.length || !voiceModel) {
-      recs.delete(opts.recId);
+      recs.remove(opts.recId);
       return;
     }
     const kaldi = new voiceModel.KaldiRecognizer(opts.audioCtx.sampleRate, JSON.stringify(opts.words));
@@ -56,7 +56,7 @@ export function initModule(): VoskModule {
         opts.words,
       );
 
-    recs.set(opts.recId, new KaldiRec(kaldi, node, opts.partial));
+    recs.add(opts.recId, new KaldiRec(kaldi, node, opts.partial));
     return node;
   }
 
@@ -64,8 +64,8 @@ export function initModule(): VoskModule {
     return voiceModel !== undefined && (!language || language === lang);
   }
 
-  function select(recId: string | false): void {
-    recs.select(recId);
+  function set(recId: string | false): void {
+    recs.set(recId);
   }
 }
 

@@ -109,7 +109,7 @@ object post:
         (!post.erased).option(reactions(post, canReact)),
         ctx.me
           .soUse(post.shouldShowEditForm)
-          .option(
+          .option:
             postForm(cls := "edit-post-form", action := routes.ForumPost.edit(post.id))(
               textarea(
                 bits.dataTopic := topic.id,
@@ -123,13 +123,10 @@ object post:
                   cls   := "edit-post-cancel",
                   href  := routes.ForumPost.redirect(post.id),
                   style := "margin-left:20px"
-                ):
-                  trans.site.cancel()
-                ,
+                )(trans.cancel()),
                 submitButton(cls := "button")(trans.site.apply())
               )
             )
-          )
       )
 
   def reactions(post: ForumPost, canReact: Boolean)(using ctx: PageContext) =

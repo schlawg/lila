@@ -59,7 +59,7 @@ object askAdmin:
           frag(
             property("form respondents:", fbmap.size.toString),
             div(cls := "inset-box")(
-              fbmap.toSeq map:
+              fbmap.toSeq.map:
                 case (uid, fb) if uid.startsWith("anon-") => p(s"anon: $fb")
                 case (uid, fb)                            => p(s"$uid: $fb")
             )

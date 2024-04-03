@@ -27,7 +27,7 @@
     }
 
     &__content {
-      background: $c-bg-box;
+      //background: $c-bg-box;
       overflow-x: hidden;
       overflow-y: auto;
     }
@@ -67,9 +67,9 @@
       }
     }
 
-    tr:nth-child(even) {
-      background: $c-bg-zebra;
-    }
+    //tr:nth-child(even) {
+    //  background: $c-bg-zebra;
+    //}
   }
 
   &__leaderboard,

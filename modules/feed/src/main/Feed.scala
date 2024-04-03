@@ -74,22 +74,26 @@ final class FeedApi(coll: Coll, cacheApi: CacheApi, askEmbed: AskEmbed)(using Ex
 
   def recentPublished = cache.store.get({}).map(_.filter(_.published))
 
-  def get(id: ID): Fu[Option[Update]] = coll.byId[Update](id) flatMap:
-    case Some(up) => askEmbed.repo.preload(up.content.value) inject up.some
-    case _        => fuccess(none[Update])
+  def get(id: ID): Fu[Option[Update]] = coll
+    .byId[Update](id)
+    .flatMap:
+      case Some(up) => askEmbed.repo.preload(up.content.value).inject(up.some)
+      case _        => fuccess(none[Update])
 
-  def edit(id: ID): Fu[Option[Update]] = get(id) flatMap:
+  def edit(id: ID): Fu[Option[Update]] = get(id).flatMap:
     case Some(up) =>
-      askEmbed.unfreezeAndLoad(up.content.value).map: text =>
-        up.copy(content = Markdown(text)).some
+      askEmbed
+        .unfreezeAndLoad(up.content.value)
+        .map: text =>
+          up.copy(content = Markdown(text)).some
     case _ => fuccess(none[Update])
 
   def set(update: Update)(using me: Me): Funit =
     askEmbed.freezeAndCommit(update.content.value, me, s"/feed#${update.id}".some).flatMap { text =>
-        coll.update
-          .one($id(update.id), update.copy(content = Markdown(text)), upsert = true)
-          .void
-          .andDo(cache.clear())
+      coll.update
+        .one($id(update.id), update.copy(content = Markdown(text)), upsert = true)
+        .void
+        .andDo(cache.clear())
     }
   def delete(id: ID): Funit =
     coll.delete.one($id(id)).void.andDo(cache.clear())

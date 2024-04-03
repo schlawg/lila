@@ -47,17 +47,20 @@ final class Ask(env: Env) extends LilaController(env):
   def unset(aid: Ask.ID, view: Option[String], anon: Boolean) = Open: _ ?=>
     effectiveId(aid, anon).flatMap:
       case Some(id) =>
-        env.ask.repo.unset(aid, id).map {
-          case Some(ask) => Ok(html.ask.renderOne(ask, intVec(view)))
-          case _         => NotFound(s"Ask $aid not found")
-        }
+        env.ask.repo
+          .unset(aid, id)
+          .map:
+            case Some(ask) => Ok(html.ask.renderOne(ask, intVec(view)))
+            case _         => NotFound(s"Ask $aid not found")
+
       case _ => authenticationFailed
 
   def admin(aid: Ask.ID) = Auth: _ ?=>
-    env.ask.repo.getAsync(aid).map {
-      case Some(ask) => Ok(html.askAdmin.renderOne(ask))
-      case _         => NotFound(s"Ask $aid not found")
-    }
+    env.ask.repo
+      .getAsync(aid)
+      .map:
+        case Some(ask) => Ok(html.askAdmin.renderOne(ask))
+        case _         => NotFound(s"Ask $aid not found")
 
   def byUser(username: UserStr) = Auth: _ ?=>
     me ?=>
@@ -70,23 +73,25 @@ final class Ask(env: Env) extends LilaController(env):
 
   def json(aid: Ask.ID) = Auth: _ ?=>
     me ?=>
-      env.ask.repo.getAsync(aid).map {
-        case Some(ask) =>
-          if (me.is(ask.creator)) || isGranted(_.ModerateForum) then JsonOk(ask.toJson)
-          else JsonBadRequest(jsonError(s"Not authorized to view ask $aid"))
-        case _ => JsonBadRequest(jsonError(s"Ask $aid not found"))
-      }
+      env.ask.repo
+        .getAsync(aid)
+        .map:
+          case Some(ask) =>
+            if (me.is(ask.creator)) || isGranted(_.ModerateForum) then JsonOk(ask.toJson)
+            else JsonBadRequest(jsonError(s"Not authorized to view ask $aid"))
+          case _ => JsonBadRequest(jsonError(s"Ask $aid not found"))
 
   def delete(aid: Ask.ID) = Auth: _ ?=>
     me ?=>
-      env.ask.repo.getAsync(aid).map {
-        case Some(ask) =>
-          if (me.is(ask.creator)) || isGranted(_.ModerateForum) then
-            env.ask.repo.delete(aid)
-            Ok(lila.ask.AskEmbed.askNotFoundFrag)
-          else Unauthorized
-        case _ => NotFound(s"Ask id ${aid} not found")
-      }
+      env.ask.repo
+        .getAsync(aid)
+        .map:
+          case Some(ask) =>
+            if (me.is(ask.creator)) || isGranted(_.ModerateForum) then
+              env.ask.repo.delete(aid)
+              Ok(lila.ask.AskEmbed.askNotFoundFrag)
+            else Unauthorized
+          case _ => NotFound(s"Ask id ${aid} not found")
 
   def conclude(aid: Ask.ID) = authorized(aid, env.ask.repo.conclude)
 
@@ -96,22 +101,24 @@ final class Ask(env: Env) extends LilaController(env):
     ctx.myId match
       case Some(u) => fuccess((if anon then Ask.anonHash(u.toString, aid) else u.toString).some)
       case _ =>
-        env.ask.repo.isOpen(aid).map {
-          case true  => Ask.anonHash(ctx.ip.toString, aid).some
-          case false => none[String]
-        }
+        env.ask.repo
+          .isOpen(aid)
+          .map:
+            case true  => Ask.anonHash(ctx.ip.toString, aid).some
+            case false => none[String]
 
   private def authorized(aid: Ask.ID, action: lila.ask.Ask.ID => Fu[Option[lila.ask.Ask]]) = Auth: _ ?=>
     me ?=>
-      env.ask.repo.getAsync(aid).flatMap {
-        case Some(ask) =>
-          if (me.is(ask.creator)) || isGranted(_.ModerateForum) then
-            action(ask._id).map:
-              case Some(newAsk) => Ok(html.ask.renderOne(newAsk))
-              case _            => NotFound(s"Ask id ${aid} not found")
-          else fuccess(Unauthorized)
-        case _ => fuccess(NotFound(s"Ask id $aid not found"))
-      }
+      env.ask.repo
+        .getAsync(aid)
+        .flatMap:
+          case Some(ask) =>
+            if (me.is(ask.creator)) || isGranted(_.ModerateForum) then
+              action(ask._id).map:
+                case Some(newAsk) => Ok(html.ask.renderOne(newAsk))
+                case _            => NotFound(s"Ask id ${aid} not found")
+            else fuccess(Unauthorized)
+          case _ => fuccess(NotFound(s"Ask id $aid not found"))
 
   private def intVec(param: Option[String]) =
     param.map(_.split('-').filter(_.nonEmpty).map(_.toInt).toVector)

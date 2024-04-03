@@ -27,12 +27,10 @@ final class UblogApi(
   def create(data: UblogForm.UblogPostData, author: User): Fu[UblogPost] =
     val frozen = askEmbed.freeze(data.markdown.value, author.id)
     val post   = data.create(author, Markdown(frozen.text))
-    askEmbed.commit(frozen, s"/ublog/${post.id}/redirect".some) >>
-      colls.post.insert
-        .one(
-          bsonWriteObjTry[UblogPost](post).get ++ $doc("likers" -> List(author.id))
-        )
-        .inject(post)
+    (askEmbed.commit(frozen, s"/ublog/${post.id}/redirect".some) >>
+      colls.post.insert.one(
+        bsonWriteObjTry[UblogPost](post).get ++ $doc("likers" -> List(author.id))
+      )).inject(post)
 
   def getByPrismicId(id: String): Fu[Option[UblogPost]] = colls.post.one[UblogPost]($doc("prismicId" -> id))
 

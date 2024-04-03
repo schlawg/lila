@@ -109,6 +109,8 @@ lazy val i18n = module("i18n",
   }.taskValue
 )
 
+bloopInstall := (bloopInstall dependsOn Compile / managedSources).value
+
 lazy val cms = module("cms",
   Seq(user),
   reactivemongo.bundle

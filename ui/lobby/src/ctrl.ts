@@ -23,6 +23,7 @@ import LobbySocket from './socket';
 import Filter from './filter';
 import SetupController from './setupCtrl';
 import disableDarkBoard from './disableDarkBoard';
+import { TabCtrl } from './tabCtrl';
 
 export default class LobbyController {
   data: LobbyData;
@@ -30,7 +31,7 @@ export default class LobbyController {
   me?: LobbyMe;
   socket: LobbySocket;
   stores: Stores;
-  tab: Tab;
+  tab: TabCtrl;
   mode: Mode;
   sort: Sort;
   stepHooks: Hook[] = [];
@@ -63,10 +64,7 @@ export default class LobbyController {
     this.socket = new LobbySocket(opts.socketSend, this);
 
     this.stores = makeStores(this.me?.username.toLowerCase());
-    if (!this.me?.isBot && this.stores.tab.get() == 'now_playing' && this.data.nbNowPlaying == 0) {
-      this.stores.tab.set('pools');
-    }
-    this.tab = this.me?.isBot ? 'now_playing' : this.stores.tab.get();
+    this.tab = new TabCtrl(this);
     this.mode = this.stores.mode.get();
     this.sort = this.stores.sort.get();
     this.trans = opts.trans;
@@ -78,10 +76,10 @@ export default class LobbyController {
       const friendUser = urlParams.get('user') ?? undefined;
       if (locationHash === 'hook') {
         if (urlParams.get('time') === 'realTime') {
-          this.tab = 'real_time';
+          this.setTab('real_time');
           forceOptions.timeMode = 'realTime';
         } else if (urlParams.get('time') === 'correspondence') {
-          this.tab = 'seeks';
+          this.setTab('correspondence');
           forceOptions.timeMode = 'correspondence';
         }
       } else if (urlParams.get('fen')) {
@@ -112,16 +110,16 @@ export default class LobbyController {
     } else {
       setInterval(() => {
         if (this.poolMember) this.poolIn();
-        else if (this.tab === 'real_time' && !this.data.hooks.length) this.socket.realTimeIn();
+        else if (this.tab.showingHooks && !this.data.hooks.length) this.socket.realTimeIn();
       }, 10 * 1000);
       this.joinPoolFromLocationHash();
     }
 
     site.pubsub.on('socket.open', () => {
-      if (this.tab === 'real_time') {
+      if (this.tab.showingHooks) {
         this.data.hooks = [];
         this.socket.realTimeIn();
-      } else if (this.tab === 'pools' && this.poolMember) this.poolIn();
+      } else if (this.tab.active === 'pools' && this.poolMember) this.poolIn();
       disableDarkBoard();
     });
 
@@ -150,7 +148,7 @@ export default class LobbyController {
 
   private doFlushHooks() {
     this.stepHooks = this.data.hooks.slice(0);
-    if (this.tab === 'real_time') this.redraw();
+    if (this.tab.primary === 'lobby') this.redraw();
   }
 
   flushHooks = (now: boolean) => {
@@ -158,7 +156,7 @@ export default class LobbyController {
     if (now) this.doFlushHooks();
     else {
       this.stepping = true;
-      if (this.tab === 'real_time') this.redraw();
+      if (this.tab.primary === 'lobby') this.redraw();
       setTimeout(() => {
         this.stepping = false;
         this.doFlushHooks();
@@ -170,15 +168,7 @@ export default class LobbyController {
   private flushHooksSchedule = (): number => setTimeout(this.flushHooks, 8000);
 
   setTab = (tab: Tab) => {
-    if (tab !== this.tab) {
-      if (tab === 'seeks') xhr.seeks().then(this.setSeeks);
-      else if (tab === 'real_time') this.socket.realTimeIn();
-      else if (this.tab === 'real_time') {
-        this.socket.realTimeOut();
-        this.data.hooks = [];
-      }
-      this.tab = this.stores.tab.set(tab);
-    }
+    this.tab.set(tab);
     this.filter.open = false;
   };
 
@@ -193,7 +183,7 @@ export default class LobbyController {
 
   onSetFilter = () => {
     this.flushHooks(true);
-    if (this.tab !== 'real_time') this.redraw();
+    this.redraw();
   };
 
   clickHook = (id: string) => {
@@ -272,14 +262,10 @@ export default class LobbyController {
   };
 
   awake = () => {
-    switch (this.tab) {
-      case 'real_time':
-        this.data.hooks = [];
-        this.socket.realTimeIn();
-        break;
-      case 'seeks':
-        xhr.seeks().then(this.setSeeks);
-        break;
+    if (this.tab.active === 'correspondence') xhr.seeks().then(this.setSeeks);
+    else if (this.tab.showingHooks) {
+      this.data.hooks = [];
+      this.socket.realTimeIn();
     }
   };
 
