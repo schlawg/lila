@@ -4,7 +4,7 @@ $c-contours: mix($c-brag, $c-shade, 80%);
   @extend %box-neat;
   @include hoverflow;
   overflow-y: auto;
-  min-height: 17em;
+  min-height: 14em;
 }
 
 .daily-feed {
