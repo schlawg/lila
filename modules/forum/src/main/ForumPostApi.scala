@@ -167,108 +167,91 @@ final class ForumPostApi(
         posts.flatMap: post =>
           topics.find(_.id == post.topicId).map { ForumPostMiniView(post, _) }
 
-<<<<<<< HEAD
-def toMiniView(post: ForumPost): Fu[Option[ForumPostMiniView]] =
-  toMiniViews(List(post.mini)).dmap(_.headOption)
+  def toMiniView(post: ForumPost): Fu[Option[ForumPostMiniView]] =
+    toMiniViews(List(post.mini)).dmap(_.headOption)
 
-def toMiniView(post: ForumPostMini): Fu[Option[ForumPostMiniView]] =
-  miniViews(List(post.id)).dmap(_.headOption)
+  def toMiniView(post: ForumPostMini): Fu[Option[ForumPostMiniView]] =
+    miniViews(List(post.id)).dmap(_.headOption)
 
-def miniPosts(posts: List[ForumPost]): Fu[List[ForumPostMiniView]] =
-  topicRepo
-    .byIds(posts.map(_.topicId))
-    .map: topics =>
-      posts.flatMap: post =>
-        topics
-          .find(_.id == post.topicId)
-          .map: topic =>
-            ForumPostMiniView(post = post.mini, topic = topic)
-=======
-def miniPosts(posts: List[ForumPost]): Fu[List[MiniForumPost]] =
-  topicRepo.coll.byStringIds[ForumTopic](posts.map(_.topicId.value).distinct).map { topics =>
-    posts.flatMap: post =>
-      topics.find(_.id == post.topicId).map { topic =>
-        MiniForumPost(
-          isTeam = post.isTeam,
-          postId = post.id,
-          topicName = topic.name,
-          userId = post.userId,
-          text = post.cleanTake(200),
-          createdAt = post.createdAt
-        )
-      }
-  }
-    >>>>>>> schlawg - lobby - wip
+  def miniPosts(posts: List[ForumPost]): Fu[List[ForumPostMiniView]] =
+    topicRepo
+      .byIds(posts.map(_.topicId))
+      .map: topics =>
+        posts.flatMap: post =>
+          topics
+            .find(_.id == post.topicId)
+            .map: topic =>
+              ForumPostMiniView(post = post.mini, topic = topic)
 
-def allUserIds(topicId: ForumTopicId) = postRepo.allUserIdsByTopicId(topicId)
+  def allUserIds(topicId: ForumTopicId) = postRepo.allUserIdsByTopicId(topicId)
 
-def nbByUser(userId: UserId) = postRepo.coll.countSel($doc("userId" -> userId))
+  def nbByUser(userId: UserId) = postRepo.coll.countSel($doc("userId" -> userId))
 
-def categsForUser(teams: Iterable[TeamId], forUser: Option[User]): Fu[List[CategView]] =
-  val isMod = forUser.fold(false)(MasterGranter.of(_.ModerateForum))
-  for
-    categs     <- categRepo.visibleWithTeams(teams, isMod)
-    diagnostic <- if isMod then fuccess(none) else forUser.so(diagnosticForUser)
-    views <- categs
-      .map: categ =>
-        get(categ.lastPostId(forUser)).map: topicPost =>
-          CategView(
-            categ,
-            topicPost.map { case (topic, post) => (topic, post, topic.lastPage(config.postMaxPerPage)) },
-            forUser
-          )
-      .parallel
-  yield views ++ diagnostic.toList
+  def categsForUser(teams: Iterable[TeamId], forUser: Option[User]): Fu[List[CategView]] =
+    val isMod = forUser.fold(false)(MasterGranter.of(_.ModerateForum))
+    for
+      categs     <- categRepo.visibleWithTeams(teams, isMod)
+      diagnostic <- if isMod then fuccess(none) else forUser.so(diagnosticForUser)
+      views <- categs
+        .map: categ =>
+          get(categ.lastPostId(forUser)).map: topicPost =>
+            CategView(
+              categ,
+              topicPost.map { case (topic, post) => (topic, post, topic.lastPage(config.postMaxPerPage)) },
+              forUser
+            )
+        .parallel
+    yield views ++ diagnostic.toList
 
-private def diagnosticForUser(user: User): Fu[Option[CategView]] = // CategView with user's topic/post
-  for
-    categOpt <- categRepo.byId(ForumCateg.diagnosticId)
-    topicOpt <- topicRepo.byTree(ForumCateg.diagnosticId, user.id.value)
-    postOpt  <- topicOpt.so(t => postRepo.coll.byId[ForumPost](t.lastPostId(user.some)))
-  yield for
-    post  <- postOpt
-    topic <- topicOpt
-    categ <- categOpt
-  yield CategView(categ, (topic, post, topic.lastPage(config.postMaxPerPage)).some, user.some)
+  private def diagnosticForUser(user: User): Fu[Option[CategView]] = // CategView with user's topic/post
+    for
+      categOpt <- categRepo.byId(ForumCateg.diagnosticId)
+      topicOpt <- topicRepo.byTree(ForumCateg.diagnosticId, user.id.value)
+      postOpt  <- topicOpt.so(t => postRepo.coll.byId[ForumPost](t.lastPostId(user.some)))
+    yield for
+      post  <- postOpt
+      topic <- topicOpt
+      categ <- categOpt
+    yield CategView(categ, (topic, post, topic.lastPage(config.postMaxPerPage)).some, user.some)
 
-private def recentUserIds(topic: ForumTopic, newPostNumber: Int) =
-  postRepo.coll
-    .distinctEasy[UserId, List](
-      "userId",
-      $doc(
-        "topicId" -> topic.id,
-        "number".$gt(newPostNumber - 20)
-      ),
-      _.sec
-    )
+  private def recentUserIds(topic: ForumTopic, newPostNumber: Int) =
+    postRepo.coll
+      .distinctEasy[UserId, List](
+        "userId",
+        $doc(
+          "topicId" -> topic.id,
+          "number".$gt(newPostNumber - 20)
+        ),
+        _.sec
+      )
 
-def erasePost(post: ForumPost) =
-  postRepo.coll.update
-    .one($id(post.id), post.erase)
-    .void
-    .andDo:
-      Bus.publish(ErasePost(post.id), "forumPost")
+  def erasePost(post: ForumPost) =
+    postRepo.coll.update
+      .one($id(post.id), post.erase)
+      .void
+      .andDo:
+        Bus.publish(ErasePost(post.id), "forumPost")
 
-def eraseFromSearchIndex(user: User): Funit =
-  postRepo.coll
-    .distinctEasy[ForumPostId, List]("_id", $doc("userId" -> user.id), _.sec)
-    .map: ids =>
-      Bus.publish(ErasePosts(ids), "forumPost")
+  def eraseFromSearchIndex(user: User): Funit =
+    postRepo.coll
+      .distinctEasy[ForumPostId, List]("_id", $doc("userId" -> user.id), _.sec)
+      .map: ids =>
+        Bus.publish(ErasePosts(ids), "forumPost")
 
-def teamIdOfPostId(postId: ForumPostId): Fu[Option[TeamId]] =
-  postRepo.coll.byId[ForumPost](postId).flatMapz { post =>
-    categRepo.coll.primitiveOne[TeamId]($id(post.categId), "team")
-  }
+  def teamIdOfPostId(postId: ForumPostId): Fu[Option[TeamId]] =
+    postRepo.coll.byId[ForumPost](postId).flatMapz { post =>
+      categRepo.coll.primitiveOne[TeamId]($id(post.categId), "team")
+    }
 
-private def logAnonPost(post: ForumPost, edit: Boolean)(using Me): Funit =
-  topicRepo.byId(post.topicId).orFail(s"No such topic ${post.topicId}").flatMap { topic =>
-    modLog.postOrEditAsAnonMod(
-      post.categId,
-      topic.slug,
-      post.id,
-      post.text,
-      edit
-    )
-  }
+  private def logAnonPost(post: ForumPost, edit: Boolean)(using Me): Funit =
+    topicRepo.byId(post.topicId).orFail(s"No such topic ${post.topicId}").flatMap { topic =>
+      modLog.postOrEditAsAnonMod(
+        post.categId,
+        topic.slug,
+        post.id,
+        post.text,
+        edit
+      )
+    }
 
-export postRepo.nonGhostCursor
+  export postRepo.nonGhostCursor

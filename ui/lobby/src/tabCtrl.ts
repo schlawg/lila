@@ -76,6 +76,7 @@ export class TabCtrl {
       name: 'Open events',
       group: new Map([
         ['tournaments', { name: 'Tournaments' }],
+        ['swiss', { name: 'Swiss' }],
         ['simuls', { name: 'Simuls' }],
       ]),
     });

@@ -6,6 +6,7 @@ import reactivemongo.api.bson.{ BSONDocument, BSONDocumentHandler, Macros }
 
 import lila.core.{ EmailAddress, NormalizedEmailAddress }
 import lila.core.LightUser
+import lila.core.user.{ UserMark, UserMarks, UserEnabled }
 import lila.core.i18n.Language
 import lila.rating.{ Perf, PerfType }
 import lila.core.rating.PerfKey
@@ -27,7 +28,7 @@ case class User(
     plan: Plan,
     flair: Option[Flair] = None,
     totpSecret: Option[TotpSecret] = None,
-    marks: UserMarks = UserMarks.empty,
+    marks: UserMarks = UserMarks(Nil),
     hasEmail: Boolean
 ) extends lila.core.user.User:
 
@@ -107,7 +108,7 @@ object User:
 
   given UserIdOf[User] = _.id
 
-  export lila.user.UserEnabled as Enabled
+  export lila.core.user.UserEnabled as Enabled
 
   case class WithPerfs(user: User, perfs: UserPerfs):
     export user.*
@@ -230,8 +231,6 @@ object User:
     def nonEmptyTvDuration = (tv > 0).option(tvDuration)
   given BSONDocumentHandler[PlayTime] = Macros.handler[PlayTime]
 
-  // what existing usernames are like
-  val historicalUsernameRegex = "(?i)[a-z0-9][a-z0-9_-]{0,28}[a-z0-9]".r
   // what new usernames should be like -- now split into further parts for clearer error messages
   val newUsernameRegex   = "(?i)[a-z][a-z0-9_-]{0,28}[a-z0-9]".r
   val newUsernamePrefix  = "(?i)^[a-z].*".r
@@ -239,7 +238,8 @@ object User:
   val newUsernameChars   = "(?i)^[a-z0-9_-]*$".r
   val newUsernameLetters = "(?i)^([a-z0-9][_-]?)+$".r
 
-  def couldBeUsername(str: UserStr) = noGhost(str.id) && historicalUsernameRegex.matches(str.value)
+  def couldBeUsername(str: UserStr) =
+    noGhost(str.id) && lila.core.UserName.historicalRegex.matches(str.value)
 
   def validateId(str: UserStr): Option[UserId] = couldBeUsername(str).option(str.id)
 
@@ -312,7 +312,7 @@ object User:
         plan = r.getO[Plan](plan) | Plan.empty,
         totpSecret = r.getO[TotpSecret](totpSecret),
         flair = r.getO[Flair](flair).filter(FlairApi.exists),
-        marks = r.getO[UserMarks](marks) | UserMarks.empty,
+        marks = r.getO[UserMarks](marks) | UserMarks(Nil),
         hasEmail = r.contains(email)
       )
 
@@ -334,7 +334,7 @@ object User:
         plan       -> o.plan.nonEmpty,
         totpSecret -> o.totpSecret,
         flair      -> o.flair,
-        marks      -> o.marks.nonEmpty
+        marks      -> o.marks.value.nonEmpty.option(o.marks)
       )
 
   given BSONDocumentHandler[Speaker] = Macros.handler[Speaker]

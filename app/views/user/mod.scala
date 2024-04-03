@@ -205,9 +205,9 @@ object mod:
       isGranted(_.ModMessage).option(
         postForm(action := routes.Mod.warn(u.username, ""), cls := "pm-preset")(
           st.select(
-            option(value := "")("Send PM"),
+            st.option(value := "")("Send PM"),
             pmPresets.value.map { preset =>
-              option(st.value := preset.name, title := preset.text)(preset.name)
+              st.option(st.value := preset.name, title := preset.text)(preset.name)
             }
           )
         )
@@ -937,7 +937,7 @@ object mod:
       }
     )(reportScore(r.score), " ", strong(r.reason.name))
 
-  def userMarks(o: User, playbans: Option[Int]) =
+  def userMarks(o: lila.core.user.User, playbans: Option[Int]) =
     div(cls := "user_marks")(
       playbans.map: nb =>
         playban(nb),

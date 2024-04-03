@@ -100,14 +100,14 @@ private case class RenderAsk(
               cls        := "admin",
               formmethod := "GET",
               formaction := routes.Ask.admin(ask._id),
-              title      := trans.edit.txt()
+              title      := trans.site.edit.txt()
             )
           ),
           ((ask.hasPickFor(voterId) || ask.hasFormFor(voterId)) && !ask.isConcluded).option(
             button(
               cls        := "unset",
               formaction := routes.Ask.unset(ask._id, viewParam.some, ask.isAnon),
-              title      := trans.delete.txt()
+              title      := trans.site.delete.txt()
             )
           )
         ),

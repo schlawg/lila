@@ -96,13 +96,12 @@
   padding-top: 8px;
   background: $c-bg-med;
 
-  span.active,
-  span:hover {
-    border-color: if($theme == 'light', $c-primary, $c-font);
-  }
-
   span.active {
-    color: if($theme == 'light', $c-primary, $c-font);
+    border-color: mix($c-accent, $c-bg-high, 60%);
+    color: mix($c-accent, $c-bg-high, 90%);
+  }
+  span:hover {
+    color: mix($c-accent, $c-font-clearer, 80%);
   }
 }
 

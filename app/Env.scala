@@ -33,7 +33,6 @@ final class Env(
 
   // wire all the lila modules in the right order
   val i18n: lila.i18n.Env.type          = lila.i18n.Env
-  val lilaCookie                        = wire[lila.core.LilaCookie]
   val mongo: lila.db.Env                = wire[lila.db.Env]
   val memo: lila.memo.Env               = wire[lila.memo.Env]
   val socket: lila.socket.Env           = wire[lila.socket.Env]
@@ -63,6 +62,7 @@ final class Env(
   val tournament: lila.tournament.Env   = wire[lila.tournament.Env]
   val swiss: lila.swiss.Env             = wire[lila.swiss.Env]
   val mod: lila.mod.Env                 = wire[lila.mod.Env]
+  val ask: lila.ask.Env                 = wire[lila.ask.Env]
   val forum: lila.forum.Env             = wire[lila.forum.Env]
   val forumSearch: lila.forumSearch.Env = wire[lila.forumSearch.Env]
   val team: lila.team.Env               = wire[lila.team.Env]
@@ -74,7 +74,6 @@ final class Env(
   val simul: lila.simul.Env             = wire[lila.simul.Env]
   val appeal: lila.appeal.Env           = wire[lila.appeal.Env]
   val timeline: lila.timeline.Env       = wire[lila.timeline.Env]
-  val ask: lila.ask.Env                 = wire[lila.ask.Env]
   val puzzle: lila.puzzle.Env           = wire[lila.puzzle.Env]
   val coordinate: lila.coordinate.Env   = wire[lila.coordinate.Env]
   val tv: lila.tv.Env                   = wire[lila.tv.Env]

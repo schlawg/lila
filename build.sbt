@@ -112,7 +112,7 @@ lazy val i18n = module("i18n",
 bloopInstall := (bloopInstall dependsOn Compile / managedSources).value
 
 lazy val cms = module("cms",
-  Seq(user),
+  Seq(memo),
   reactivemongo.bundle
 )
 
@@ -132,7 +132,7 @@ lazy val racer = module("racer",
 )
 
 lazy val video = module("video",
-  Seq(user),
+  Seq(memo),
   reactivemongo.bundle ++ macwire.bundle
 )
 
@@ -147,17 +147,17 @@ lazy val streamer = module("streamer",
 )
 
 lazy val coordinate = module("coordinate",
-  Seq(user),
+  Seq(db),
   reactivemongo.bundle ++ macwire.bundle
 )
 
 lazy val feed = module("feed",
-  Seq(user, ask),
+  Seq(memo, ask),
   reactivemongo.bundle
 )
 
 lazy val ublog = module("ublog",
-  Seq(security),
+  Seq(security, ask),
   Seq(bloomFilter) ++ reactivemongo.bundle
 )
 
@@ -202,7 +202,7 @@ lazy val timeline = module("timeline",
 )
 
 lazy val event = module("event",
-  Seq(user),
+  Seq(memo),
   Seq(scalatags) ++ reactivemongo.bundle
 )
 
@@ -357,7 +357,7 @@ lazy val studySearch = module("studySearch",
 )
 
 lazy val learn = module("learn",
-  Seq(user),
+  Seq(db),
   reactivemongo.bundle
 )
 
@@ -382,8 +382,8 @@ lazy val push = module("push",
 )
 
 lazy val irc = module("irc",
-  Seq(user),
-  reactivemongo.bundle
+  Seq(common),
+  reactivemongo.bundle ++ playWs.bundle
 )
 
 lazy val mailer = module("mailer",
@@ -402,7 +402,7 @@ lazy val relation = module("relation",
 )
 
 lazy val pref = module("pref",
-  Seq(user),
+  Seq(memo),
   reactivemongo.bundle
 )
 

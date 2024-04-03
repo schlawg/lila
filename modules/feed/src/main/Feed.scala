@@ -12,11 +12,11 @@ import lila.core.lilaism.Lilaism.*
 export lila.common.extensions.unapply
 
 import scalalib.paginator.Paginator
+import lila.core.user.MyId
+import lila.core.user.FlairApi
 import lila.db.dsl.{ *, given }
 import lila.db.paginator.Adapter
 import lila.memo.CacheApi
-import lila.core.config.BaseUrl
-import play.api.data.Form
 import lila.user.Me
 
 object Feed:
@@ -45,7 +45,7 @@ object Feed:
   import scalalib.ThreadLocalRandom
   def makeId = ThreadLocalRandom.nextString(6)
 
-final class FeedApi(coll: Coll, cacheApi: CacheApi, askEmbed: AskEmbed)(using Executor):
+final class FeedApi(coll: Coll, cacheApi: CacheApi, flairApi: FlairApi, askEmbed: AskEmbed)(using Executor):
 
   import Feed.*
 
@@ -101,7 +101,7 @@ final class FeedApi(coll: Coll, cacheApi: CacheApi, askEmbed: AskEmbed)(using Ex
   case class UpdateData(content: Markdown, public: Boolean, at: Instant, flair: Option[Flair]):
     def toUpdate(id: Option[ID]) = Update(id | makeId, content, public, at, flair)
 
-  def form(from: Option[Update])(using Me): Form[UpdateData] =
+  def form(from: Option[Update])(using MyId): Form[UpdateData] =
     import play.api.data.*
     import play.api.data.Forms.*
     import lila.common.Form.*
@@ -110,7 +110,7 @@ final class FeedApi(coll: Coll, cacheApi: CacheApi, askEmbed: AskEmbed)(using Ex
         "content" -> nonEmptyText(maxLength = 20_000).into[Markdown],
         "public"  -> boolean,
         "at"      -> ISOInstantOrTimestamp.mapping,
-        lila.user.FlairApi.formPair(anyFlair = true)
+        "flair"   -> flairApi.formField(anyFlair = true, asAdmin = true)
       )(UpdateData.apply)(unapply)
     from.fold(form)(u => form.fill(UpdateData(u.content, u.public, u.at, u.flair)))
 

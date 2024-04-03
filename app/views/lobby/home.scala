@@ -95,7 +95,7 @@ object home:
             st.section(cls := "lobby__streams")(
               views.html.streamer.bits.liveStreams(streams),
               a(href := routes.Streamer.index(), cls := "more")(
-                trans.streamersMenu(),
+                trans.site.streamersMenu(),
                 " »"
               )
             )

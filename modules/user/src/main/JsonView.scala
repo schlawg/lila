@@ -5,8 +5,7 @@ import play.api.libs.json.*
 import lila.common.Json.{ writeAs, given }
 import lila.core.LightUser
 import lila.rating.{ Perf, PerfType }
-
-import User.{ LightPerf, PlayTime }
+import lila.user.User.{ LightPerf, PlayTime }
 import lila.core.rating.PerfKey
 
 final class JsonView(isOnline: lila.core.socket.IsOnline):
