@@ -205,7 +205,7 @@ final class RelayRound(
         videoUrls =
           if embed.contains("fake") then
             lila.streamer.Stream
-              .Urls(s"https://www.youtube.com/embed/-NSql4J2lNc?autoplay=1&disablekb=1&color=white", "")
+              .Urls(s"https://www.youtube.com/embed/nWK0kqjPSVI?autoplay=1&disablekb=1&color=white", "")
               .some
           else stream.flatMap(_.stream).map(_.urls(netDomain))
         crossSiteIsolation = videoUrls.isEmpty
