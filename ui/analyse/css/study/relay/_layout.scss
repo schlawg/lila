@@ -18,6 +18,9 @@ main.is-relay {
   }
   .relay-tour__header__image {
     display: flex;
+    &.video {
+      display: block;
+    }
     justify-content: end;
     > img {
       width: unset;
@@ -64,7 +67,7 @@ main.is-relay.wide.with-video {
     flex-shrink: 0;
   }
   .relay-tour__header__image {
-    display: block;
+    display: block !important;
   }
 
   .study__multiboard {

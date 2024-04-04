@@ -258,7 +258,7 @@ export default class AnalyseCtrl {
   };
 
   fullscreen = () => {
-    const el = document.querySelector('main') as any;
+    const el = document.getElementById('main-wrap') as any;
     const doc = document as any;
     if (document.fullscreenElement) document.exitFullscreen();
     else if (doc.webkitFullscreenElement) doc.webkitExitFullscreen();

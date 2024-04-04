@@ -34,10 +34,11 @@ class VideoPlayer {
 
   cover(el?: HTMLElement) {
     cancelAnimationFrame(this.animationFrameId);
+    const wrap = document.getElementById('main-wrap')!;
     if (!el) {
-      if (!document.body.contains(this.iframe)) return;
-      document.body.removeChild(this.iframe);
-      document.body.removeChild(this.close);
+      if (!wrap.contains(this.iframe)) return;
+      wrap.removeChild(this.iframe);
+      wrap.removeChild(this.close);
     }
     this.animationFrameId = requestAnimationFrame(() => {
       this.iframe.style.display = 'block';
@@ -47,9 +48,9 @@ class VideoPlayer {
       this.iframe.style.height = `${el!.offsetHeight}px`;
       this.close.style.left = `${el!.offsetLeft + el!.offsetWidth - 16}px`;
       this.close.style.top = `${el!.offsetTop - 4}px`;
-      if (document.body.contains(this.iframe)) return;
-      document.body.appendChild(this.iframe);
-      document.body.appendChild(this.close);
+      if (wrap.contains(this.iframe)) return;
+      wrap.appendChild(this.iframe);
+      wrap.appendChild(this.close);
     });
   }
 }
