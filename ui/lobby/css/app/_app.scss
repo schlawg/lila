@@ -92,11 +92,11 @@
   background: $m-bg_bg-low--mix-50;
 
   span.active {
-    border-color: mix($c-accent, $c-bg-high, 60%);
-    color: mix($c-accent, $c-bg-high, 90%);
+    border-color: $m-accent_bg--mix-60;
+    color: $m-accent_bg--mix-90;
   }
   span:hover {
-    color: mix($c-accent, $c-font-clearer, 80%);
+    color: $m-accent_font--mix-74;
   }
 }
 
