@@ -13,7 +13,7 @@ final class BotPlayer(
     chatApi: lila.chat.ChatApi,
     gameRepo: GameRepo,
     rematches: Rematches,
-    spam: lila.security.Spam
+    spam: lila.core.security.SpamApi
 )(using Executor, Scheduler):
 
   private def clientError[A](msg: String): Fu[A] = fufail(lila.core.round.ClientError(msg))
@@ -39,7 +39,7 @@ final class BotPlayer(
         val source = (d.room == "spectator").option {
           PublicSource.Watcher(gameId)
         }
-        chatApi.userChat.write(chatId, me, d.text, publicSource = source, _.Round)
+        chatApi.userChat.write(chatId, me, d.text, publicSource = source, _.round)
       )
 
   def rematchAccept(id: GameId)(using Me): Fu[Boolean] = rematch(id, accept = true)

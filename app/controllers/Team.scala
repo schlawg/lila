@@ -60,8 +60,8 @@ final class Team(env: Env, apiC: => Api) extends LilaController(env):
         else
           for
             ids   <- env.teamSearch(text, page)
-            teams <- ids.mapFutureList(env.team.teamRepo.byOrderedIds)
-            forMe <- teams.mapFutureList(env.team.memberRepo.addMyLeadership)
+            teams <- lila.common.hotfix.mapFutureList(ids)(env.team.teamRepo.byOrderedIds)
+            forMe <- lila.common.hotfix.mapFutureList(teams)(env.team.memberRepo.addMyLeadership)
           yield html.team.list.search(text, forMe)
 
   private def renderTeam(team: TeamModel, page: Int, asMod: Boolean)(using ctx: Context) = for
@@ -182,7 +182,7 @@ final class Team(env: Env, apiC: => Api) extends LilaController(env):
                         env.msg.api.systemPost(
                           change.user,
                           lila.msg.MsgPreset.newPermissions(
-                            if asMod then LightUser.fallback(UserModel.lichessName) else me.light,
+                            if asMod then LightUser.fallback(UserName.lichess) else me.light,
                             team.team.light,
                             change.perms.map(_.name),
                             env.net.baseUrl

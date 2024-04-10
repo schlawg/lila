@@ -6,7 +6,8 @@ import play.api.i18n.Lang
 import lila.app.templating.Environment.{ *, given }
 import lila.app.ui.ScalatagsTemplate.{ *, given }
 import lila.perfStat.{ PerfStat, PerfStatData }
-import lila.rating.{ Perf, PerfType }
+import lila.rating.Perf
+import lila.core.perf.PerfType
 import lila.user.User
 
 object perfStat:
@@ -19,14 +20,13 @@ object perfStat:
     views.html.base.layout(
       title = s"${user.username} - ${perfStats.txt(perfType.trans)}",
       robots = false,
-      moreJs = frag(
-        jsModule("user"),
-        ratingChart.map: rc =>
+      modules = jsModule("bits.user") ++
+        ratingChart.map { rc =>
           jsModuleInit(
             "chart.ratingHistory",
             SafeJsonStr(s"{data:$rc,singlePerfName:'${perfType.trans(using ctxTrans.translator.toDefault)}'}")
-          )
-      ),
+          ).some
+        },
       moreCss = cssTag("perf-stat")
     ):
       main(cls := s"page-menu")(

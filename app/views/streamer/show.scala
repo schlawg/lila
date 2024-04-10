@@ -6,7 +6,8 @@ import lila.app.templating.Environment.{ *, given }
 import lila.app.ui.ScalatagsTemplate.{ *, given }
 import lila.common.String.html.richText
 import lila.streamer.Stream.YouTube
-import lila.user.{ User, UserPerfs }
+import lila.user.User
+import lila.rating.UserPerfs
 
 object show:
 
@@ -20,7 +21,7 @@ object show:
     views.html.base.layout(
       title = s"${s.titleName} streams chess",
       moreCss = cssTag("streamer.show"),
-      moreJs = jsModule("streamer"),
+      modules = jsModule("bits.streamer"),
       openGraph = lila.app.ui
         .OpenGraph(
           title = s"${s.titleName} streams chess",

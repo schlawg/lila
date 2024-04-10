@@ -10,7 +10,8 @@ import lila.app.{ *, given }
 import lila.common.{ HTTPRequest, config }
 import lila.i18n.LangPicker
 import lila.oauth.{ EndpointScopes, OAuthScope, OAuthScopes, OAuthServer, TokenScopes }
-import lila.security.Permission
+import lila.core.perm.Permission
+import lila.user.Me
 
 abstract private[controllers] class LilaController(val env: Env)
     extends BaseController
@@ -227,7 +228,7 @@ abstract private[controllers] class LilaController(val env: Env)
         f(using ctx)(using scoped.me)
 
   private def handleScopedCommon(selectors: Seq[OAuthScope.Selector])(using req: RequestHeader)(
-      f: OAuthScope.Scoped => Fu[Result]
+      f: OAuthScope.Scoped[Me] => Fu[Result]
   ) =
     val accepted = OAuthScope.select(selectors).into(EndpointScopes)
     env.security.api.oauthScoped(req, accepted).flatMap {
@@ -321,8 +322,8 @@ abstract private[controllers] class LilaController(val env: Env)
         case ByHref.Found(lang) =>
           f(using ctx.withLang(lang))
 
-  import lila.rating.{ Perf, PerfType }
-  def WithMyPerf[A](pt: PerfType)(f: Perf ?=> Fu[A])(using me: Option[Me]): Fu[A] = me
+  import lila.rating.Perf
+  def WithMyPerf[A](pt: lila.core.perf.PerfType)(f: Perf ?=> Fu[A])(using me: Option[Me]): Fu[A] = me
     .soFu(env.user.perfsRepo.perfOf(_, pt))
     .flatMap: perf =>
       f(using perf | Perf.default)

@@ -1,6 +1,5 @@
 @import 'themes';
 
-$site-theme: $theme;
 @each $name, $theme in $board-themes-2d {
   .#{$name} .is2d {
     cg-board {
@@ -8,7 +7,7 @@ $site-theme: $theme;
       $name-override: map-get($theme, name-override);
       $file-name: if($name-override, $name-override, $name);
       $dir-name: 'board#{if($file-ext == "svg", "/svg", "")}';
-      @if $site-theme == 'transp' {
+      @include if-transp {
         backdrop-filter: blur(6px);
       }
       &::before {
@@ -22,10 +21,10 @@ $site-theme: $theme;
         z-index: -1;*/
         background-size: cover;
         background-image: img-url('#{$dir-name}/#{$file-name}.#{$file-ext}');
-        @if $site-theme == 'transp' {
-          opacity: var(--board-opacity);
-        } @else {
-          filter: brightness(var(--board-brightness));
+        filter: brightness(var(---board-brightness));
+        @include if-transp {
+          opacity: var(---board-opacity);
+          filter: unset;
         }
       }
     }
@@ -35,9 +34,9 @@ $site-theme: $theme;
 
     @if $coord-color-white and $coord-color-black {
       coords {
-        --cg-ccw: #{$coord-color-white};
-        --cg-ccb: #{$coord-color-black};
-        --cg-cs: none;
+        ---cg-ccw: #{$coord-color-white};
+        ---cg-ccb: #{$coord-color-black};
+        ---cg-cs: none;
       }
     }
   }

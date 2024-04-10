@@ -18,12 +18,13 @@ final class Env(
     userCache: lila.user.Cached,
     relationApi: lila.core.relation.RelationApi,
     prefApi: lila.pref.PrefApi,
-    notifyApi: lila.notify.NotifyApi,
+    notifyApi: lila.core.notify.NotifyApi,
     cacheApi: lila.memo.CacheApi,
     reportApi: lila.core.report.ReportApi,
     shutupApi: lila.core.shutup.ShutupApi,
-    spam: lila.security.Spam,
+    spam: lila.core.security.SpamApi,
     chatPanicAllowed: lila.core.chat.panic.IsAllowed,
+    textAnalyser: lila.core.shutup.TextAnalyser,
     mongoCache: lila.memo.MongoCache.Api
 )(using Executor, akka.actor.ActorSystem, Scheduler, akka.stream.Materializer, lila.core.i18n.Translator):
 

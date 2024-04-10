@@ -5,13 +5,14 @@ import controllers.routes
 
 import lila.app.templating.Environment.{ *, given }
 import lila.app.ui.ScalatagsTemplate.{ *, given }
+import lila.core.perf.PerfType
 
 object variant:
 
   def show(
       p: lila.cms.CmsPage.Render,
       variant: chess.variant.Variant,
-      perfType: lila.rating.PerfType
+      perfType: PerfType
   )(using PageContext) =
     layout(
       active = perfType.some,
@@ -46,13 +47,13 @@ object variant:
   private def layout(
       title: String,
       klass: String,
-      active: Option[lila.rating.PerfType] = None,
+      active: Option[PerfType] = None,
       openGraph: Option[lila.app.ui.OpenGraph] = None
   )(body: Modifier*)(using PageContext) =
     views.html.base.layout(
       title = title,
       moreCss = cssTag("variant"),
-      moreJs = jsModule("expandText"),
+      modules = jsModule("bits.expandText"),
       openGraph = openGraph
     ):
       main(cls := "page-menu")(

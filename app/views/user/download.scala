@@ -5,13 +5,14 @@ import controllers.routes
 import lila.app.templating.Environment.{ *, given }
 import lila.app.ui.ScalatagsTemplate.{ *, given }
 import lila.user.User
+import lila.core.perf.PerfType
 
 object download:
   def apply(user: lila.user.User)(using ctx: PageContext): Frag =
     views.html.base.layout(
       title = s"${user.username} • ${trans.site.exportGames.txt()}",
       moreCss = cssTag("search"),
-      moreJs = jsModule("userGamesDownload")
+      modules = jsModule("bits.userGamesDownload")
     ) {
       main(cls := "box page-small search")(
         boxTop(h1(userLink(user), s" • ${trans.site.exportGames.txt()}")),
@@ -139,7 +140,7 @@ object download:
       )
     )
 
-  private def perfToggle(perfType: lila.rating.PerfType)(using Context): Frag = div(
+  private def perfToggle(perfType: PerfType)(using Context): Frag = div(
     form3.cmnToggle(
       s"dl-perf-${perfType.key}",
       "",

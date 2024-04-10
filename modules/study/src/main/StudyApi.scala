@@ -8,7 +8,7 @@ import chess.format.pgn.{ Glyph, Tags }
 import lila.chat.ChatApi
 import lila.common.Bus
 import lila.core.timeline.{ Propagate, StudyLike }
-import lila.security.Granter
+import lila.core.perm.Granter
 import lila.core.socket.Sri
 import lila.core.{ study as hub }
 import lila.tree.Branch
@@ -48,7 +48,7 @@ final class StudyApi(
 
   def byIdAndOwnerOrAdmin(id: StudyId, owner: User) =
     byId(id).map:
-      _.filter(_.isOwner(owner.id) || Granter.of(_.StudyAdmin)(owner))
+      _.filter(_.isOwner(owner.id) || Granter.ofUser(_.StudyAdmin)(owner))
 
   def isOwnerOrAdmin(id: StudyId, owner: User) = byIdAndOwnerOrAdmin(id, owner).map(_.isDefined)
 
@@ -154,7 +154,7 @@ final class StudyApi(
 
   def cloneWithChat(me: User, prev: Study, update: Study => Study = identity): Fu[Option[Study]] = for
     study <- justCloneNoChecks(me, prev, update)
-    _ <- chatApi.userChat.system(study.id.into(ChatId), s"Cloned from lichess.org/study/${prev.id}", _.Study)
+    _ <- chatApi.userChat.system(study.id.into(ChatId), s"Cloned from lichess.org/study/${prev.id}", _.study)
   yield study.some
 
   def justCloneNoChecks(
@@ -211,7 +211,7 @@ final class StudyApi(
             userId = userId,
             text = text,
             publicSource = lila.core.shutup.PublicSource.Study(studyId).some,
-            busChan = _.Study
+            busChan = _.study
           )
         }
 

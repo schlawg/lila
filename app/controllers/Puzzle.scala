@@ -21,7 +21,8 @@ import lila.puzzle.{
   PuzzleStreak,
   PuzzleTheme
 }
-import lila.rating.{ Perf, PerfType }
+import lila.rating.Perf
+import lila.core.perf.PerfType
 import lila.user.User
 import lila.core.i18n.Translate
 
@@ -118,7 +119,7 @@ final class Puzzle(env: Env, apiC: => Api) extends LilaController(env):
     }
 
   def ofPlayer(name: Option[UserStr], page: Int) = Open:
-    val userId = name.flatMap(lila.user.User.validateId)
+    val userId = name.flatMap(_.validateId)
     for
       user    <- userId.so(env.user.repo.enabledById).orElse(fuccess(ctx.me.map(_.value)))
       puzzles <- user.soFu(env.puzzle.api.puzzle.of(_, page))
@@ -530,4 +531,4 @@ final class Puzzle(env: Env, apiC: => Api) extends LilaController(env):
     }
 
   def WithPuzzlePerf[A](f: Perf ?=> Fu[A])(using Option[Me]): Fu[A] =
-    WithMyPerf(lila.rating.PerfType.Puzzle)(f)
+    WithMyPerf(PerfType.Puzzle)(f)

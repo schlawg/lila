@@ -12,12 +12,13 @@ import lila.game.LightPov
 import lila.gathering.{ Condition, ConditionHandlers, GreatPlayer }
 import lila.memo.CacheApi.*
 import lila.memo.SettingStore
-import lila.rating.{ Perf, PerfType }
+import lila.rating.Perf
 import lila.core.socket.SocketVersion
 import lila.user.{ LightUserApi, Me, User }
 import lila.core.i18n.Translate
 import lila.core.Preload
 import lila.common.Json.lightUser.writeNoId
+import lila.core.perf.PerfType
 
 final class JsonView(
     lightUserApi: LightUserApi,
@@ -28,7 +29,7 @@ final class JsonView(
     statsApi: TournamentStatsApi,
     shieldApi: TournamentShieldApi,
     cacheApi: lila.memo.CacheApi,
-    proxyRepo: lila.round.GameProxyRepo,
+    gameProxy: lila.game.core.GameProxy,
     perfsRepo: lila.user.UserPerfsRepo,
     verify: TournamentCondition.Verify,
     duelStore: DuelStore,
@@ -83,7 +84,7 @@ final class JsonView(
       stats       <- statsApi(tour)
       shieldOwner <- full.so { shieldApi.currentOwner(tour) }
       teamsToJoinWith <- full.so(~(for u <- me; battle <- tour.teamBattle
-      yield getMyTeamIds(u).map: teams =>
+      yield getMyTeamIds(u.lightMe).map: teams =>
         battle.teams.intersect(teams.toSet).toList))
       teamStanding <- getTeamStanding(tour)
       myTeam       <- myInfo.flatMap(_.teamId).so { getMyRankedTeam(tour, _) }
@@ -211,7 +212,7 @@ final class JsonView(
       .ifTrue(tour.isStarted)
       .so(pairingRepo.byId)
       .flatMapz: pairing =>
-        proxyRepo
+        gameProxy
           .game(pairing.gameId)
           .flatMapz: game =>
             cached

@@ -31,7 +31,7 @@ final class TeamApi(env: Env, apiC: => Api) extends LilaController(env):
         _     <- env.user.lightUserApi.preloadMany(pager.currentPageResults.flatMap(_.publicLeaders))
       yield pager
 
-  def show(id: TeamId) = Open:
+  def show(id: TeamId) = OpenOrScoped(): ctx ?=>
     JsonOptionOk:
       api
         .teamEnabled(id)
@@ -43,11 +43,13 @@ final class TeamApi(env: Env, apiC: => Api) extends LilaController(env):
             _           <- env.user.lightUserApi.preloadMany(withLeaders.publicLeaders)
           yield some:
             import env.team.jsonView.given
+            import lila.common.Json.given
             Json.toJsObject(withLeaders) ++ Json
               .obj(
                 "joined"    -> joined,
                 "requested" -> requested
               )
+              .add("descriptionPrivate" -> team.descPrivate.ifTrue(joined))
 
   def users(teamId: TeamId) = AnonOrScoped(_.Team.Read): ctx ?=>
     Found(api.teamEnabled(teamId)): team =>
@@ -73,8 +75,8 @@ final class TeamApi(env: Env, apiC: => Api) extends LilaController(env):
       else
         for
           ids   <- env.teamSearch(text, page)
-          teams <- ids.mapFutureList(env.team.teamRepo.byOrderedIds)
-          leads <- teams.mapFutureList(env.team.memberRepo.addPublicLeaderIds)
+          teams <- lila.common.hotfix.mapFutureList(ids)(env.team.teamRepo.byOrderedIds)
+          leads <- lila.common.hotfix.mapFutureList(teams)(env.team.memberRepo.addPublicLeaderIds)
         yield leads
 
   def teamsOf(username: UserStr) = AnonOrScoped(): ctx ?=>

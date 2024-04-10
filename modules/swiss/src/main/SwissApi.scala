@@ -18,7 +18,7 @@ import lila.gathering.Condition.WithVerdicts
 import lila.gathering.GreatPlayer
 import lila.rating.Perf
 import lila.core.round.QuietFlag
-import lila.user.{ Me, User, UserApi, UserPerfsRepo, UserRepo }
+import lila.user.{ Me, User, UserApi, UserPerfsRepo, UserRepo, given }
 import lila.core.swiss.{ IdName, SwissFinish }
 
 final class SwissApi(
@@ -37,7 +37,7 @@ final class SwissApi(
     verify: SwissCondition.Verify,
     chatApi: lila.chat.ChatApi,
     lightUserApi: lila.user.LightUserApi,
-    roundSocket: lila.round.RoundSocket
+    roundApi: lila.game.core.RoundApi
 )(using scheduler: Scheduler)(using Executor, akka.stream.Materializer)
     extends lila.core.swiss.SwissApi:
 
@@ -170,7 +170,7 @@ final class SwissApi(
   def verdicts(swiss: Swiss)(using me: Option[Me]): Fu[WithVerdicts] =
     me.foldUse(fuccess(swiss.settings.conditions.accepted)): me ?=>
       perfsRepo
-        .withPerf(me.value, swiss.perfType)
+        .withPerf(me, swiss.perfType)
         .flatMap: user =>
           given Perf = user.perf
           verify(swiss)
@@ -589,7 +589,7 @@ final class SwissApi(
       .flatMap:
         _.traverse_ { (swissId, gameIds) =>
           Sequencing[List[Game]](swissId)(cache.swissCache.byId) { _ =>
-            roundSocket
+            roundApi
               .getGames(gameIds)
               .map: pairs =>
                 val games               = pairs.collect { case (_, Some(g)) => g }
@@ -612,7 +612,7 @@ final class SwissApi(
         }
 
   private def systemChat(id: SwissId, text: String, volatile: Boolean = false): Unit =
-    chatApi.userChat.service(id.into(ChatId), text, _.Swiss, isVolatile = volatile)
+    chatApi.userChat.service(id.into(ChatId), text, _.swiss, isVolatile = volatile)
 
   def withdrawAll(user: User, teamIds: List[TeamId]): Funit =
     mongo.swiss

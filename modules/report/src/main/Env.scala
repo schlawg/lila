@@ -16,8 +16,7 @@ final class Env(
     userApi: lila.user.UserApi,
     lightUserAsync: lila.core.LightUser.Getter,
     gameRepo: lila.game.GameRepo,
-    securityApi: lila.security.SecurityApi,
-    userLoginsApi: lila.security.UserLoginsApi,
+    securityApi: lila.core.security.SecurityApi,
     playbansOf: => lila.core.playban.BansOf,
     ircApi: lila.core.irc.IrcApi,
     captcha: lila.core.captcha.CaptchaApi,
@@ -51,3 +50,6 @@ final class Env(
 
   scheduler.scheduleWithFixedDelay(1 minute, 1 minute): () =>
     api.inquiries.expire
+
+  lila.common.Bus.subscribeFun("playban"):
+    case lila.core.playban.Playban(userId, mins, _) => api.maybeAutoPlaybanReport(userId, mins)

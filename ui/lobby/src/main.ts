@@ -45,8 +45,7 @@ const layoutHacks = () => {
   cancelAnimationFrame(animationFrameId); // avoid more than one call per frame
   animationFrameId = requestAnimationFrame(() => {
     $('main.lobby').each(function (this: HTMLElement) {
-      //$('.lobby__tournaments-simuls').detach();
-      const newCols = Number(window.getComputedStyle(this).getPropertyValue('--cols'));
+      const newCols = Number(window.getComputedStyle(this).getPropertyValue('---cols'));
       if (newCols != cols) {
         cols = newCols;
         if (cols === 3) {

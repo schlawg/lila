@@ -25,6 +25,8 @@ final class Env(
     SessionCookieBaker
 ):
   val net: NetConfig = config.get[NetConfig]("net")
+  val manifest       = AssetManifest(environment)
+
   export net.{ domain, baseUrl, assetBaseUrlInternal }
 
   given Mode                   = environment.mode

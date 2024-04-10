@@ -7,7 +7,7 @@ import lila.common.Bus
 import lila.db.dsl.{ *, given }
 import lila.core.shutup.{ ShutupApi, PublicSource }
 import lila.core.timeline.{ ForumPost as TimelinePost, Propagate }
-import lila.security.Granter as MasterGranter
+import lila.core.perm.Granter as MasterGranter
 import lila.user.{ Me, User, given }
 import lila.core.forum.{ ForumPost as _, ForumCateg as _, * }
 
@@ -18,8 +18,8 @@ final class ForumPostApi(
     mentionNotifier: MentionNotifier,
     modLog: lila.core.mod.LogApi,
     config: ForumConfig,
-    spam: lila.security.Spam,
-    promotion: lila.security.PromotionApi,
+    spam: lila.core.security.SpamApi,
+    promotion: lila.core.security.PromotionApi,
     shutupApi: lila.core.shutup.ShutupApi,
     detectLanguage: DetectLanguage,
     askEmbed: AskEmbed
@@ -34,8 +34,8 @@ final class ForumPostApi(
       data: ForumForm.PostData
   )(using me: Me): Fu[ForumPost] =
     detectLanguage(data.text).zip(recentUserIds(topic, topic.nbPosts)).flatMap { (lang, topicUserIds) =>
-      val publicMod = MasterGranter(_.PublicMod)
-      val modIcon   = ~data.modIcon && (publicMod || MasterGranter(_.SeeReport))
+      val publicMod = MasterGranter[Me](_.PublicMod)
+      val modIcon   = ~data.modIcon && (publicMod || MasterGranter[Me](_.SeeReport))
       val anonMod   = modIcon && !publicMod
       val frozen    = askEmbed.freeze(spam.replace(data.text), me)
       val post = ForumPost.make(
@@ -57,7 +57,7 @@ final class ForumPostApi(
             _ <- categRepo.coll.update.one($id(categ.id), categ.withPost(topic, post))
             _ <- askEmbed.commit(frozen, s"/forum/redirect/post/${post.id}".some)
           yield
-            promotion.save(post.text)
+            promotion.save(me, post.text)
             if post.isTeam
             then shutupApi.teamForumMessage(me, post.text)
             else shutupApi.publicText(me, post.text, PublicSource.Forum(post.id))
@@ -89,12 +89,11 @@ final class ForumPostApi(
             .freezeAndCommit(spam.replace(newText), me, s"/forum/redirect/post/${postId}".some)
             .flatMap: frozen =>
               val newPost = post.editPost(nowInstant, frozen)
-              val save = (newPost.text != post.text)
-                .so:
-                  for
-                    _ <- postRepo.coll.update.one($id(post.id), newPost)
-                    _ <- newPost.isAnonModPost.so(logAnonPost(newPost, edit = true))
-                  yield promotion.save(newPost.text)
+              val save = (newPost.text != post.text).so:
+                for
+                  _ <- postRepo.coll.update.one($id(post.id), newPost)
+                  _ <- newPost.isAnonModPost.so(logAnonPost(newPost, edit = true))
+                yield promotion.save(me, newPost.text)
               save.inject(newPost)
       }
 

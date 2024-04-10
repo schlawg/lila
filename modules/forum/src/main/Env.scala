@@ -6,7 +6,6 @@ import play.api.libs.ws.StandaloneWSClient
 
 import lila.common.autoconfig.{ *, given }
 import lila.core.config.*
-import lila.notify.NotifyApi
 import lila.pref.PrefApi
 import lila.core.relation.RelationApi
 import lila.user.User
@@ -23,11 +22,11 @@ final private class ForumConfig(
 final class Env(
     appConfig: Configuration,
     db: lila.db.Db,
-    spam: lila.security.Spam,
-    promotion: lila.security.PromotionApi,
+    spam: lila.core.security.SpamApi,
+    promotion: lila.core.security.PromotionApi,
     captcha: lila.core.captcha.CaptchaApi,
     shutupApi: lila.core.shutup.ShutupApi,
-    notifyApi: NotifyApi,
+    notifyApi: lila.core.notify.NotifyApi,
     relationApi: RelationApi,
     prefApi: PrefApi,
     modLog: lila.core.mod.LogApi,

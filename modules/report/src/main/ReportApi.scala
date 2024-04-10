@@ -15,8 +15,7 @@ final class ReportApi(
     userApi: UserApi,
     gameRepo: GameRepo,
     autoAnalysis: AutoAnalysis,
-    securityApi: lila.security.SecurityApi,
-    userLoginsApi: lila.security.UserLoginsApi,
+    securityApi: lila.core.security.SecurityApi,
     playbansOf: () => lila.core.playban.BansOf,
     ircApi: lila.core.irc.IrcApi,
     isOnline: lila.core.socket.IsOnline,
@@ -188,7 +187,7 @@ final class ReportApi(
     }
 
   def maybeAutoPlaybanReport(userId: UserId, minutes: Int): Funit =
-    (minutes > 60 * 24).so(userLoginsApi.getUserIdsWithSameIpAndPrint(userId)).flatMap { ids =>
+    (minutes > 60 * 24).so(securityApi.getUserIdsWithSameIpAndPrint(userId)).flatMap { ids =>
       playbansOf()(userId :: ids.toList)
         .map:
           _.filter { (_, bans) => bans > 4 }
@@ -222,14 +221,14 @@ final class ReportApi(
       _ <- doProcessReport(
         $inIds(all.filter(_.open).map(_.id)),
         unsetInquiry = false
-      )(using User.lichessIdAsMe)
+      )(using UserId.lichessAsMe)
     yield open
 
   def reopenReports(suspect: Suspect): Funit =
     for
       all <- recent(suspect, 10)
       closed = all
-        .filter(_.done.map(_.by).has(User.lichessId.into(ModId)))
+        .filter(_.done.map(_.by).has(UserId.lichess.into(ModId)))
         .filterNot(_.isAlreadySlain(suspect.user))
       _ <-
         coll.update

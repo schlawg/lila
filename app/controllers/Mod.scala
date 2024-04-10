@@ -13,9 +13,10 @@ import scala.util.chaining.scalaUtilChainingOps
 import lila.app.{ *, given }
 import lila.common.HTTPRequest
 import lila.core.EmailAddress
+import lila.core.perm.Permission
 import lila.mod.ModUserSearch
 import lila.report.{ Mod as AsMod, Suspect }
-import lila.security.{ FingerHash, Granter, Permission }
+import lila.security.FingerHash
 import lila.user.User as UserModel
 import lila.core.IpAddress
 
@@ -141,7 +142,7 @@ final class Mod(
     if username == UserName("-") && env.mod.impersonate.isImpersonated(me) then
       env.mod.impersonate.stop(me)
       Redirect(routes.User.show(me.username))
-    else if isGranted(_.Impersonate) || (isGranted(_.Admin) && username.is(lila.user.User.lichessId)) then
+    else if isGranted(_.Impersonate) || (isGranted(_.Admin) && username.is(UserId.lichess)) then
       Found(env.user.repo.byId(username)): user =>
         env.mod.impersonate.start(me, user)
         Redirect(routes.User.show(user.username))
@@ -189,11 +190,11 @@ final class Mod(
                 case Room.Boost => ModDomain.Boost
                 case Room.Comm  => ModDomain.Comm
                 // spontaneous inquiry
-                case _ if Granter(_.Admin)       => ModDomain.Admin
-                case _ if Granter(_.CheatHunter) => ModDomain.Cheat // heuristic
-                case _ if Granter(_.Shusher)     => ModDomain.Comm
-                case _ if Granter(_.BoostHunter) => ModDomain.Boost
-                case _                           => ModDomain.Admin
+                case _ if isGranted(_.Admin)       => ModDomain.Admin
+                case _ if isGranted(_.CheatHunter) => ModDomain.Cheat // heuristic
+                case _ if isGranted(_.Shusher)     => ModDomain.Comm
+                case _ if isGranted(_.BoostHunter) => ModDomain.Boost
+                case _                             => ModDomain.Admin
               ,
               room = if report.isSpontaneous then "Spontaneous inquiry" else report.room.name
             )
@@ -408,7 +409,7 @@ final class Mod(
     for
       uids       <- env.security.api.recentUserIdsByFingerHash(hash)
       users      <- env.user.repo.usersFromSecondary(uids.reverse)
-      withEmails <- env.user.api.withEmails(users)
+      withEmails <- env.user.api.withPerfsAndEmails(users)
       uas        <- env.security.api.printUas(hash)
       page <- renderPage(html.mod.search.print(hash, withEmails, uas, env.security.printBan.blocks(hash)))
     yield Ok(page)
@@ -425,7 +426,7 @@ final class Mod(
       for
         uids       <- env.security.api.recentUserIdsByIp(address)
         users      <- env.user.repo.usersFromSecondary(uids.reverse)
-        withEmails <- env.user.api.withEmails(users)
+        withEmails <- env.user.api.withPerfsAndEmails(users)
         uas        <- env.security.api.ipUas(address)
         data       <- env.security.ipTrust.data(address)
         blocked = env.security.firewall.blocksIp(address)
@@ -457,19 +458,19 @@ final class Mod(
   }
 
   def savePermissions(username: UserStr) = SecureBody(_.ChangePermission) { ctx ?=> me ?=>
-    import lila.security.Permission
     Found(env.user.repo.byId(username)): user =>
       Form(single("permissions" -> list(text.verifying(Permission.allByDbKey.contains))))
         .bindFromRequest()
         .fold(
           _ => BadRequest.page(html.mod.permissions(user)),
           permissions =>
-            val newPermissions = Permission(permissions).diff(Permission(user.roles))
-            (modApi.setPermissions(user.username, Permission(permissions)) >> {
+            val newPermissions = Permission.ofDbKeys(permissions).diff(Permission(user))
+            (modApi.setPermissions(user.username, Permission.ofDbKeys(permissions)) >> {
               newPermissions(Permission.Coach).so(env.mailer.automaticEmail.onBecomeCoach(user))
             } >> {
-              Permission(permissions)
-                .exists(_.is(Permission.SeeReport))
+              Permission
+                .ofDbKeys(permissions)
+                .exists(_.grants(Permission.SeeReport))
                 .so(env.plan.api.setLifetime(user))
             }).inject(Redirect(routes.Mod.permissions(user.username.value)).flashSuccess)
         )
@@ -484,7 +485,7 @@ final class Mod(
         val username = query.lift(1)
         def tryWith(setEmail: EmailAddress, q: String): Fu[Option[Result]] =
           env.mod.search(q).map(_.filter(_.user.enabled.yes)).flatMap {
-            case List(UserModel.WithEmails(user, _)) =>
+            case List(UserModel.WithPerfsAndEmails(user, _)) =>
               for
                 _ <- (!user.everLoggedIn).so {
                   lila.mon.user.register.modConfirmEmail.increment()

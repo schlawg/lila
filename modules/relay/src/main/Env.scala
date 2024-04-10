@@ -23,24 +23,20 @@ final class Env(
     studyPgnDump: lila.study.PgnDump,
     gameRepo: lila.game.GameRepo,
     pgnDump: lila.game.PgnDump,
-    gameProxy: lila.round.GameProxyRepo,
+    gameProxy: lila.game.core.GameProxy,
     federations: lila.core.fide.Federation.FedsOf,
     guessPlayer: lila.core.fide.GuessPlayer,
     cacheApi: lila.memo.CacheApi,
     settingStore: SettingStore.Builder,
     irc: lila.core.irc.IrcApi,
     baseUrl: BaseUrl,
-    notifyApi: lila.notify.NotifyApi,
+    notifyApi: lila.core.notify.NotifyApi,
     picfitApi: lila.memo.PicfitApi,
     picfitUrl: lila.memo.PicfitUrl,
     langList: lila.core.i18n.LangList
-)(using
-    Executor,
-    ActorSystem,
-    akka.stream.Materializer,
-    play.api.Mode,
-    lila.core.i18n.Translator
-)(using scheduler: Scheduler):
+)(using Executor, ActorSystem, akka.stream.Materializer, play.api.Mode, lila.core.i18n.Translator)(using
+    scheduler: Scheduler
+):
 
   lazy val roundForm = wire[RelayRoundForm]
 

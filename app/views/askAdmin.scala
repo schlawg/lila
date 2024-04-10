@@ -11,7 +11,7 @@ object askAdmin:
   def show(asks: List[Ask], user: lila.core.LightUser)(using Me, PageContext) =
     views.html.base.layout(
       title = s"${user.titleName} polls",
-      moreJs = jsModuleInit("ask"),
+      modules = jsModuleInit("bits.ask"),
       moreCss = cssTag("ask"),
       csp = defaultCsp.withInlineIconFont.some
     ):

@@ -106,9 +106,11 @@ final class PlaybanApi(
     }
 
   private def propagateSitting(game: Game, userId: UserId): Funit =
-    rageSitCache.get(userId).map { rageSit =>
-      if rageSit.isBad then Bus.publish(SittingDetected(game, userId), "playban")
-    }
+    game.tournamentId.so: tourId =>
+      rageSitCache.get(userId).map { rageSit =>
+        if rageSit.isBad
+        then Bus.publish(lila.core.playban.SittingDetected(tourId, userId), "playban")
+      }
 
   def other(game: Game, status: Status.type => Status, winner: Option[Color]): Funit =
     IfBlameable(game) {
@@ -235,8 +237,7 @@ final class PlaybanApi(
         lila.mon.playban.ban.count.increment()
         lila.mon.playban.ban.mins.record(ban.mins)
         Bus.publish(
-          lila.core.actorApi.playban
-            .Playban(record.userId, ban.mins, inTournament = source.has(Source.Arena)),
+          lila.core.playban.Playban(record.userId, ban.mins, inTournament = source.has(Source.Arena)),
           "playban"
         )
         coll
@@ -269,6 +270,6 @@ final class PlaybanApi(
                 .flatMapz: user =>
                   noteApi
                     .lichessWrite(user, "Closed for ragesit recidive")
-                    .andDo(Bus.publish(lila.core.actorApi.playban.RageSitClose(user.id), "rageSitClose"))
+                    .andDo(Bus.publish(lila.core.playban.RageSitClose(user.id), "rageSitClose"))
           }
       case _ => funit

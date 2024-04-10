@@ -53,9 +53,9 @@ export function addResizeListener(redraw: () => void) {
 
 function queryBody() {
   const docStyle = window.getComputedStyle(document.body),
-    scale = (parseFloat(docStyle.getPropertyValue('--zoom')) / 100) * 0.75 + 0.25,
+    scale = (parseFloat(docStyle.getPropertyValue('---zoom')) / 100) * 0.75 + 0.25,
     boardWidth = scale * window.innerHeight,
-    allowVideo = docStyle.getPropertyValue('--allow-video') === 'true',
+    allowVideo = docStyle.getPropertyValue('---allow-video') === 'true',
     leftSidePlusGaps = 410,
     minWidthForTwoColumns = 500;
   // zoom -> scale calc from file://./../../../../common/css/layout/_uniboard.scss
@@ -120,7 +120,7 @@ export function renderPinnedImage(relay: RelayCtrl) {
   return h('img.link', {
     attrs: { src: relay.data.pinned.image },
     hook: bind('click', () => {
-      if (window.getComputedStyle(document.body).getPropertyValue('--allow-video') !== 'true') {
+      if (window.getComputedStyle(document.body).getPropertyValue('---allow-video') !== 'true') {
         const url = `${window.location.origin}/streamer/${relay.data.pinned!.userId}`;
         window.open(url, '_blank', 'noopener');
         return;

@@ -15,11 +15,11 @@ import lila.user.{ Me, User }
 
 object search:
 
-  def apply(form: Form[?], users: List[User.WithEmails])(using PageContext, Me) =
+  def apply(form: Form[?], users: List[User.WithPerfsAndEmails])(using PageContext, Me) =
     views.html.base.layout(
       title = "Search users",
       moreCss = cssTag("mod.misc"),
-      moreJs = jsModule("mod.search")
+      modules = jsModule("mod.search")
     ) {
       main(cls := "page-menu")(
         views.html.mod.menu("search"),
@@ -40,14 +40,14 @@ object search:
 
   def print(
       fh: FingerHash,
-      users: List[User.WithEmails],
+      users: List[User.WithPerfsAndEmails],
       uas: List[String],
       blocked: Boolean
   )(using PageContext, Me) =
     views.html.base.layout(
       title = "Fingerprint",
       moreCss = cssTag("mod.misc"),
-      moreJs = jsModule("mod.search")
+      modules = jsModule("mod.search")
     ):
       main(cls := "page-menu")(
         views.html.mod.menu("search"),
@@ -81,7 +81,7 @@ object search:
 
   def ip(
       address: IpAddress,
-      users: List[lila.user.User.WithEmails],
+      users: List[lila.user.User.WithPerfsAndEmails],
       uas: List[String],
       data: IpTrust.IpData,
       blocked: Boolean
@@ -89,7 +89,7 @@ object search:
     views.html.base.layout(
       title = "IP address",
       moreCss = cssTag("mod.misc"),
-      moreJs = jsModule("mod.search")
+      modules = jsModule("mod.search")
     ):
       main(cls := "page-menu")(
         views.html.mod.menu("search"),
@@ -119,11 +119,11 @@ object search:
         )
       )
 
-  def clas(c: lila.clas.Clas, users: List[User.WithEmails])(using PageContext, Me) =
+  def clas(c: lila.clas.Clas, users: List[User.WithPerfsAndEmails])(using PageContext, Me) =
     views.html.base.layout(
       title = "IP address",
       moreCss = cssTag("mod.misc"),
-      moreJs = jsModule("mod.search")
+      modules = jsModule("mod.search")
     ):
       main(cls := "page-menu")(
         views.html.mod.menu("search"),
@@ -186,7 +186,7 @@ object search:
     views.html.base.layout(
       title = "Mod notes",
       moreCss = frag(cssTag("mod.misc"), cssTag("slist")),
-      moreJs = infiniteScrollTag
+      modules = infiniteScrollTag
     ) {
       main(cls := "page-menu")(
         views.html.mod.menu("notes"),

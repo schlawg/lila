@@ -31,7 +31,7 @@ object home:
               Json.obj("minutes" -> pb.mins, "remainingSeconds" -> (pb.remainingSeconds + 3))
           )
       ).some,
-      moreJs = homepage.hasAsks.option(jsModuleInit("ask")),
+      modules = homepage.hasAsks.option(jsModuleInit("ask")),
       moreCss = frag(cssTag("lobby"), homepage.hasAsks.option(cssTag("ask"))),
       openGraph = lila.app.ui
         .OpenGraph(

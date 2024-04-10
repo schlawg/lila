@@ -1,6 +1,7 @@
 package lila.core.lilaism
 
 import scalalib.newtypes.*
+import lila.core.user.MyId
 
 trait LilaUserId:
 
@@ -16,7 +17,14 @@ trait LilaUserId:
   // the id of a user, always lowercased
   opaque type UserId = String
   object UserId extends OpaqueString[UserId]:
+    extension (id: UserId)
+      def isGhost: Boolean = id == ghost || id.startsWith("!")
+      def noGhost: Boolean = !isGhost
     given UserIdOf[UserId] = _.value
+    val lichess: UserId    = "lichess"
+    val lichessAsMe: MyId  = lichess.into(MyId)
+    val ghost: UserId      = "ghost"
+    val explorer: UserId   = "openingexplorer"
 
   // specialized UserIds like Coach.Id
   trait OpaqueUserId[A] extends OpaqueString[A]:
@@ -28,11 +36,16 @@ trait LilaUserId:
   object UserName extends OpaqueString[UserName]:
     given UserIdOf[UserName] = n => UserId(n.value.toLowerCase)
     // what existing usernames are like
-    val historicalRegex = "(?i)[a-z0-9][a-z0-9_-]{0,28}[a-z0-9]".r
+    val historicalRegex     = "(?i)[a-z0-9][a-z0-9_-]{0,28}[a-z0-9]".r
+    val anonymous: UserName = "Anonymous"
+    val lichess: UserName   = "lichess"
 
   // maybe an Id, maybe a Name... something that's probably cased wrong
   opaque type UserStr = String
   object UserStr extends OpaqueString[UserStr]:
+    extension (e: UserStr)
+      def couldBeUsername: Boolean   = UserId.noGhost(e.id) && UserName.historicalRegex.matches(e)
+      def validateId: Option[UserId] = Option.when(couldBeUsername)(e.id)
     given UserIdOf[UserStr] = n => UserId(n.value.toLowerCase)
     def read(str: String): Option[UserStr] =
       val clean = str.trim.takeWhile(' ' !=)

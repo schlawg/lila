@@ -17,7 +17,7 @@ import lila.core.timeline.{ Propagate, SimulCreate, SimulJoin }
 import lila.memo.CacheApi.*
 import lila.rating.{ Perf, PerfType }
 import lila.core.socket.SendToFlag
-import lila.user.{ Me, User, UserApi, UserPerfsRepo, UserRepo }
+import lila.user.{ Me, User, UserApi, UserPerfsRepo, UserRepo, given }
 
 final class SimulApi(
     userRepo: UserRepo,
@@ -40,9 +40,11 @@ final class SimulApi(
     lila.log.asyncActorMonitor
   )
 
+  export repo.{ find, byIds, byTeamLeaders }
+
   def currentHostIds: Fu[Set[UserId]] = currentHostIdsCache.get {}
 
-  export repo.{ find, byIds, byTeamLeaders }
+  def isSimulHost(userId: UserId): Fu[Boolean] = currentHostIds.map(_ contains userId)
 
   private val currentHostIdsCache = cacheApi.unit[Set[UserId]]:
     _.refreshAfterWrite(5 minutes).buildAsyncFuture: _ =>

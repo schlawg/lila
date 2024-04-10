@@ -4,7 +4,7 @@ package team
 import cats.derived.*
 
 import lila.memo.CacheApi.*
-import lila.security.Granter
+import lila.core.perm.Granter
 import lila.user.{ Me, User, UserRepo }
 
 object TeamSecurity:
@@ -66,7 +66,7 @@ final class TeamSecurity(memberRepo: TeamMemberRepo, userRepo: UserRepo, cached:
           )
           .verifying(
             "You can't make Lichess a leader",
-            n => Granter(_.ManageTeam) || n.isnt(User.lichessId)
+            n => Granter[Me](_.ManageTeam) || n.isnt(UserId.lichess)
           )
           .verifying(
             "This user is already a team leader",
@@ -90,9 +90,9 @@ final class TeamSecurity(memberRepo: TeamMemberRepo, userRepo: UserRepo, cached:
       single("leaders" -> seq(permissionsForm))
         .verifying(
           "You can't make Lichess a leader",
-          Granter(_.ManageTeam) ||
-            !_.exists(_.name.is(User.lichessId)) ||
-            t.leaders.exists(_.is(User.lichessId))
+          Granter[Me](_.ManageTeam) ||
+            !_.exists(_.name.is(UserId.lichess)) ||
+            t.leaders.exists(_.is(UserId.lichess))
         )
         .verifying(
           "There must be at least one leader able to manage permissions",
@@ -113,7 +113,7 @@ final class TeamSecurity(memberRepo: TeamMemberRepo, userRepo: UserRepo, cached:
         .verifying(
           "You cannot evict the team creator",
           d =>
-            Granter(_.ManageTeam) || !t.hasAdminCreator || d.exists: l =>
+            Granter[Me](_.ManageTeam) || !t.hasAdminCreator || d.exists: l =>
               l.name.is(t.createdBy) && l.perms(Permission.Admin)
         )
         .verifying(
