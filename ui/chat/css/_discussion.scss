@@ -61,10 +61,6 @@
       vertical-align: bottom;
     }
 
-    t .user-link {
-      color: $c-link;
-    }
-
     .patron {
       font-size: 1.1em;
       width: 1.2em;
@@ -110,7 +106,7 @@
 
     &.as-mod {
       li:hover {
-        background: $c_accent_bg--mix-10;
+        background: $m-accent_bg--mix-10;
       }
     }
   }

@@ -8,7 +8,7 @@ import play.api.i18n.Lang
 import lila.app.ContentSecurityPolicy
 import lila.app.templating.Environment.{ *, given }
 import lila.app.ui.ScalatagsTemplate.{ *, given }
-import lila.core.LangPath
+import lila.core.app.LangPath
 import lila.common.String.html.safeJsonValue
 import scalalib.StringUtils.escapeHtmlRaw
 
@@ -204,19 +204,21 @@ object layout:
     )
 
   // consolidate script packaging here to dedup chunk dependencies
-  private def preloadScripts(modules: EsmList)(using ctx: PageContext) =
+  private def modulesPreload(modules: EsmList)(using ctx: PageContext) =
     val keys: List[String] = "site" :: {
       ctx.data.inquiry.isDefined.option("mod.inquiry")
         :: (!netConfig.isProd).option("site.devMode")
         :: modules.map(_.map(_.key))
-    }.flatten
+    }.flatten // in head
     frag(
       jsTag("manifest"),
       cashTag,
       keys.map(jsTag),
-      env.manifest.deps(keys).map(jsTag),
-      modules.flatMap(_.map(_.init))
+      env.manifest.deps(keys).map(jsTag)
     )
+
+  private def modulesInit(modules: EsmList)(using ctx: PageContext) =
+    modules.flatMap(_.map(_.init)) // in body
 
   private def hrefLang(langStr: String, path: String) =
     s"""<link rel="alternate" hreflang="$langStr" href="$netBaseUrl$path"/>"""
@@ -329,7 +331,9 @@ object layout:
           piecesPreload,
           manifests,
           jsLicense,
-          withHrefLangs.map(hrefLangs)
+          withHrefLangs.map(hrefLangs),
+          modulesPreload(modules ++ pageModule.so(module => jsPageModule(module.name))),
+          systemThemeScript
         ),
         st.body(
           cls := {
@@ -405,8 +409,7 @@ object layout:
           spinnerMask,
           div(id := "inline-scripts")(
             frag(ctx.needsFp.option(fingerprintTag), ctx.nonce.map(inlineJs.apply)),
-            preloadScripts(modules ++ List(pageModule.map(mod => jsPageModule(mod.name)))),
-            systemThemeScript,
+            modulesInit(modules ++ pageModule.so(module => jsPageModule(module.name))),
             moreJs,
             pageModule.map { mod => frag(jsonScript(mod.data)) }
           )
