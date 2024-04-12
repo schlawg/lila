@@ -1,10 +1,10 @@
 package lila.core
 
 import reactivemongo.api.bson.Macros.Annotations.Key
-import reactivemongo.api.bson.{ BSONDocument, BSONDocumentHandler }
+import reactivemongo.api.bson.{ BSONDocument, BSONDocumentHandler, BSONDocumentReader }
 import reactivemongo.api.bson.collection.BSONCollection
 import play.api.i18n.Lang
-import _root_.chess.PlayerTitle
+import _root_.chess.{ ByColor, PlayerTitle }
 
 import lila.core.perf.Perf
 import lila.core.rating.data.{ IntRating, IntRatingDiff }
@@ -12,7 +12,7 @@ import lila.core.perf.{ PerfKey, UserPerfs, UserWithPerfs }
 import lila.core.userId.*
 import lila.core.email.*
 import lila.core.id.Flair
-import lila.core.perm.Grantable
+import lila.core.rating.Glicko
 
 object user:
 
@@ -161,9 +161,6 @@ object user:
 
   object User:
     given UserIdOf[User] = _.id
-    given perm.Grantable[User] = new:
-      def enabled(u: User) = u.enabled
-      def roles(u: User)   = u.roles
 
   case class Count(
       ai: Int,
@@ -188,6 +185,7 @@ object user:
   trait UserApi:
     def byId[U: UserIdOf](u: U): Fu[Option[User]]
     def byIds[U: UserIdOf](us: Iterable[U]): Fu[List[User]]
+    def byIdAs[U: BSONDocumentReader](id: String, proj: BSONDocument): Fu[Option[U]]
     def me[U: UserIdOf](u: U): Fu[Option[Me]]
     def email(id: UserId): Fu[Option[EmailAddress]]
     def withEmails[U: UserIdOf](user: U): Fu[Option[WithEmails]]
@@ -210,6 +208,18 @@ object user:
     def withPerfs(u: User): Fu[UserWithPerfs]
     def withPerfs[U: UserIdOf](id: U): Fu[Option[UserWithPerfs]]
     def perfsOf[U: UserIdOf](u: U): Fu[UserPerfs]
+    def dubiousPuzzle(id: UserId, puzzle: Perf): Fu[Boolean]
+    def setPerf(userId: UserId, pk: PerfKey, perf: Perf): Funit
+    def userIdsWithRoles(roles: List[String]): Fu[Set[UserId]]
+    def incColor(userId: UserId, value: Int): Unit
+    def firstGetsWhite(u1O: Option[UserId], u2O: Option[UserId]): Fu[Boolean]
+    def gamePlayersAny(userIds: ByColor[Option[UserId]], perf: PerfKey): Fu[GameUsers]
+    def gamePlayersLoggedIn(
+        ids: ByColor[UserId],
+        perf: PerfKey,
+        useCache: Boolean = true
+    ): Fu[Option[ByColor[WithPerf]]]
+    def glicko(userId: UserId, perf: PerfKey): Fu[Glicko]
 
   trait LightUserApiMinimal:
     val async: LightUser.Getter
@@ -255,15 +265,19 @@ object user:
 
   abstract class UserRepo(val coll: BSONCollection):
     given userHandler: BSONDocumentHandler[User]
+    given planHandler: BSONDocumentHandler[Plan]
   abstract class PerfsRepo(val coll: BSONCollection):
     def aggregateLookup: BSONDocument
     def aggregateReadFirst[U: UserIdOf](root: BSONDocument, u: U): UserPerfs
 
   object BSONFields:
-    val enabled = "enabled"
-    val title   = "title"
-    val roles   = "roles"
-    val marks   = "marks"
+    val enabled  = "enabled"
+    val title    = "title"
+    val roles    = "roles"
+    val marks    = "marks"
+    val username = "username"
+    val flair    = "flair"
+    val plan     = "plan"
 
   trait Note:
     val text: String
@@ -291,15 +305,11 @@ object user:
     given (using me: Me): LightUser.Me           = me.lightMe
     given [M[_]]: Conversion[M[Me], M[User]]     = Me.raw(_)
     given (using me: Me): Option[Me]             = Some(me)
-    given Grantable[Me] = new Grantable[User]:
-      def enabled(me: Me) = me.enabled
-      def roles(me: Me)   = me.roles
     extension (me: Me)
       def userId: UserId        = me.id
       def lightMe: LightUser.Me = LightUser.Me(me.value.light)
       inline def modId: ModId   = userId.into(ModId)
       inline def myId: MyId     = userId.into(MyId)
-    // given (using me: Me): LightUser.Me = LightUser.Me(me.light)
 
   final class Flag(val code: Flag.Code, val name: Flag.Name, val abrev: Option[String]):
     def shortName = abrev | name
@@ -311,3 +321,6 @@ object user:
   trait FlagApi:
     val all: List[Flag]
     val nonCountries: List[Flag.Code]
+
+  type GameUser  = Option[WithPerf]
+  type GameUsers = ByColor[GameUser]

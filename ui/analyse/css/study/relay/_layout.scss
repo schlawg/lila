@@ -141,7 +141,7 @@ main.analyse.is-relay:not(.has-relay-tour) {
   }
 
   @include mq-at-least-col2 {
-    grid-template-rows: repeat(2, calc(var(---cg-height) / 2)) 2.5em;
+    grid-template-rows: repeat(2, calc(var(--cg-height) / 2)) 2.5em; // TODO add hyphen once chessground is updated
     grid-template-areas:
       'board       gauge side'
       'board       gauge tools'
@@ -158,7 +158,7 @@ main.analyse.is-relay:not(.has-relay-tour) {
   }
 
   @include mq-at-least-col3 {
-    grid-template-rows: calc(var(---cg-height) * 0.6) calc(var(---cg-height) * 0.4) 2.5em fit-content(0);
+    grid-template-rows: var(--cg-height) 2.5em; // TODO add hyphen once chessground is updated
     grid-template-areas:
       'side        . board gauge tools'
       'chat        . board gauge tools'

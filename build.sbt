@@ -125,12 +125,12 @@ lazy val cms = module("cms",
 )
 
 lazy val puzzle = module("puzzle",
-  Seq(game, user),
+  Seq(game),
   reactivemongo.bundle ++ tests.bundle
 )
 
 lazy val storm = module("storm",
-  Seq(puzzle),
+  Seq(puzzle, user),
   reactivemongo.bundle
 )
 
@@ -190,7 +190,7 @@ lazy val search = module("search",
 )
 
 lazy val chat = module("chat",
-  Seq(memo, user),
+  Seq(memo, coreI18n),
   Seq(scalatags) ++ reactivemongo.bundle
 )
 
@@ -200,7 +200,7 @@ lazy val room = module("room",
 )
 
 lazy val timeline = module("timeline",
-  Seq(user),
+  Seq(memo),
   reactivemongo.bundle
 )
 
@@ -255,17 +255,17 @@ lazy val pool = module("pool",
 )
 
 lazy val activity = module("activity",
-  Seq(puzzle),
+  Seq(puzzle, user),
   reactivemongo.bundle
 )
 
 lazy val lobby = module("lobby",
-  Seq(game, user),
+  Seq(game),
   Seq(lettuce) ++ reactivemongo.bundle
 )
 
 lazy val setup = module("setup",
-  Seq(lobby),
+  Seq(lobby, user),
   reactivemongo.bundle
 )
 
