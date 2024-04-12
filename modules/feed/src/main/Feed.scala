@@ -12,12 +12,10 @@ import lila.core.lilaism.Lilaism.*
 export lila.common.extensions.unapply
 
 import scalalib.paginator.Paginator
-import lila.core.user.MyId
-import lila.core.user.FlairApi
 import lila.db.dsl.{ *, given }
 import lila.db.paginator.Adapter
 import lila.memo.CacheApi
-import lila.user.Me
+import lila.core.user.FlairApi
 
 object Feed:
 
@@ -88,7 +86,7 @@ final class FeedApi(coll: Coll, cacheApi: CacheApi, flairApi: FlairApi, askEmbed
           up.copy(content = Markdown(text)).some
     case _ => fuccess(none[Update])
 
-  def set(update: Update)(using me: Me): Funit =
+  def set(update: Update)(using me: lila.user.Me): Funit =
     askEmbed.freezeAndCommit(update.content.value, me, s"/feed#${update.id}".some).flatMap { text =>
       coll.update
         .one($id(update.id), update.copy(content = Markdown(text)), upsert = true)

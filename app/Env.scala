@@ -187,6 +187,6 @@ given ConfigLoader[NetConfig] = ConfigLoader(config =>
       socketAlts = get[List[String]]("socket.alts"),
       crawlable = get[Boolean]("crawlable"),
       rateLimit = get[RateLimit]("ratelimit"),
-      email = get[lila.core.EmailAddress]("email")
+      email = get[EmailAddress]("email")
     )
 )

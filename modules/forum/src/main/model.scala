@@ -1,6 +1,5 @@
 package lila.forum
 
-import lila.user.User
 import lila.ask.AskEmbed
 
 case class CategView(

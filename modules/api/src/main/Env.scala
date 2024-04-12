@@ -8,9 +8,8 @@ import play.api.{ Configuration, Mode }
 import lila.chat.{ GetLinkCheck, IsChatFresh }
 import lila.common.Bus
 import lila.common.config.*
-import lila.core.actorApi.Announce
-import lila.core.actorApi.lpv.*
-import lila.user.User
+import lila.socket.Announce
+import lila.core.misc.lpv.*
 
 @Module
 final class Env(

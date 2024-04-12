@@ -11,10 +11,10 @@ import lila.common.Json.given
 import lila.common.{ Bus, Lilakka }
 import lila.game.{ Event, Game, Pov }
 import scalalib.actor.AsyncActorConcMap
-import lila.core.actorApi.map.{ Exists, Tell, TellAll, TellIfExists, TellMany }
+import lila.core.misc.map.{ Exists, Tell, TellAll, TellIfExists, TellMany }
 import lila.core.game.TvSelect
 import lila.core.round.*
-import lila.core.actorApi.socket.remote.TellSriIn
+import lila.core.socket.remote.TellSriIn
 import lila.room.RoomSocket.{ Protocol as RP, * }
 import lila.core.socket.{ protocol as P, * }
 import lila.core.net.IpAddress

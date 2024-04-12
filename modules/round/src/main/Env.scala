@@ -14,7 +14,7 @@ import lila.game.{ Game, GameRepo, Pov }
 import lila.core.round.{ Abort, Resign }
 import lila.memo.SettingStore
 import lila.rating.RatingFactor
-import lila.core.perf.PerfType
+import lila.rating.PerfType
 import lila.core.user.{ FlairGet, FlairGetMap }
 
 @Module
@@ -112,7 +112,7 @@ final class Env(
   private val getFactors: () => Map[PerfType, RatingFactor] = ratingFactorsSetting.get
 
   Bus.subscribeFuns(
-    "accountClose" -> { case lila.core.actorApi.security.CloseAccount(userId) =>
+    "accountClose" -> { case lila.core.security.CloseAccount(userId) =>
       resignAllGamesOf(userId)
     },
     "gameStartId" -> { case Game.OnStart(gameId) =>

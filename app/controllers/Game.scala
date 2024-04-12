@@ -9,7 +9,8 @@ import lila.api.GameApiV2
 import lila.app.{ *, given }
 import lila.common.HTTPRequest
 
-import lila.core.perf.{ PerfKey, PerfType }
+import lila.rating.PerfType
+import lila.core.id.GameAnyId
 
 final class Game(env: Env, apiC: => Api) extends LilaController(env):
 
@@ -79,7 +80,7 @@ final class Game(env: Env, apiC: => Api) extends LilaController(env):
                 until = getTimestamp("until"),
                 max = getIntAs[Max]("max").map(_.atLeast(1)),
                 rated = getBoolOpt("rated"),
-                perfType = ((~get("perfType")).split(",").map { PerfKey(_) }.flatMap(PerfType.apply)).toSet,
+                perfType = ((~get("perfType")).split(",").flatMap { PerfKey(_) }.map(PerfType.apply)).toSet,
                 color = get("color").flatMap(chess.Color.fromName),
                 analysed = getBoolOpt("analysed"),
                 flags = requestPgnFlags(extended = false),
@@ -166,5 +167,5 @@ final class Game(env: Env, apiC: => Api) extends LilaController(env):
     env.user.lightUserApi.preloadMany(game.userIds)
   private[controllers] def preloadUsers(users: lila.user.GameUsers): Unit =
     env.user.lightUserApi.preloadUsers(users.all.collect:
-      case Some(lila.user.User.WithPerf(u, _)) => u
+      case Some(lila.core.user.WithPerf(u, _)) => u
     )

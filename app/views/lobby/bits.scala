@@ -4,6 +4,7 @@ import controllers.routes
 
 import lila.app.templating.Environment.{ *, given }
 import lila.app.ui.ScalatagsTemplate.{ *, given }
+import lila.rating.PerfType
 
 object bits:
 
@@ -15,7 +16,7 @@ object bits:
   def tournaments(tours: List[lila.tournament.Tournament])(using ctx: Context) =
     div(cls := "lobby__tournaments lobby__box")(
       a(cls := "lobby__box__top", href := routes.Tournament.home)(
-        h2(cls := "title text", dataIcon := licon.Trophy)(trans.site.openTournaments()),
+        h2(cls := "title text", dataIcon := Icon.Trophy)(trans.site.openTournaments()),
         span(cls := "more")(trans.site.more(), " »")
       ),
       div(cls := "enterable_list"):
@@ -25,7 +26,7 @@ object bits:
   def simuls(simuls: List[lila.simul.Simul])(using ctx: Context) =
     div(cls := "lobby__simuls lobby__box")(
       a(cls := "lobby__box__top", href := routes.Simul.home)(
-        h2(cls := "title text", dataIcon := licon.Group)(trans.site.simultaneousExhibitions()),
+        h2(cls := "title text", dataIcon := Icon.Group)(trans.site.simultaneousExhibitions()),
         span(cls := "more")(trans.site.more(), " »")
       ),
       div(cls := "enterable_list"):
@@ -42,7 +43,7 @@ object bits:
       /*ctx.pref.showRatings.option(
         div(cls := "lobby__leaderboard lobby__box")(
           div(cls := "lobby__box__top")(
-            h2(cls := "title text", dataIcon := licon.CrownElite)(trans.site.leaderboard()),
+            h2(cls := "title text", dataIcon := Icon.CrownElite)(trans.site.leaderboard()),
             a(cls := "more", href := routes.User.list)(trans.site.more(), " »")
           ),
           div(cls := "lobby__box__content"):
@@ -51,17 +52,14 @@ object bits:
                 leaderboard.map: l =>
                   tr(
                     td(lightUserLink(l.user)),
-                    lila.core.perf
-                      .PerfType(l.perfKey)
-                      .map: pt =>
-                        td(cls := "text", dataIcon := pt.icon)(l.rating),
+                    td(cls := "text", dataIcon := PerfType(l.perfKey).icon)(l.rating),
                     td(ratingProgress(l.progress))
                   )
         )
       ),
       div(cls := s"lobby__box ${if ctx.pref.showRatings then "lobby__winners" else "lobby__wide-winners"}")(
         div(cls := "lobby__box__top")(
-          h2(cls := "title text", dataIcon := licon.Trophy)(trans.arena.tournamentWinners()),
+          h2(cls := "title text", dataIcon := Icon.Trophy)(trans.arena.tournamentWinners()),
           a(cls := "more", href := routes.Tournament.leaderboard)(trans.site.more(), " »")
         ),
         div(cls := "lobby__box__content"):
@@ -80,7 +78,7 @@ object bits:
       div(cls := "lobby__tournaments-simuls")(
         div(cls := "lobby__tournaments lobby__box")(
           a(cls := "lobby__box__top", href := routes.Tournament.home)(
-            h2(cls := "title text", dataIcon := licon.Trophy)(trans.site.openTournaments()),
+            h2(cls := "title text", dataIcon := Icon.Trophy)(trans.site.openTournaments()),
             span(cls := "more")(trans.site.more(), " »")
           ),
           div(cls := "lobby__box__content"):
@@ -89,7 +87,7 @@ object bits:
         simuls.nonEmpty.option(
           div(cls := "lobby__simuls lobby__box")(
             a(cls := "lobby__box__top", href := routes.Simul.home)(
-              h2(cls := "title text", dataIcon := licon.Group)(trans.site.simultaneousExhibitions()),
+              h2(cls := "title text", dataIcon := Icon.Group)(trans.site.simultaneousExhibitions()),
               span(cls := "more")(trans.site.more(), " »")
             ),
             div(cls := "lobby__box__content"):
@@ -169,7 +167,7 @@ object bits:
       br,
       a(
         cls      := "text button button-fat",
-        dataIcon := licon.PlayTriangle,
+        dataIcon := Icon.PlayTriangle,
         href     := routes.Round.player(current.pov.fullId)
       )(
         trans.site.joinTheGame()
@@ -180,7 +178,7 @@ object bits:
       br,
       br,
       postForm(action := routes.Round.resign(current.pov.fullId))(
-        button(cls := "text button button-red", dataIcon := licon.X):
+        button(cls := "text button button-red", dataIcon := Icon.X):
           if current.pov.game.abortableByUser then trans.site.abortTheGame() else trans.site.resignTheGame()
       ),
       br,

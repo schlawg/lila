@@ -52,7 +52,7 @@ case class Ask(
   def toAnon(user: UserId): Option[String] =
     Some(if isAnon then Ask.anonHash(user.value, _id) else user.value)
 
-  def toAnon(ip: lila.core.IpAddress): Option[String] =
+  def toAnon(ip: lila.core.net.IpAddress): Option[String] =
     isOpen.option(Ask.anonHash(ip.toString, _id))
 
   // eid = effective id, either a user id or an anonymous hash

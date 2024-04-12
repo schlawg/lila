@@ -24,7 +24,7 @@ final class Env(
     userRepo: lila.user.UserRepo,
     perfsRepo: lila.user.UserPerfsRepo,
     userApi: lila.user.UserApi,
-    chatApi: lila.chat.ChatApi,
+    chat: lila.core.chat.ChatApi,
     lightUser: lila.core.LightUser.GetterFallback,
     onGameStart: lila.core.game.OnStart,
     cacheApi: lila.memo.CacheApi,
@@ -77,7 +77,7 @@ final class Env(
     "moveEventSimul" -> { case lila.core.round.SimulMoveEvent(move, _, opponentUserId) =>
       import lila.common.Json.given
       Bus.publish(
-        lila.core.actorApi.socket.SendTo(
+        lila.core.socket.SendTo(
           opponentUserId,
           lila.core.socket.makeMessage("simulPlayerMove", move.gameId)
         ),

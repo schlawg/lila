@@ -1,8 +1,7 @@
 package lila.core
 package perm
 
-import lila.core.user.UserEnabled
-import lila.core.user.User
+import lila.core.user.{ User, UserEnabled }
 
 trait Grantable[U]:
   def enabled(u: U): UserEnabled
@@ -20,7 +19,7 @@ object Granter:
     me.isEnabled && ofDbKeys(f(Permission), me.dbKeys)
 
   def opt[U: Grantable](f: Permission.Selector)(using me: Option[U]): Boolean =
-    me.soUse(apply(f))
+    me.exists(of(f))
 
   def of[U: Grantable](permission: Permission)(user: U): Boolean =
     user.isEnabled && ofDbKeys(permission, user.dbKeys)

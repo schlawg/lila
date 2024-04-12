@@ -10,7 +10,7 @@ import lila.core.shutup.PublicSource
 import lila.memo.CacheApi.*
 import lila.core.perm.Granter
 import lila.core.security.{ FloodSource, FloodApi, SpamApi }
-import lila.user.{ Me, User, UserRepo, given }
+import lila.user.UserRepo
 import lila.core.chat.{ OnTimeout, OnReinstate }
 import lila.core.user.{ FlairGet, FlairGetMap }
 
@@ -27,7 +27,7 @@ final class ChatApi(
     extends lila.core.chat.ChatApi:
 
   import Chat.given
-  export userChat.{ write, volatile, timeout }
+  export userChat.{ write, volatile, timeout, system }
 
   def exists(id: ChatId) = coll.exists($id(id))
 
@@ -123,9 +123,6 @@ final class ChatApi(
       val line = UserLine(UserName.lichess, None, false, flair = true, text, troll = false, deleted = false)
       publishLine(chatId, line, busChan)
 
-    def service(chatId: ChatId, text: String, busChan: BusChan.Select, isVolatile: Boolean): Unit =
-      (if isVolatile then volatile else system) (chatId, text, busChan)
-
     def timeout(
         chatId: ChatId,
         userId: UserId,
@@ -133,7 +130,7 @@ final class ChatApi(
         scope: ChatTimeout.Scope,
         text: String,
         busChan: BusChan.Select
-    )(using mod: Me.Id): Funit =
+    )(using mod: MyId): Funit =
       coll.byId[UserChat](chatId.value).zip(userRepo.me(mod)).zip(userRepo.byId(userId)).flatMap {
         case ((Some(chat), Some(me)), Some(user))
             if isMod(using me) || (busChan(BusChan) == BusChan.study && isRelayMod(using me)) ||
@@ -142,7 +139,7 @@ final class ChatApi(
         case _ => funit
       }
 
-    def publicTimeout(data: ChatTimeout.TimeoutFormData)(using Me): Funit =
+    def publicTimeout(data: ChatTimeout.TimeoutFormData)(using MyId): Funit =
       ChatTimeout
         .Reason(data.reason)
         .so: reason =>
@@ -209,7 +206,7 @@ final class ChatApi(
               )
               if isNew then
                 lila.common.Bus
-                  .publish(lila.core.actorApi.security.DeletePublicChats(user.id), "deletePublicChats")
+                  .publish(lila.core.security.DeletePublicChats(user.id), "deletePublicChats")
             else logger.info(s"${mod.username} times out ${user.username} in #${c.id} for ${reason.key}")
           }
 

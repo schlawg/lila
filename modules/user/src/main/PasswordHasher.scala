@@ -9,6 +9,7 @@ import javax.crypto.Cipher
 import javax.crypto.spec.{ IvParameterSpec, SecretKeySpec }
 
 import lila.core.config.Secret
+import lila.core.email.UserIdOrEmail
 
 /** Encryption for bcrypt hashes.
   *
@@ -48,7 +49,6 @@ final class PasswordHasher(
     hashTimer: (=> Array[Byte]) => Array[Byte] = x => x
 )(using Executor):
   import org.mindrot.BCrypt
-  import User.ClearPassword
 
   private val aes = new Aes(secret)
   private def bHash(salt: Array[Byte], p: ClearPassword) =

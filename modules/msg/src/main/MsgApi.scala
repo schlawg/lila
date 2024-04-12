@@ -153,7 +153,7 @@ final class MsgApi(
               _ <- threadWrite
             yield
               import MsgSecurity.*
-              import lila.core.actorApi.socket.SendTo
+              import lila.core.socket.SendTo
               import lila.core.socket.makeMessage
               if send == Ok || send == TrollFriend then
                 notifier.onPost(threadId)
@@ -238,6 +238,7 @@ final class MsgApi(
           UnwindField("contact")
         )
       .flatMap: docs =>
+        import lila.user.BSONHandlers.userHandler
         (for
           doc     <- docs
           msgs    <- doc.getAsOpt[List[Msg]]("msgs")

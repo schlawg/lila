@@ -5,7 +5,6 @@ import lila.user.{ Me, User, given }
 import lila.core.user.{ UserMark, NoteApi, UserRepo }
 
 import Appeal.Filter
-import lila.core.user.MyId
 
 final class AppealApi(
     coll: Coll,
@@ -102,6 +101,7 @@ final class AppealApi(
           UnwindField("user")
         )
       .map: docs =>
+        import lila.user.BSONHandlers.userHandler
         for
           doc    <- docs
           appeal <- doc.asOpt[Appeal]
@@ -109,7 +109,7 @@ final class AppealApi(
         yield Appeal.WithUser(appeal, user)
 
   def filterSelector(filter: Filter) =
-    import User.BSONFields as F
+    import lila.user.BSONFields as F
     filter.value match
       case Some(mark) => $doc(F.marks.$in(List(mark.key)))
       case None       => $doc(F.marks.$nin(UserMark.bannable))

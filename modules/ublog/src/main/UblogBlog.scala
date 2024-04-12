@@ -1,7 +1,8 @@
 package lila.ublog
 
 import lila.core.perm.Granter
-import lila.user.{ Me, User }
+
+import lila.core.perf.UserWithPerfs
 
 case class UblogBlog(
     _id: UblogBlog.Id,
@@ -27,7 +28,7 @@ object UblogBlog:
       case Array("user", id) => User(UserId(id)).some
       case _                 => none
 
-  def make(user: User.WithPerfs) = UblogBlog(
+  def make(user: UserWithPerfs) = UblogBlog(
     _id = Id.User(user.id),
     tier = UblogRank.Tier.default(user),
     modTier = none

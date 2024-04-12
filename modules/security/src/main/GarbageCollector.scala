@@ -4,9 +4,7 @@ import scalalib.ThreadLocalRandom
 import play.api.mvc.RequestHeader
 
 import lila.common.{ Bus, HTTPRequest }
-import lila.core.EmailAddress
 import lila.core.net.IpAddress
-import lila.user.User
 
 // codename UGC
 final class GarbageCollector(
@@ -117,6 +115,6 @@ final class GarbageCollector(
 
   private def doCollect(user: UserId): Unit =
     Bus.publish(
-      lila.core.actorApi.security.GarbageCollect(user),
+      lila.core.security.GarbageCollect(user),
       "garbageCollect"
     )
