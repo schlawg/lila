@@ -15,7 +15,7 @@ import lila.core.timeline.{ AskConcluded, Propagate }
 
 final class AskRepo(
     askDb: lila.db.AsyncColl,
-    //timeline: lila.timeline.Timeline,
+    // timeline: lila.timeline.Timeline,
     cacheApi: lila.memo.CacheApi
 )(using
     Executor
@@ -165,12 +165,14 @@ final class AskRepo(
 
   // only preserve votes if important fields haven't been altered
   private[ask] def upsert(ask: Ask): Fu[Ask] = askDb: coll =>
-    coll.byId[Ask](ask._id) flatMap:
-      case Some(dbAsk) =>
-        val mergedAsk = ask.merge(dbAsk)
-        cache.set(ask._id, mergedAsk.some)
-        if dbAsk eq mergedAsk then fuccess(mergedAsk)
-        else coll.update.one($id(ask._id), mergedAsk).inject(mergedAsk)
-      case _ =>
-        cache.set(ask._id, ask.some)
-        coll.insert.one(ask).inject(ask)
+    coll
+      .byId[Ask](ask._id)
+      .flatMap:
+        case Some(dbAsk) =>
+          val mergedAsk = ask.merge(dbAsk)
+          cache.set(ask._id, mergedAsk.some)
+          if dbAsk eq mergedAsk then fuccess(mergedAsk)
+          else coll.update.one($id(ask._id), mergedAsk).inject(mergedAsk)
+        case _ =>
+          cache.set(ask._id, ask.some)
+          coll.insert.one(ask).inject(ask)
