@@ -49,6 +49,17 @@ object net:
   opaque type Crawler = Boolean
   object Crawler extends YesNo[Crawler]
 
+  opaque type AssetVersion = String
+  object AssetVersion extends OpaqueString[AssetVersion]:
+    private var stored = random
+    def current        = stored
+    def change() =
+      stored = random
+      current
+
+    private def random = AssetVersion(SecureRandom.nextString(6))
+    case class Changed(version: AssetVersion)
+
   opaque type ApiVersion = Int
   object ApiVersion extends OpaqueInt[ApiVersion]:
     def puzzleV2(v: ApiVersion) = v >= 6
