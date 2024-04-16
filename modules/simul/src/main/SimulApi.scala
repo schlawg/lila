@@ -4,12 +4,12 @@ import akka.actor.*
 import chess.variant.Variant
 import chess.{ ByColor, Status }
 import play.api.libs.json.Json
+import monocle.syntax.all.*
 
 import lila.common.Json.given
 import scalalib.paginator.Paginator
 import lila.common.{ Bus, Debouncer }
 import lila.db.dsl.{ *, given }
-import lila.game.{ Game, GameRepo, LightGame }
 import lila.gathering.Condition
 import lila.gathering.Condition.GetMyTeamIds
 import lila.core.team.LightTeam
@@ -22,7 +22,8 @@ import lila.rating.UserWithPerfs.only
 
 final class SimulApi(
     userApi: lila.core.user.UserApi,
-    gameRepo: GameRepo,
+    gameRepo: lila.core.game.GameRepo,
+    newPlayer: lila.core.game.NewPlayer,
     onGameStart: lila.core.game.OnStart,
     socket: SimulSocket,
     repo: SimulRepo,
@@ -98,7 +99,7 @@ final class SimulApi(
         .flatMapz: simul =>
           Variant(variantKey)
             .filter(simul.variants.contains)
-            .ifTrue(simul.nbAccepted < Game.maxPlayingRealtime)
+            .ifTrue(simul.nbAccepted < lila.core.game.maxPlayingRealtime.value)
             .so: variant =>
               val perfType = PerfType(variant, chess.Speed(simul.clock.config.some))
               userApi
@@ -240,7 +241,7 @@ final class SimulApi(
     users     = hostColor.fold(us, us.swap)
     clock     = simul.clock.chessClockOf(hostColor)
     perfType  = PerfType(pairing.player.variant, chess.Speed(clock.config))
-    game1 = Game.make(
+    game1 = lila.core.game.newGame(
       chess = chess
         .Game(
           variantOption = Some:
@@ -251,14 +252,15 @@ final class SimulApi(
           fen = simul.position
         )
         .copy(clock = clock.start.some),
-      players = users.mapWithColor((c, u) => lila.game.Player.make(c, u.only(perfType).some)),
+      players = users.mapWithColor((c, u) => newPlayer(c, u.only(perfType).some)),
       mode = chess.Mode.Casual,
       source = lila.core.game.Source.Simul,
       pgnImport = None
     )
     game2 = game1
       .withId(pairing.gameId)
-      .withSimulId(simul.id)
+      .focus(_.metadata.simulId)
+      .replace(simul.id.some)
       .start
     _ <- gameRepo.insertDenormalized(game2)
   yield

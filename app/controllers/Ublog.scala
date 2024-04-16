@@ -10,8 +10,7 @@ import lila.core.config
 import lila.core.i18n.Language
 import lila.i18n.{ LangPicker, LangList }
 import lila.report.Suspect
-import lila.ublog.{ UblogBlog, UblogPost, UblogRank, Markdown }
-import lila.user.User as UserModel
+import lila.ublog.{ UblogBlog, UblogPost, UblogRank }
 
 final class Ublog(env: Env) extends LilaController(env):
 

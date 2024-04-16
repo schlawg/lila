@@ -8,6 +8,7 @@ import lila.core.net.AssetVersion
 import lila.core.data.SafeJsonStr
 import lila.common.String.html.safeJsonValue
 import lila.web.ui.*
+import lila.web.ContentSecurityPolicy
 
 trait AssetHelper:
   self: I18nHelper & SecurityHelper =>
@@ -35,8 +36,7 @@ trait AssetHelper:
 
   def assetVersion = AssetVersion.current
 
-  def updateManifest() =
-    if !env.net.isProd then env.manifest.update()
+  def updateManifest() = if !env.net.isProd then env.web.manifest.update()
 
   // bump flairs version if a flair is changed only (not added or removed)
   val flairVersion = "______2"
@@ -49,7 +49,11 @@ trait AssetHelper:
   def flairSrc(flair: Flair) = staticAssetUrl(s"$flairVersion/flair/img/$flair.webp")
 
   def cssTag(key: String)(using ctx: Context): Frag =
-    link(href := staticAssetUrl(s"css/${env.manifest.css(key).getOrElse(key)}"), rel := "stylesheet")
+    link(
+      cls  := key,
+      href := staticAssetUrl(s"css/${env.web.manifest.css(key).getOrElse(key)}"),
+      rel  := "stylesheet"
+    )
 
   def jsonScript(json: JsValue | SafeJsonStr, id: String = "page-init-data") =
     script(tpe := "application/json", st.id := id):
@@ -64,11 +68,13 @@ trait AssetHelper:
   private val load = "site.asset.loadEsm"
 
   def jsName(key: String): String =
-    env.manifest.js(key).fold(key)(_.name)
+    env.web.manifest.js(key).fold(key)(_.name)
   def jsTag(key: String): Frag =
     script(tpe := "module", src := staticAssetUrl(s"compiled/${jsName(key)}"))
   def jsDeps(keys: List[String]): Frag = frag:
-    env.manifest.deps(keys).map { dep => script(tpe := "module", src := staticAssetUrl(s"compiled/$dep")) }
+    env.web.manifest.deps(keys).map { dep =>
+      script(tpe := "module", src := staticAssetUrl(s"compiled/$dep"))
+    }
   def jsModule(key: String): EsmInit =
     EsmInit(key, emptyFrag)
   def jsModuleInit(key: String)(using PageContext): EsmInit =
@@ -97,17 +103,9 @@ trait AssetHelper:
     val sockets = socketDomains.map { x => s"wss://$x${(!ctx.req.secure).so(s" ws://$x")}" }
     // include both ws and wss when insecure because requests may come through a secure proxy
     val localDev = (!ctx.req.secure).so(List("http://127.0.0.1:3000"))
-    ContentSecurityPolicy(
-      defaultSrc = List("'self'", assetDomain.value),
-      connectSrc =
-        "'self'" :: "blob:" :: "data:" :: assetDomain.value :: sockets ::: env.explorerEndpoint :: env.tablebaseEndpoint :: localDev,
-      styleSrc = List("'self'", "'unsafe-inline'", assetDomain.value),
-      frameSrc = List("'self'", assetDomain.value, "www.youtube.com", "player.twitch.tv"),
-      workerSrc = List("'self'", assetDomain.value, "blob:"),
-      imgSrc = List("'self'", "blob:", "data:", "*"),
-      scriptSrc = List("'self'", assetDomain.value),
-      fontSrc = List("'self'", assetDomain.value),
-      baseUri = List("'none'")
+    ContentSecurityPolicy.basic(
+      assetDomain,
+      assetDomain.value :: sockets ::: env.explorerEndpoint :: env.tablebaseEndpoint :: localDev
     )
 
   def defaultCsp(using ctx: PageContext): ContentSecurityPolicy =

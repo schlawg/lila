@@ -9,7 +9,6 @@ object Environment
     with RouterHelper
     with AssetHelper
     with DateHelper
-    with NumberHelper
     with PaginatorHelper
     with FormHelper
     with lila.setup.SetupUi
@@ -24,6 +23,8 @@ object Environment
     with ChessgroundHelper
     with HtmlHelper:
 
+  export NumberHelper.*
+
   export lila.core.lilaism.Lilaism.{ *, given }
   export lila.common.extensions.*
   export lila.common.Icon
@@ -36,7 +37,7 @@ object Environment
   def env: Env                    = envVar.get
 
   def netConfig           = env.net
-  def netBaseUrl          = env.net.baseUrl.value
+  def netBaseUrl          = env.net.baseUrl
   def contactEmailInClear = env.net.email.value
 
   given lila.core.config.NetDomain = env.net.domain
@@ -59,7 +60,7 @@ object Environment
   def tablebaseEndpoint      = env.tablebaseEndpoint
   def externalEngineEndpoint = env.externalEngineEndpoint
 
-  def chessground(pov: lila.game.Pov)(using ctx: Context): Frag =
+  def chessground(pov: Pov)(using ctx: Context): Frag =
     chessground(
       board = pov.game.board,
       orient = pov.color,

@@ -3,15 +3,15 @@ package lila.analyse
 import play.api.libs.json.*
 
 import lila.common.Bus
-import lila.game.actorApi.InsertGame
-import lila.game.{ Game, GameRepo }
+import lila.core.game.InsertGame
 import lila.core.misc.map.TellIfExists
-import lila.tree.Analysis
+import lila.tree.{ Analysis, ExportOptions, Tree }
 
 final class Analyser(
-    gameRepo: GameRepo,
+    gameRepo: lila.core.game.GameRepo,
     analysisRepo: AnalysisRepo
-)(using Executor):
+)(using Executor)
+    extends lila.tree.Analyser:
 
   def get(game: Game): Fu[Option[Analysis]] =
     analysisRepo.byGame(game)
@@ -24,7 +24,7 @@ final class Analyser(
         gameRepo.game(id).flatMapz { prev =>
           val game = prev.setAnalysed
           for
-            _ <- gameRepo.setAnalysed(game.id)
+            _ <- gameRepo.setAnalysed(game.id, true)
             _ <- analysisRepo.save(analysis)
             _ <- sendAnalysisProgress(analysis, complete = true)
           yield
@@ -44,7 +44,7 @@ final class Analyser(
           Bus.publish(
             TellIfExists(
               id.value,
-              lila.core.analyse.AnalysisProgress: () =>
+              lila.tree.AnalysisProgress: () =>
                 makeProgressPayload(analysis, g.game, g.fen | g.game.variant.initialFen)
             ),
             "roundSocket"
@@ -52,7 +52,7 @@ final class Analyser(
         }
       case _ =>
         fuccess:
-          Bus.publish(actorApi.StudyAnalysisProgress(analysis, complete), "studyAnalysisProgress")
+          Bus.publish(lila.tree.StudyAnalysisProgress(analysis, complete), "studyAnalysisProgress")
 
   private def makeProgressPayload(
       analysis: Analysis,
@@ -61,6 +61,5 @@ final class Analyser(
   ): JsObject =
     Json.obj(
       "analysis" -> JsonView.bothPlayers(game.startedAtPly, analysis),
-      "tree" -> lila.tree.Node.minimalNodeJsonWriter.writes:
-        lila.tree.TreeBuilder(game, analysis.some, initialFen, lila.tree.ExportOptions.default)
+      "tree"     -> Tree.makeMinimalJsonString(game, analysis.some, initialFen, ExportOptions.default)
     )

@@ -23,7 +23,6 @@ final class Env(
     SessionCookieBaker
 ):
   val net: NetConfig = config.get[NetConfig]("net")
-  val manifest       = AssetManifest(environment, net)
 
   export net.{ domain, baseUrl, assetBaseUrlInternal }
 
@@ -70,7 +69,6 @@ final class Env(
   val pool: lila.pool.Env               = wire[lila.pool.Env]
   val lobby: lila.lobby.Env             = wire[lila.lobby.Env]
   val setup: lila.setup.Env             = wire[lila.setup.Env]
-  val importer: lila.importer.Env       = wire[lila.importer.Env]
   val simul: lila.simul.Env             = wire[lila.simul.Env]
   val appeal: lila.appeal.Env           = wire[lila.appeal.Env]
   val timeline: lila.timeline.Env       = wire[lila.timeline.Env]
@@ -114,27 +112,17 @@ final class Env(
   val appVersionCommit  = config.getOptional[String]("app.version.commit")
   val appVersionMessage = config.getOptional[String]("app.version.message")
 
-  lazy val preloader     = wire[mashup.Preload]
-  lazy val socialInfo    = wire[mashup.UserInfo.SocialApi]
-  lazy val userNbGames   = wire[mashup.UserInfo.NbGamesApi]
-  lazy val userInfo      = wire[mashup.UserInfo.UserInfoApi]
-  lazy val teamInfo      = wire[mashup.TeamInfoApi]
-  lazy val gamePaginator = wire[mashup.GameFilterMenu.PaginatorBuilder]
-  lazy val pageCache     = wire[http.PageCache]
-
-  private val tryDailyPuzzle: lila.puzzle.DailyPuzzle.Try = () =>
-    Future {
-      puzzle.daily.get
-    }.flatMap(identity)
-      .withTimeoutDefault(50.millis, none)
-      .recover { case e: Exception =>
-        lila.log("preloader").warn("daily puzzle", e)
-        none
-      }
+  val preloader     = wire[mashup.Preload]
+  val socialInfo    = wire[mashup.UserInfo.SocialApi]
+  val userNbGames   = wire[mashup.UserInfo.NbGamesApi]
+  val userInfo      = wire[mashup.UserInfo.UserInfoApi]
+  val teamInfo      = wire[mashup.TeamInfoApi]
+  val gamePaginator = wire[mashup.GameFilterMenu.PaginatorBuilder]
+  val pageCache     = wire[http.PageCache]
 
   lila.common.Bus.subscribeFun("renderer"):
     case lila.tv.RenderFeaturedJs(game, promise) =>
-      promise.success(Html(views.html.game.mini.noCtx(lila.game.Pov.naturalOrientation(game), tv = true)))
+      promise.success(Html(views.html.game.mini.noCtx(Pov.naturalOrientation(game), tv = true)))
     case lila.puzzle.DailyPuzzle.Render(puzzle, fen, lastMove, promise) =>
       promise.success(Html(views.html.puzzle.bits.daily(puzzle, fen, lastMove)))
 
@@ -159,6 +147,7 @@ given ConfigLoader[NetConfig] = ConfigLoader(config =>
       socketAlts = get[List[String]]("socket.alts"),
       crawlable = get[Boolean]("crawlable"),
       rateLimit = get[RateLimit]("ratelimit"),
-      email = get[EmailAddress]("email")
+      email = get[EmailAddress]("email"),
+      logRequests = get[Boolean]("http.log")
     )
 )

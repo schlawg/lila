@@ -13,7 +13,7 @@ import scala.util.chaining.*
 import lila.common.Bus
 import lila.core.LightUser
 import lila.db.dsl.{ *, given }
-import lila.game.{ Game, Pov }
+
 import lila.gathering.Condition.WithVerdicts
 import lila.gathering.GreatPlayer
 
@@ -35,7 +35,7 @@ final class SwissApi(
     chatApi: lila.core.chat.ChatApi,
     userApi: lila.core.user.UserApi,
     lightUserApi: lila.core.user.LightUserApi,
-    roundApi: lila.game.core.RoundApi
+    roundApi: lila.core.round.RoundApi
 )(using scheduler: Scheduler)(using Executor, akka.stream.Materializer)
     extends lila.core.swiss.SwissApi:
 

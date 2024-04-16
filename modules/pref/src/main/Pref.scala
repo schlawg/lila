@@ -44,8 +44,10 @@ case class Pref(
     resizeHandle: Int,
     agreement: Int,
     usingAltSocket: Option[Boolean],
-    boardBrightness: Int,
+    simpleBoard: Boolean,
+    boardBrightness: Float,
     boardOpacity: Float,
+    boardHue: Float, // in turns, 1turn = 2pi
     tags: Map[String, String] = Map.empty
 ) extends lila.core.pref.Pref:
 
@@ -464,8 +466,10 @@ object Pref:
     resizeHandle = ResizeHandle.INITIAL,
     agreement = Agreement.current,
     usingAltSocket = none,
-    boardBrightness = 100,
+    simpleBoard = false,
+    boardBrightness = 1f,
     boardOpacity = 1f,
+    boardHue = 0f,
     tags = Map.empty
   )
 

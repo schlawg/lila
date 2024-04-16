@@ -5,7 +5,7 @@ import reactivemongo.api.bson.*
 
 import lila.common.{ Bus, Uptime }
 import lila.db.dsl.{ *, given }
-import lila.game.{ Game, Pov }
+
 import lila.core.msg.{ MsgApi, MsgPreset }
 import lila.core.game.Source
 import lila.core.playban.RageSit as RageSitCounter
@@ -13,6 +13,7 @@ import lila.core.playban.RageSit as RageSitCounter
 final class PlaybanApi(
     coll: Coll,
     feedback: PlaybanFeedback,
+    gameApi: lila.core.game.GameApi,
     userApi: lila.core.user.UserApi,
     noteApi: lila.core.user.NoteApi,
     cacheApi: lila.memo.CacheApi,
@@ -90,7 +91,7 @@ final class PlaybanApi(
         .userId
         .ifTrue {
           ~(for
-            movetimes    <- game.moveTimes(flaggerColor)
+            movetimes    <- gameApi.computeMoveTimes(game, flaggerColor)
             lastMovetime <- movetimes.lastOption
             limit        <- unreasonableTime
           yield lastMovetime.toSeconds >= limit)

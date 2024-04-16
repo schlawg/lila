@@ -2,7 +2,6 @@ package lila.round
 
 import chess.{ ByColor, Color, Speed }
 
-import lila.game.{ Game, GameRepo, RatingDiffs }
 import lila.rating.{ Glicko, Perf, RatingFactors, RatingRegulator, glicko2, UserPerfs }
 import lila.user.{ RankingApi, User, UserApi }
 import lila.rating.PerfType
@@ -12,7 +11,7 @@ import lila.rating.PerfExt.addOrReset
 import lila.rating.GlickoExt.average
 
 final class PerfsUpdater(
-    gameRepo: GameRepo,
+    gameRepo: lila.game.GameRepo,
     userApi: UserApi,
     rankingApi: RankingApi,
     botFarming: BotFarming,
@@ -22,11 +21,15 @@ final class PerfsUpdater(
   import PerfsUpdater.*
 
   // returns rating diffs
-  def save(game: Game, white: UserWithPerfs, black: UserWithPerfs): Fu[Option[RatingDiffs]] =
+  def save(game: Game, white: UserWithPerfs, black: UserWithPerfs): Fu[Option[ByColor[IntRatingDiff]]] =
     botFarming(game).flatMap {
       if _ then fuccess(none)
       else
-        game.ratingPerfType.so: mainPerf =>
+        val ratingPerf: Option[PerfKey] =
+          if game.variant.fromPosition
+          then game.isTournament.option(PerfKey(game.ratingVariant, game.speed))
+          else game.perfKey.some
+        ratingPerf.so: mainPerf =>
           (game.rated && game.finished && game.accountable && !white.lame && !black.lame).so:
             val ratingsW = mkRatings(white.perfs)
             val ratingsB = mkRatings(black.perfs)
@@ -79,9 +82,9 @@ final class PerfsUpdater(
               )
             gameRepo
               .setRatingDiffs(game.id, ratingDiffs)
-              .zip(userApi.updatePerfs(ByColor(white.perfs -> perfsW, black.perfs -> perfsB), game.perfType))
-              .zip(rankingApi.save(white.user, game.perfType, perfsW))
-              .zip(rankingApi.save(black.user, game.perfType, perfsB))
+              .zip(userApi.updatePerfs(ByColor(white.perfs -> perfsW, black.perfs -> perfsB), game.perfKey))
+              .zip(rankingApi.save(white.user, game.perfKey, perfsW))
+              .zip(rankingApi.save(black.user, game.perfKey, perfsB))
               .inject(ratingDiffs.some)
     }
 

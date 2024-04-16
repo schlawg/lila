@@ -59,7 +59,7 @@ case class HookConfig(
             sri = sri,
             variant = variant,
             clock = clock,
-            mode = if lila.game.Game.allowRated(variant, clock.some) then mode else Mode.Casual,
+            mode = if lila.core.game.allowRated(variant, clock.some) then mode else Mode.Casual,
             color = color.name,
             user = user,
             blocking = blocking,
@@ -79,7 +79,7 @@ case class HookConfig(
               ratingRange = ratingRange
             )
 
-  def updateFrom(game: lila.game.Game) =
+  def updateFrom(game: Game) =
     copy(
       variant = game.variant,
       timeMode = TimeMode.ofGame(game),

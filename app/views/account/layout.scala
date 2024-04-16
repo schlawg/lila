@@ -18,14 +18,14 @@ object layout:
       title = title,
       moreCss = frag(cssTag("account"), evenMoreCss),
       moreJs = evenMoreJs,
-      modules = modules
+      modules = jsModule("bits.account") ++ modules
     ):
       def activeCls(c: String) = cls := active.activeO(c)
       main(cls := "account page-menu")(
         ctx.me
           .exists(_.enabled.yes)
           .option(
-            views.html.site.bits.pageMenuSubnav(
+            views.html.base.bits.pageMenuSubnav(
               a(activeCls("editProfile"), href := routes.Account.profile)(
                 trans.site.editProfile()
               ),

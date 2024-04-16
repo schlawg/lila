@@ -80,7 +80,7 @@ object topic:
       modules = jsModule("bits.forum")
         ++ jsModule("bits.expandText")
         ++ formWithCaptcha.isDefined.so(captchaTag)
-        ++ hasAsks.so(jsModuleInit("ask")),
+        ++ hasAsks.so(jsModuleInit("bits.ask")),
       moreCss = frag(cssTag("forum"), hasAsks.option(cssTag("ask"))),
       openGraph = lila.web
         .OpenGraph(
