@@ -5,47 +5,43 @@ import play.api.libs.ws.StandaloneWSClient
 import play.api.libs.ws.JsonBodyReadables.*
 import play.api.libs.json.{ JsObject, Json, JsValue, JsString }
 import java.nio.file.{ Files, Path, Paths }
-import java.time.Instant
 
 import lila.core.config.NetConfig
 
 case class SplitAsset(name: String, imports: List[String])
-case class AssetMaps(js: Map[String, SplitAsset], css: Map[String, String])
+case class AssetMaps(js: Map[String, SplitAsset], css: Map[String, String], modified: Instant)
 
 final class AssetManifest(environment: Environment, net: NetConfig)(using ws: StandaloneWSClient)(using
     Executor
-):
+) extends lila.ui.AssetManifest:
+  private var maps: AssetMaps = AssetMaps(Map.empty, Map.empty, java.time.Instant.MIN)
 
-  private var lastModified: Instant = Instant.MIN
-  private var maps: AssetMaps       = AssetMaps(Map.empty, Map.empty)
-  private val defaultFilename       = s"manifest.${if net.minifiedAssets then "prod" else "dev"}.json"
-  private val keyRe                 = """^(?!common\.)(\S+)\.([A-Z0-9]{8})\.(?:js|css)""".r
+  private val filename = s"manifest.${if net.minifiedAssets then "prod" else "dev"}.json"
+  private val logger   = lila.log("assetManifest")
 
   def js(key: String): Option[SplitAsset]    = maps.js.get(key)
   def css(key: String): Option[String]       = maps.css.get(key)
   def deps(keys: List[String]): List[String] = keys.flatMap { key => js(key).so(_.imports) }.distinct
-  def lastUpdate: Instant                    = lastModified
+  def lastUpdate: Instant                    = maps.modified
 
-  def update(filename: String = defaultFilename): Unit =
+  def jsName(key: String): String = js(key).fold(key)(_.name)
+
+  def update(): Unit =
     if environment.mode.isProd || net.externalManifest then
       fetchManifestJson(filename).foreach:
-        case Some(manifestJson) =>
+        _.foreach: manifestJson =>
           maps = readMaps(manifestJson)
-          lastModified = Instant.now
-        case _ => ()
     else
       val pathname = environment.getFile(s"public/compiled/$filename").toPath
       try
         val current = Files.getLastModifiedTime(pathname).toInstant
-        if current.isAfter(lastModified) then
-          maps = readMaps(Json.parse(Files.newInputStream(pathname)))
-          lastModified = current
+        if current.isAfter(maps.modified)
+        then maps = readMaps(Json.parse(Files.newInputStream(pathname)))
       catch
-        case _: Throwable =>
-          lila.log("assetManifest").warn(s"Error reading $pathname")
+        case e: Throwable =>
+          logger.error(s"Error reading $pathname", e)
 
-  update()
-
+  private val keyRe = """^(?!common\.)(\S+)\.([A-Z0-9]{8})\.(?:js|css)""".r
   private def keyOf(fullName: String): String =
     fullName match
       case keyRe(k, _) => k
@@ -63,8 +59,9 @@ final class AssetManifest(environment: Environment, net: NetConfig)(using ws: St
           importName :: closure(importName, jsMap, visited + name)
       case _ => Nil
 
-  private def readMaps(manifest: JsValue) =
-    val js = (manifest \ "js")
+  // throws an Exception if JsValue is not as expected
+  private def readMaps(manifest: JsValue): AssetMaps =
+    val splits: Map[String, SplitAsset] = (manifest \ "js")
       .as[JsObject]
       .value
       .map { (k, value) =>
@@ -73,20 +70,19 @@ final class AssetManifest(environment: Environment, net: NetConfig)(using ws: St
         (k, SplitAsset(name, imports))
       }
       .toMap
-    AssetMaps(
-      js.map { (k, asset) =>
-        k -> (if asset.imports.nonEmpty then asset.copy(imports = closure(asset.name, js).distinct)
-              else asset)
-      },
-      (manifest \ "css")
-        .as[JsObject]
-        .value
-        .map { case (k, asset) =>
-          val hash = (asset \ "hash").as[String]
-          (k, s"$k.$hash.css")
-        }
-        .toMap
-    )
+    val js = splits.map { (k, asset) =>
+      k -> (if asset.imports.nonEmpty then asset.copy(imports = closure(asset.name, splits).distinct)
+            else asset)
+    }
+    val css = (manifest \ "css")
+      .as[JsObject]
+      .value
+      .map { (k, asset) =>
+        val hash = (asset \ "hash").as[String]
+        (k, s"$k.$hash.css")
+      }
+      .toMap
+    AssetMaps(js, css, nowInstant)
 
   private def fetchManifestJson(filename: String) =
     val resource = s"${net.assetBaseUrlInternal}/assets/compiled/$filename"
@@ -95,9 +91,11 @@ final class AssetManifest(environment: Environment, net: NetConfig)(using ws: St
       .map:
         case res if res.status == 200 => res.body[JsValue].some
         case res =>
-          lila.log("assetManifest").warn(s"${res.status} fetching $resource")
+          logger.error(s"${res.status} fetching $resource")
           none
       .recoverWith:
         case e: Exception =>
-          lila.log("assetManifest").warn(s"fetching $resource", e)
+          logger.error(s"fetching $resource", e)
           fuccess(none)
+
+  update()

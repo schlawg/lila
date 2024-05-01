@@ -5,7 +5,7 @@ export let player: VideoPlayer;
 
 export function renderVideoPlayer(relay: RelayCtrl): VNode | undefined {
   if (!relay.data.videoUrls) return undefined;
-  player ??= new VideoPlayer(relay);
+  if (!player) player = new VideoPlayer(relay);
   return h('div#video-player-placeholder', {
     hook: {
       insert: (vnode: VNode) => player.cover(vnode.elm as HTMLElement),

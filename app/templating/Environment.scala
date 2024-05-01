@@ -1,35 +1,25 @@
 package lila.app
 package templating
 
-import lila.web.ui.ScalatagsTemplate.*
+import lila.ui.*
 import lila.web.ui.*
 
 object Environment
-    extends StringHelper
+    extends ScalatagsTemplate
     with RouterHelper
-    with AssetHelper
-    with DateHelper
-    with PaginatorHelper
-    with FormHelper
     with lila.setup.SetupUi
-    with lila.pref.PrefUi
-    with GameHelper
-    with UserHelper
-    with I18nHelper
+    with lila.pref.PrefHelper
     with SecurityHelper
     with TeamHelper
-    with TournamentHelper
-    with FlashHelper
-    with ChessgroundHelper
-    with HtmlHelper:
-
-  export NumberHelper.*
+    with Helpers
+    with AssetFullHelper:
 
   export lila.core.lilaism.Lilaism.{ *, given }
+  export lila.core.id.ImageId
   export lila.common.extensions.*
-  export lila.common.Icon
-  export lila.web.Nonce
-  export lila.api.Context.{ *, given }
+  export lila.common.String.html.richText
+  export lila.ui.{ Page, Nonce, OpenGraph, PageModule, EsmList, Icon }
+  export lila.api.Context.{ ctxToTranslate as _, *, given }
   export lila.api.PageData
 
   private var envVar: Option[Env] = None
@@ -37,22 +27,12 @@ object Environment
   def env: Env                    = envVar.get
 
   def netConfig           = env.net
-  def netBaseUrl          = env.net.baseUrl
   def contactEmailInClear = env.net.email.value
+  def picfitUrl           = env.memo.picfitUrl
 
-  given lila.core.config.NetDomain = env.net.domain
-
-  def jsDump     = lila.i18n.JsDump
-  def translator = lila.i18n.Translator
-  def flairApi   = env.user.flairApi
-  export lila.mailer.translateDuration
-
-  lazy val siteName: String =
-    if env.net.siteName == "localhost:9663" then "lichess.dev"
-    else env.net.siteName
-  lazy val siteNameFrag: Frag =
-    if siteName == "lichess.org" then frag("lichess", span(".org"))
-    else frag(siteName)
+  given lila.core.config.NetDomain                           = env.net.domain
+  given (using ctx: PageContext): Option[Nonce]              = ctx.nonce
+  given Conversion[lila.team.Team, lila.core.team.LightTeam] = _.light
 
   def apiVersion = lila.security.Mobile.Api.currentVersion
 
@@ -60,24 +40,27 @@ object Environment
   def tablebaseEndpoint      = env.tablebaseEndpoint
   def externalEngineEndpoint = env.externalEngineEndpoint
 
-  def chessground(pov: Pov)(using ctx: Context): Frag =
-    chessground(
-      board = pov.game.board,
-      orient = pov.color,
-      lastMove = pov.game.history.lastMove
-        .map(_.origDest)
-        .so: (orig, dest) =>
-          List(orig, dest),
-      blindfold = pov.player.blindfold,
-      pref = ctx.pref
-    )
+  // helpers dependencies
+  lazy val assetBaseUrl            = netConfig.assetBaseUrl
+  lazy val netBaseUrl              = netConfig.baseUrl
+  protected val ratingApi          = lila.rating.ratingApi
+  protected lazy val flairApi      = env.user.flairApi
+  lazy val isOnline                = env.socket.isOnline
+  lazy val lightUserSync           = env.user.lightUserSync
+  def manifest                     = env.web.manifest
+  protected val jsDump             = lila.i18n.JsDump
+  protected val translator         = lila.i18n.Translator
+  val langList                     = lila.i18n.LangList
+  protected val namer              = lila.game.Namer
+  protected lazy val lightTeamSync = env.team.lightTeamSync
+  protected lazy val syncBelongsTo = env.team.api.syncBelongsTo
 
-  def titleOrText(v: String)(using ctx: Context): Modifier = titleOrTextFor(ctx.blind, v)
+  def helpers: Helpers                 = this
+  def assetHelper: AssetFullHelper     = this
+  def prefHelper: lila.pref.PrefHelper = this
 
-  def isChatPanicEnabled = env.chat.panic.enabled
+  lazy val atomUi = lila.ui.AtomUi(netConfig.baseUrl)
+  def flagApi     = lila.user.Flags
 
-  def blockingReportScores: (Int, Int, Int) = (
-    env.report.api.maxScores.dmap(_.highest).awaitOrElse(50.millis, "nbReports", 0),
-    env.report.scoreThresholdsSetting.get().mid,
-    env.report.scoreThresholdsSetting.get().high
-  )
+  def lightUserFallback           = env.user.lightUserSyncFallback
+  def isStreaming(userId: UserId) = env.streamer.liveStreamApi.isStreaming(userId)

@@ -1,6 +1,7 @@
 package lila.ask
 
 import lila.db.dsl.{ *, given }
+import lila.core.ask.*
 
 /* the freeze process transforms form text prior to database storage and creates/updates collection
  * objects with data from ask markup. freeze methods return replacement text with magic id tags in place
@@ -8,7 +9,7 @@ import lila.db.dsl.{ *, given }
  * tags in a previously frozen text with their markup. ids in magic tags correspond to db.ask._id
  */
 
-final class AskEmbed(val repo: lila.ask.AskRepo)(using Executor):
+final class AskEmbed(val repo: lila.ask.AskRepo)(using Executor) extends lila.core.ask.AskEmbed:
 
   import AskEmbed.*
   import Ask.*
@@ -65,8 +66,6 @@ final class AskEmbed(val repo: lila.ask.AskRepo)(using Executor):
 
 object AskEmbed:
   val askNotFoundFrag = "&lt;deleted&gt;<br>"
-
-  case class Frozen(text: String, asks: Iterable[Ask])
 
   def hasAskId(text: String): Boolean = text.contains(frozenIdMagic)
 

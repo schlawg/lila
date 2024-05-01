@@ -4,6 +4,7 @@ import play.api.mvc.RequestHeader
 
 import lila.common.Form.trueish
 import lila.common.HTTPRequest
+import lila.ui.Context
 
 trait RequestGetter:
 
@@ -23,9 +24,6 @@ trait RequestGetter:
 
   protected def getInt(name: String)(using req: RequestHeader) =
     req.queryString.get(name).flatMap(_.headOption).flatMap(_.toIntOption)
-
-  protected def getFloat(name: String)(using req: RequestHeader) =
-    req.queryString.get(name).flatMap(_.headOption).flatMap(_.toFloatOption)
 
   protected def getIntAs[A](name: String)(using
       req: RequestHeader,

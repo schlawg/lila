@@ -4,6 +4,7 @@ import scala.concurrent.duration.*
 import scala.collection.concurrent.TrieMap
 import reactivemongo.api.bson.*
 
+import lila.core.ask.*
 import lila.db.dsl.{ *, given }
 import lila.core.timeline.{ AskConcluded, Propagate }
 
@@ -19,8 +20,8 @@ final class AskRepo(
     cacheApi: lila.memo.CacheApi
 )(using
     Executor
-):
-  import Ask.*
+) extends lila.core.ask.AskRepo:
+  import lila.core.ask.Ask.*
   import AskEmbed.*
 
   given BSONDocumentHandler[Ask] = Macros.handler[Ask]

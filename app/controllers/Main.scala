@@ -4,7 +4,6 @@ import akka.pattern.ask
 import play.api.data.*
 import play.api.libs.json.*
 import play.api.mvc.*
-import views.*
 
 import lila.app.{ *, given }
 import lila.common.HTTPRequest
@@ -43,10 +42,10 @@ final class Main(
     }
 
   def webmasters = Open:
-    Ok.page(html.site.page.webmasters)
+    Ok.page(views.site.page.webmasters)
 
   def lag = Open:
-    Ok.page(html.site.lag())
+    Ok.page(views.site.ui.lag)
 
   def mobile     = Open(serveMobile)
   def mobileLang = LangPage(routes.Main.mobile)(serveMobile)
@@ -60,10 +59,10 @@ final class Main(
 
   private def serveMobile(using Context) =
     pageHit
-    FoundPage(env.api.cmsRenderKey("mobile-apk"))(html.mobile.apply)
+    FoundPage(env.api.cmsRenderKey("mobile-apk"))(views.mobile)
 
   def dailyPuzzleSlackApp = Open:
-    Ok.page(html.site.dailyPuzzleSlackApp())
+    Ok.page(views.site.ui.dailyPuzzleSlackApp)
 
   def jslog(id: GameFullId) = Open:
     env.round.selfReport(
@@ -86,7 +85,7 @@ final class Main(
 
   def getFishnet = Open:
     pageHit
-    Ok.page(html.site.bits.getFishnet())
+    Ok.page(views.site.ui.getFishnet())
 
   def costs = Anon:
     pageHit
@@ -100,15 +99,15 @@ final class Main(
 
   def contact = Open:
     pageHit
-    Ok.page(html.site.contact())
+    Ok.page(views.site.page.contact)
 
   def faq = Open:
     pageHit
-    Ok.page(html.site.faq())
+    Ok.page(views.site.page.faq)
 
   def temporarilyDisabled(path: String) = Open:
     pageHit
-    NotImplemented.page(html.site.message.temporarilyDisabled)
+    NotImplemented.page(views.site.message.temporarilyDisabled)
 
   def keyboardMoveHelp = Open:
     Ok.page(lila.web.views.help.keyboardMove)
@@ -129,28 +128,9 @@ final class Main(
         env.security.lilaCookie.withSession(remember = true): s =>
           s + ("theme" -> "ic") + ("pieceSet" -> "icpieces")
 
-  def legacyQaQuestion(id: Int, slug: String) = Open:
+  def legacyQaQuestion(id: Int, _slug: String) = Open:
     MovedPermanently:
-      val faq = routes.Main.faq.url
-      id match
-        case 103  => s"$faq#acpl"
-        case 258  => s"$faq#marks"
-        case 13   => s"$faq#titles"
-        case 87   => routes.User.ratingDistribution("blitz").url
-        case 110  => s"$faq#name"
-        case 29   => s"$faq#titles"
-        case 4811 => s"$faq#lm"
-        case 216  => routes.Main.mobile.url
-        case 340  => s"$faq#trophies"
-        case 6    => s"$faq#ratings"
-        case 207  => s"$faq#hide-ratings"
-        case 547  => s"$faq#leaving"
-        case 259  => s"$faq#trophies"
-        case 342  => s"$faq#provisional"
-        case 50   => routes.Cms.help.url
-        case 46   => s"$faq#name"
-        case 122  => s"$faq#marks"
-        case _    => faq
+      lila.web.StaticContent.legacyQaQuestion(id)
 
   def devAsset(v: String, path: String, file: String) = assetsC.at(path, file)
 
@@ -175,3 +155,11 @@ final class Main(
           .map(url => JsonOk(Json.obj("imageUrl" -> url)))
       case None => JsonBadRequest(jsonError("Image content only"))
   }
+
+  def githubSecretScanning = AnonBodyOf(parse.json): body =>
+    env.oAuth.tokenApi
+      .secretScanning(body)
+      .flatMap:
+        _.traverse: (token, url) =>
+          env.msg.api.systemPost(token.userId, lila.msg.MsgPreset.apiTokenRevoked(url))
+      .as(NoContent)

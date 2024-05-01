@@ -2,7 +2,6 @@ package controllers
 
 import play.api.data.Form
 import play.api.mvc.*
-import views.*
 
 import lila.app.{ *, given }
 import lila.common.HTTPRequest
@@ -37,10 +36,10 @@ final class Pref(env: Env) extends LilaController(env):
             case None if categSlug == "notification" =>
               Ok.pageAsync:
                 env.notifyM.api.prefs.form(me).map {
-                  html.account.notification(_)
+                  views.account.pref.notification(_)
                 }
             case None        => notFound
-            case Some(categ) => Ok.page(html.account.pref(me, forms.prefOf(ctx.pref), categ))
+            case Some(categ) => Ok.page(views.account.pref(me, forms.prefOf(ctx.pref), categ))
         }
 
   def formApply = AuthBody { ctx ?=> _ ?=>
@@ -88,11 +87,7 @@ final class Pref(env: Env) extends LilaController(env):
               v =>
                 ctx.me
                   .so(api.setPref(_, change.update(v)))
-                  .inject(
-                    env.security.lilaCookie.session(name, v.toString)(using
-                      ctx.req
-                    )
-                  )
+                  .inject(env.security.lilaCookie.session(name, v.toString))
                   .map: cookie =>
                     Ok(()).withCookies(cookie)
             )

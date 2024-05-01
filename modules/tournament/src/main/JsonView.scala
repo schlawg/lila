@@ -11,6 +11,7 @@ import lila.core.LightUser
 import lila.gathering.{ Condition, ConditionHandlers, GreatPlayer }
 import lila.memo.CacheApi.*
 import lila.memo.SettingStore
+import lila.ui.Icon.iconWrites
 
 import lila.core.socket.SocketVersion
 import lila.core.i18n.Translate
@@ -557,7 +558,7 @@ object JsonView:
     )
 
   private[tournament] def positionJson(fen: Fen.Standard): JsObject =
-    Thematic.byFen(fen) match
+    lila.gathering.Thematic.byFen(fen) match
       case Some(pos) =>
         Json
           .obj(

@@ -1,9 +1,7 @@
-package views.html.lobby
-
-import controllers.routes
+package views.lobby
 
 import lila.app.templating.Environment.{ *, given }
-import lila.web.ui.ScalatagsTemplate.{ *, given }
+
 import lila.rating.PerfType
 
 object bits:
@@ -72,7 +70,7 @@ object bits:
                     td(userIdLink(w.userId.some)),
                     td:
                       a(title := w.tourName, href := routes.Tournament.show(w.tourId)):
-                        scheduledTournamentNameShortHtml(w.tourName)
+                        views.tournament.ui.scheduledTournamentNameShortHtml(w.tourName)
                   )
       ),*/
       div(cls := "lobby__tournaments-simuls")(
@@ -82,7 +80,7 @@ object bits:
             span(cls := "more")(trans.site.more(), " »")
           ),
           div(cls := "lobby__box__content"):
-            views.html.tournament.bits.enterable(tours)
+            views.tournament.ui.enterable(tours)
         ),
         simuls.nonEmpty.option(
           div(cls := "lobby__simuls lobby__box")(
@@ -91,7 +89,7 @@ object bits:
               span(cls := "more")(trans.site.more(), " »")
             ),
             div(cls := "lobby__box__content"):
-              views.html.simul.bits.allCreated(simuls, withName = false)
+              views.simul.ui.allCreated(simuls, withName = false)
           )
         )
       )
@@ -200,7 +198,7 @@ object bits:
         "invert"                                     -> e.isNowOrSoon
       )
     )(
-      views.html.event.iconOf(e),
+      views.event.iconOf(e),
       span(cls := "content")(
         span(cls := "name")(e.title),
         span(cls := "headline")(e.headline),

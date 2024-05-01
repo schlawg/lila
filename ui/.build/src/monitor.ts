@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as ps from 'node:process';
-import { buildModules, build, stop } from './build';
+import { build, stop } from './build';
 import { env } from './main';
 import { globArray } from './parse';
 import { stopTsc, tsc } from './tsc';
@@ -23,12 +23,13 @@ export async function startMonitor(mods: string[]) {
   if (!env.watch) return;
   const typePkgs = await globArray('*/package.json', { cwd: env.typesDir, abs: true });
   const typings = await globArray('*/*.d.ts', { cwd: env.typesDir, abs: true });
-
   const tscChange = (t: any) => {
     if (reinitTimeout) return;
     stopTsc();
     clearTimeout(tscTimeout);
-    tscTimeout = setTimeout(() => reinitTimeout ?? tsc(), 2000);
+    tscTimeout = setTimeout(() => {
+      if (!reinitTimeout) tsc();
+    }, 2000);
   };
   const packageChange = async () => {
     if (env.rebuild) {
@@ -39,14 +40,14 @@ export async function startMonitor(mods: string[]) {
       return;
     }
     env.warn('Exiting due to package.json change');
-    env.warn('Use -r/--rebuild to watch, reinstall, and rebuild rather than exit');
+    env.warn('Use --rebuild / -r to rebuild rather than exit');
     ps.exit(0);
   };
 
   watchers.push(fs.watch(path.join(env.rootDir, 'package.json'), packageChange));
   for (const p of typePkgs) watchers.push(fs.watch(p, packageChange));
   for (const t of typings) watchers.push(fs.watch(t, tscChange));
-  for (const mod of buildModules) {
+  for (const mod of env.building) {
     watchers.push(fs.watch(path.join(mod.root, 'package.json'), packageChange));
     watchers.push(fs.watch(path.join(mod.root, 'tsconfig.json'), tscChange));
   }
