@@ -95,7 +95,7 @@ object AskEmbed:
   def tag(html: String) = html.slice(1, html.indexOf(">"))
 
   def extractIds(t: String): List[Ask.ID] =
-    frozenOffsets(t).map(off => t.substring(off._1 + 5, off._2 - 1))
+    frozenOffsets(t).map(off => lila.core.id.AskId(t.substring(off._1 + 5, off._2 - 1)))
 
   // render ask as markup text
   private def askToText(ask: Ask): String =

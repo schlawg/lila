@@ -25,7 +25,7 @@ export interface VoskModule {
   initModel: (url: string, lang: string) => Promise<void>;
   initRecognizer: (opts: RecognizerOpts) => AudioNode | undefined;
   isLoaded: (lang?: string) => boolean;
-  set: (recId: string | false) => void;
+  select: (recId: string | false) => void;
 }
 
 export interface RecognizerOpts {

@@ -8,12 +8,6 @@ import lila.core.ask.*
 import lila.db.dsl.{ *, given }
 import lila.core.timeline.{ AskConcluded, Propagate }
 
-/*
- * who really cares if big polls drift a bit over time? i say make shitty cache coherence a goal!
- * updates are almost always single fields whereas reads are total so this is a write-thru cache.
- * always await preload in the controller if you want sync access from scalatags.
- */
-
 final class AskRepo(
     askDb: lila.db.AsyncColl,
     // timeline: lila.timeline.Timeline,

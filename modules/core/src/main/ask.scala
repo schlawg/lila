@@ -7,8 +7,6 @@ import scalalib.extensions.{ *, given }
 import lila.core.id.{ AskId }
 import lila.core.userId.*
 
-//import reactivemongo.api.bson.Macros.Annotations.Key
-
 case class Frozen(text: String, asks: Iterable[Ask])
 
 trait AskEmbed:

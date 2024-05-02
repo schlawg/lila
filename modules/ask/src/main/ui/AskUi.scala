@@ -8,6 +8,7 @@ import scalatags.Text.TypedTag
 import lila.ui.{ *, given }
 import ScalatagsTemplate.{ *, given }
 import lila.core.ask.*
+
 //import lila.ask.AskEmbed
 
 final class AskUi(helpers: Helpers)(repo: AskRepo):
@@ -50,7 +51,7 @@ private case class RenderAsk(
     prevView: Option[Vector[Int]],
     tallyView: Boolean
 )(using ctx: Context):
-  val voterId = ctx.myId.fold(ask.toAnon(ctx.ip))(why => ask.toAnon(why.userId))
+  val voterId = ctx.me.fold(ask.toAnon(ctx.ip))(me => ask.toAnon(me.userId))
 
   val view = prevView.getOrElse:
     if ask.isRandom then shuffle(ask.choices.indices.toList)
@@ -93,22 +94,22 @@ private case class RenderAsk(
             button(
               cls        := (if tallyView then "view" else "tally"),
               formmethod := "GET",
-              formaction := routes.Ask.view(ask._id, viewParam.some, !tallyView)
+              formaction := routes.Ask.view(ask._id.value, viewParam.some, !tallyView)
             )
           ),
-          (ctx.myId.contains(ask.creator) || isGranted(_.ModerateForum)).option(
+          (ctx.me.exists(_.userId == ask.creator) || Granter.opt(_.ModerateForum)).option(
             button(
               cls        := "admin",
               formmethod := "GET",
-              formaction := routes.Ask.admin(ask._id),
-              title      := trans.site.edit.txt()
+              formaction := routes.Ask.admin(ask._id.value),
+              title      := "Administrate this poll"
             )
           ),
           ((ask.hasPickFor(voterId) || ask.hasFormFor(voterId)) && !ask.isConcluded).option(
             button(
               cls        := "unset",
-              formaction := routes.Ask.unset(ask._id, viewParam.some, ask.isAnon),
-              title      := trans.site.delete.txt()
+              formaction := routes.Ask.unset(ask._id.value, viewParam.some, ask.isAnon),
+              title      := "Unset your submission"
             )
           )
         ),
@@ -241,8 +242,8 @@ private case class RenderAsk(
     val hasPick    = ask.hasPickFor(voterId)
 
     val count    = ask.count(choiceText)
-    val isAuthor = ctx.myId.contains(ask.creator)
-    val isMod    = isGranted(_.ModerateForum)
+    val isAuthor = ctx.me.exists(_.userId == ask.creator)
+    val isMod    = Granter.opt(_.ModerateForum)
 
     if !ask.isRanked then
       if ask.isConcluded || tallyView then
@@ -290,6 +291,6 @@ private case class RenderAsk(
       .picksFor(voterId)
       .fold(initialOrder): r =>
         if r == Vector.empty || r.distinct.sorted != initialOrder.sorted then
-          voterId.so(id => env.ask.repo.setPicks(ask._id, id, Vector.empty[Int].some))
+          // voterId.so(id => env.ask.repo.setPicks(ask._id, id, Vector.empty[Int].some))
           initialOrder
         else r

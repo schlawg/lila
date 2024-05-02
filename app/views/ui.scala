@@ -19,10 +19,15 @@ object oAuth:
 lazy val plan      = lila.plan.ui.PlanUi(helpers)(netConfig.email)
 lazy val planPages = lila.plan.ui.PlanPages(helpers)(lila.fishnet.FishnetLimiter.maxPerDay)
 
-lazy val feed =
-  lila.feed.ui.FeedUi(helpers, atomUi)(title => _ ?=> site.page.SitePage(title, "news"))(using env.executor)
+lazy val askUi      = lila.ask.ui.AskUi(helpers)
+lazy val askAdminUi = lila.ask.ui.AskAdminUi(helpers, ask)
 
-lazy val cms = lila.cms.ui.CmsUi(helpers)(views.mod.ui.menu("cms"))
+lazy val feed =
+  lila.feed.ui.FeedUi(helpers, atomUi, askUi)(title => _ ?=> site.page.SitePage(title, "news"))(using
+    env.executor
+  )
+
+lazy val cms = lila.cms.ui.CmsUi(helpers)(views.mod.ui.menu("cms"), askUi)
 
 lazy val userTournament = lila.tournament.ui.UserTournament(helpers, views.tournament.ui)
 
@@ -45,7 +50,7 @@ object forum:
   val bits  = ForumBits(helpers)
   val post  = PostUi(helpers, bits)
   val categ = CategUi(helpers, bits)
-  val topic = TopicUi(helpers, bits, post)(
+  val topic = TopicUi(helpers, bits, post, askUi)(
     views.base.captcha.apply,
     lila.msg.MsgPreset.forumDeletion.presets
   )
@@ -66,6 +71,3 @@ lazy val gameSearch = lila.gameSearch.ui.GameSearchUi(helpers)(views.game.widget
 
 def mobile(p: lila.cms.CmsPage.Render)(using Context) =
   lila.web.views.mobile(helpers)(cms.render(p))
-
-lazy val ask      = lila.ask.ui.AskUi(helpers)
-lazy val askAdmin = lila.ask.ui.AskAdminUi(helpers)
