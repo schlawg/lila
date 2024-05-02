@@ -8,15 +8,16 @@ import lila.ui.{ *, given }
 import ScalatagsTemplate.{ *, given }
 
 final class FeedUi(helpers: Helpers, atomUi: AtomUi)(
-    sitePage: String => Context ?=> Page
+    sitePage: String => Context ?=> Page,
+    askRender: (Frag) => Context ?=> Frag
 )(using Executor):
   import helpers.{ *, given }
 
-  private def renderCache[A](ttl: FiniteDuration)(toFrag: A => Frag): A => Frag =
-    val cache = lila.memo.CacheApi.scaffeineNoScheduler
-      .expireAfterWrite(1 minute)
-      .build[A, String]()
-    from => raw(cache.get(from, from => toFrag(from).render))
+  // private def renderCache[A](ttl: FiniteDuration)(toFrag: A => Frag): A => Frag =
+  //   val cache = lila.memo.CacheApi.scaffeineNoScheduler
+  //     .expireAfterWrite(1 minute)
+  //     .build[A, String]()
+  //   from => raw(cache.get(from, from => toFrag(from).render))
 
   private def page(title: String, hasAsks: Boolean, edit: Boolean = false)(using Context): Page =
     sitePage(title)
@@ -58,7 +59,7 @@ final class FeedUi(helpers: Helpers, atomUi: AtomUi)(
             a(cls := "daily-feed__update__day", href := s"/feed#${update.id}"):
               momentFromNow(update.at)
             ,
-            rawHtml(update.rendered)
+            askRender(rawHtml(update.rendered))
           )
         ),
       div(cls := "daily-feed__update")(
@@ -149,7 +150,7 @@ final class FeedUi(helpers: Helpers, atomUi: AtomUi)(
                 )
               ),
               div(cls := "daily-feed__update__markup")(
-                html.ask.render(rawHtml(update.rendered))
+                askRender(rawHtml(update.rendered))
               )
             )
           ),

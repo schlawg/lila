@@ -7,17 +7,13 @@ import chess.variant.Crazyhouse
 import play.api.i18n.Lang
 import play.api.libs.json.Json
 
-import lila.app.templating.Environment.{ *, given }
+import lila.app.UiEnv.{ *, given }
 
 import bits.dataPanel
 import lila.game.GameExt.analysable
 import lila.round.RoundGame.secondsSinceCreation
 
 object replay:
-
-  private[analyse] def titleOf(pov: Pov)(using Translate) =
-    s"${playerText(pov.game.whitePlayer)} vs ${playerText(pov.game.blackPlayer)}: ${pov.game.opening
-        .fold(trans.site.analysis.txt())(_.opening.name)}"
 
   def apply(
       pov: Pov,
@@ -31,7 +27,7 @@ object replay:
       userTv: Option[User],
       chatOption: Option[lila.chat.UserChat.Mine],
       bookmarked: Boolean
-  )(using ctx: PageContext) =
+  )(using ctx: Context) =
 
     import pov.*
 
@@ -115,7 +111,7 @@ object replay:
     )
 
     bits
-      .page(titleOf(pov))
+      .page(ui.titleOf(pov))
       .cssTag("analyse.round")
       .cssTag((pov.game.variant == Crazyhouse).option("analyse.zh"))
       .cssTag(ctx.blind.option("round.nvui"))

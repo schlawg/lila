@@ -2,14 +2,12 @@ package views.streamer
 
 import scalalib.paginator.Paginator
 
-import lila.app.templating.Environment.{ *, given }
+import lila.app.UiEnv.{ *, given }
 import lila.streamer.Streamer
 import lila.core.perf.{ UserPerfs, UserWithPerfs }
 import lila.rating.UserPerfsExt.best6Perfs
 
-lazy val bits = lila.streamer.ui.StreamerBits(helpers)(
-  picfitUrl.thumbnail(_, Streamer.imageSize, Streamer.imageSize)
-)
+lazy val bits       = lila.streamer.ui.StreamerBits(helpers)(picfitUrl)
 private lazy val ui = lila.streamer.ui.StreamerUi(helpers, bits)
 export ui.index
 
@@ -22,12 +20,13 @@ def show(s: Streamer.WithUserAndStream, perfs: UserPerfs, activities: Vector[lil
     activities = views.activity(UserWithPerfs(s.user, perfs), activities)
   )
 
-def create(using PageContext) =
-  views.site.message(
-    title = trans.streamer.becomeStreamer.txt(),
-    icon = Some(Icon.Mic),
-    moreCss = cssTag("streamer.form").some
-  )(bits.create)
+def create(using Context) =
+  views.site
+    .message(
+      title = trans.streamer.becomeStreamer.txt(),
+      icon = Some(Icon.Mic)
+    )
+    .cssTag("streamer.form")(bits.create)
 
 object edit:
 
@@ -37,7 +36,7 @@ object edit:
       s: Streamer.WithUserAndStream,
       form: play.api.data.Form[?],
       modData: Option[((List[lila.mod.Modlog], List[lila.user.Note]), List[Streamer])]
-  )(using ctx: PageContext) =
+  )(using ctx: Context) =
     val modZone = modData.map:
       case ((log, notes), streamers) =>
         div(cls := "mod_log status")(modLog(log), br, modNotes(notes)) -> streamers

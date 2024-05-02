@@ -1,6 +1,6 @@
 package views
 
-import lila.app.templating.Environment.{ *, given }
+import lila.app.UiEnv.{ *, given }
 
 object tutor:
   val bits      = lila.tutor.ui.TutorBits(helpers)(views.opening.bits.openingUrl)
@@ -14,7 +14,7 @@ object tutor:
       as: chess.Color,
       user: User,
       puzzle: Option[lila.puzzle.PuzzleOpening.FamilyWithCount]
-  )(using PageContext) =
+  )(using Context) =
     val puzzleFrag = puzzle.map: p =>
       a(
         cls      := "button button-no-upper text",

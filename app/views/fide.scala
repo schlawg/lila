@@ -2,7 +2,7 @@ package views.fide
 
 import scalalib.paginator.Paginator
 
-import lila.app.templating.Environment.{ *, given }
+import lila.app.UiEnv.{ *, given }
 import lila.fide.FidePlayer
 import lila.relay.RelayTour
 
@@ -12,7 +12,7 @@ export ui.federation
 object player:
   export ui.player.index
 
-  def show(player: FidePlayer, tours: Paginator[RelayTour.WithLastRound])(using PageContext) =
+  def show(player: FidePlayer, tours: Paginator[RelayTour.WithLastRound])(using Context) =
     ui.player.show(
       player,
       (tours.nbResults > 0).option(

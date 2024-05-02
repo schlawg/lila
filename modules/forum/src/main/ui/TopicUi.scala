@@ -92,7 +92,11 @@ final class TopicUi(helpers: Helpers, bits: ForumBits, postUi: PostUi)(
       .cssTag("forum")
       .cssTag(hasAsks.option("ask"))
       .csp(_.withInlineIconFont.withTwitter)
-      .js(EsmInit("bits.forum") ++ EsmInit("bits.expandText") ++ hasAsks.so(EsmInit("bits.ask")) ++ formWithCaptcha.isDefined.so(captchaEsmInit))
+      .js(
+        EsmInit("bits.forum") ++ EsmInit("bits.expandText") ++ hasAsks.so(
+          EsmInit("bits.ask")
+        ) ++ formWithCaptcha.isDefined.so(captchaEsmInit)
+      )
       .graph(
         OpenGraph(
           title = topic.name,

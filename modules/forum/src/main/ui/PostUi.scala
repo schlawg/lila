@@ -6,7 +6,7 @@ import scalalib.paginator.Paginator
 import lila.ui.*
 import ScalatagsTemplate.{ *, given }
 
-final class PostUi(helpers: Helpers, bits: ForumBits):
+final class PostUi(helpers: Helpers, bits: ForumBits)(askRender: (Frag) => Context ?=> Frag):
   import helpers.{ *, given }
 
   def show(
@@ -93,7 +93,7 @@ final class PostUi(helpers: Helpers, bits: ForumBits):
         frag:
           val postFrag = div(cls := s"forum-post__message expand-text")(
             if post.erased then "<Comment deleted by user>"
-            else views.html.ask.render(body)
+            else askRender(body)
           )
           if hide then
             div(cls := "forum-post__blocked")(

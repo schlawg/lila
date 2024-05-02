@@ -3,7 +3,7 @@ package views.mod
 import play.api.data.Form
 import scala.util.chaining.*
 
-import lila.app.templating.Environment.{ *, given }
+import lila.app.UiEnv.{ *, given }
 
 import lila.evaluation.PlayerAssessment
 import lila.rating.PerfType
@@ -13,20 +13,16 @@ import lila.game.GameExt.*
 import lila.mod.GameMod
 import lila.mod.ui.ModUserTableUi.sortNoneTh
 
-object games:
-
-  def apply(
-      user: User,
-      filterForm: Form[GameMod.Filter],
-      games: Either[List[Pov], List[(Pov, Either[PlayerAssessment, PlayerAssessment.Basics])]],
-      arenas: Seq[TourEntry],
-      swisses: Seq[(lila.core.swiss.IdName, Rank)]
-  )(using PageContext) =
-    views.base.layout(
-      title = s"${user.username} games",
-      moreCss = cssTag("mod.games"),
-      modules = EsmInit("mod.games")
-    ) {
+def games(
+    user: User,
+    filterForm: Form[GameMod.Filter],
+    games: Either[List[Pov], List[(Pov, Either[PlayerAssessment, PlayerAssessment.Basics])]],
+    arenas: Seq[TourEntry],
+    swisses: Seq[(lila.core.swiss.IdName, Rank)]
+)(using Context) =
+  Page(s"${user.username} games")
+    .cssTag("mod.games")
+    .js(EsmInit("mod.games")):
       main(cls := "mod-games box")(
         boxTop(
           h1(userLink(user, params = "?mod"), " games"),
@@ -180,4 +176,3 @@ object games:
           )
         )
       )
-    }

@@ -7,7 +7,7 @@ import play.api.libs.json.*
 import lila.ui.*
 import ScalatagsTemplate.{ *, given }
 
-final class CmsUi(helpers: Helpers)(menu: Context ?=> Frag):
+final class CmsUi(helpers: Helpers)(menu: Context ?=> Frag, askRender: (Frag) => Context ?=> Frag):
   import helpers.{ *, given }
 
   private given cmsPageIdConv: Conversion[CmsPage.Id, String]   = _.value
@@ -24,7 +24,7 @@ final class CmsUi(helpers: Helpers)(menu: Context ?=> Frag):
             "This draft is not published"
           )
         ),
-        rawHtml(page.html)
+        askRender(rawHtml(page.html))
       )
 
   private def editButton(p: CmsPage.Render)(using Context) =
