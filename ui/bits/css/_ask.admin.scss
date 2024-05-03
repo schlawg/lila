@@ -22,8 +22,8 @@ div.ask-admin {
       padding: 0.6em 0.8em;
       margin: 0;
       &:hover {
-        color: mix($c-primary, $c-contrast-font, 50%);
-        background: mix($c-primary, $c-bg-box, if($theme-light, 10%, 20%));
+        color: $m-primary_font--mix-50;
+        background: $m-primary_bg--mix-15;
       }
     }
   }

@@ -30,22 +30,17 @@ object page:
     preload(assetUrl(s"images/board/${ctx.pref.currentTheme.file}"), "image", crossorigin = false),
     ctx.pref.is3d.option(
       preload(
-        assetUrl(s"images/board/${ctx.pref.currentTheme3d.file}"),
+        assetUrl(s"images/staunton/board/${ctx.pref.currentTheme3d.file}"),
         "image",
         crossorigin = false
       )
-    ),
+    )
     /*(env.security.authLockdown && !ctx.isAuth).option {
       raw:
         """<style id="bg-data">body.transp::before{background-image:url("""" +
           staticAssetUrl(f"lifat/background/gallery/bg${Math.abs(ctx.ip.hashCode % 28) + 1}%02d.webp") +
           """");}</style>"""
     },*/
-    (ctx.pref.bg == lila.pref.Pref.Bg.TRANSPARENT)
-      .option(ctx.pref.bgImgOrDefault)
-      .map: img =>
-        raw(s"""<style id="bg-data">body.transp::before{background-image:url("${escapeHtmlRaw(img)
-            .replace("&amp;", "&")}");}</style>"""),
   )
 
   private def current2dTheme(using ctx: Context) =
@@ -59,7 +54,6 @@ object page:
       zoomable.so(s"---zoom:$pageZoom;")
 
   def apply(p: Page)(using ctx: PageContext): RenderedPage =
-    val body = p.transform(p.body)
     import ctx.pref
     val pageFrag = frag(
       doctype,
@@ -97,7 +91,11 @@ object page:
           noTranslate,
           p.openGraph.map(lila.web.ui.openGraph),
           p.atomLinkTag | dailyNewsAtom,
-          board,
+          (pref.bg == lila.pref.Pref.Bg.TRANSPARENT).option(pref.bgImgOrDefault).map { img =>
+            raw:
+              s"""<style id="bg-data">html.transp::before{background-image:url("${escapeHtmlRaw(img)
+                  .replace("&amp;", "&")}");}</style>"""
+          },
           fontPreload,
           boardPreload,
           manifests,
@@ -172,7 +170,7 @@ object page:
               "is2d"      -> pref.is2d,
               "is3d"      -> pref.is3d
             )
-          )(body),
+          )(p.transform(p.body)),
           bottomHtml,
           div(id := "inline-scripts")(
             frag(ctx.needsFp.option(views.auth.fingerprintTag), ctx.nonce.map(inlineJs.apply)),

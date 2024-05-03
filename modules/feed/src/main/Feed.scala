@@ -5,7 +5,7 @@ import reactivemongo.api.bson.*
 import reactivemongo.api.bson.Macros.Annotations.Key
 
 import java.time.format.{ DateTimeFormatter, FormatStyle }
-import lila.ask.{ Ask, AskEmbed }
+import lila.core.ask.{ Ask, AskEmbed }
 import lila.db.dsl.{ *, given }
 
 import lila.core.lilaism.Lilaism.*

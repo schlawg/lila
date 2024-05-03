@@ -7,22 +7,23 @@ import scala.util.Random.shuffle
 import scalatags.Text.TypedTag
 import lila.ui.{ *, given }
 import ScalatagsTemplate.{ *, given }
+import lila.core.id.AskId
 import lila.core.ask.*
 
 //import lila.ask.AskEmbed
 
-final class AskUi(helpers: Helpers)(repo: AskRepo):
+final class AskUi(helpers: Helpers)(askEmbed: AskEmbed):
   import helpers.{ *, given }
 
-  def render(fragment: Frag)(using PageContext): Frag =
+  def render(fragment: Frag)(using Context): Frag =
     val ids = extractIds(fragment, Nil)
     if ids.isEmpty then fragment
     else
       RawFrag:
-        AskEmbed.bake(
+        askEmbed.bake(
           fragment.render,
           ids.map: id =>
-            repo.get(id) match
+            askEmbed.repo.get(id) match
               case Some(ask) =>
                 div(cls := s"ask-container${ask.isStretch.so(" stretch")}", renderOne(ask)).render
               case _ =>
@@ -38,9 +39,11 @@ final class AskUi(helpers: Helpers)(repo: AskRepo):
     if ask.isRanked then RenderAsk(ask, None, true).rankGraphBody
     else RenderAsk(ask, None, true).pollGraphBody
 
+  def unfreeze(text: String): String = askEmbed.unfreeze(text)
+
   // AskEmbed.bake only has to support embedding in single fragments for all use cases
   // but keep this recursion around for later
-  private def extractIds(fragment: Modifier, ids: List[Ask.ID]): List[Ask.ID] = fragment match
+  private def extractIds(fragment: Modifier, ids: List[AskId]): List[AskId] = fragment match
     case StringFrag(s)  => ids ++ AskEmbed.extractIds(s)
     case RawFrag(f)     => ids ++ AskEmbed.extractIds(f)
     case t: TypedTag[?] => t.modifiers.flatten.foldLeft(ids)((acc, mod) => extractIds(mod, acc))

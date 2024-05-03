@@ -26,7 +26,7 @@ final private class ForumTopicApi(
     detectLanguage: DetectLanguage,
     cacheApi: CacheApi,
     relationApi: lila.core.relation.RelationApi,
-    askEmbed: lila.ask.AskEmbed
+    askEmbed: lila.core.ask.AskEmbed
 )(using Executor):
 
   import BSONHandlers.given

@@ -5,22 +5,23 @@ import play.api.data.Forms.single
 import views.*
 
 import lila.app.{ given, * }
-import lila.ask.Ask
+import lila.core.id.AskId
+import lila.core.ask.Ask
 
 final class Ask(env: Env) extends LilaController(env):
 
-  def view(aid: Ask.ID, view: Option[String], tally: Boolean) = Open: _ ?=>
+  def view(aid: AskId, view: Option[String], tally: Boolean) = Open: _ ?=>
     env.ask.repo.getAsync(aid).flatMap {
-      case Some(ask) => Ok.page(html.ask.renderOne(ask, intVec(view), tally))
+      case Some(ask) => Ok.snip(views.askUi.renderOne(ask, intVec(view), tally))
       case _         => fuccess(NotFound(s"Ask $aid not found"))
     }
 
-  def picks(aid: Ask.ID, picks: Option[String], view: Option[String], anon: Boolean) = OpenBody: _ ?=>
+  def picks(aid: AskId, picks: Option[String], view: Option[String], anon: Boolean) = OpenBody: _ ?=>
     effectiveId(aid, anon).flatMap:
       case Some(id) =>
         val setPicks = () =>
           env.ask.repo.setPicks(aid, id, intVec(picks)).map {
-            case Some(ask) => Ok(html.ask.renderOne(ask, intVec(view)))
+            case Some(ask) => Ok.snip(views.askUi.renderOne(ask, intVec(view)))
             case _         => NotFound(s"Ask $aid not found")
           }
         feedbackForm
@@ -29,49 +30,49 @@ final class Ask(env: Env) extends LilaController(env):
             _ => setPicks(),
             text =>
               setPicks() >> env.ask.repo.setForm(aid, id, text.some).flatMap {
-                case Some(ask) => Ok(html.ask.renderOne(ask, intVec(view)))
+                case Some(ask) => Ok.snip(views.askUi.renderOne(ask, intVec(view)))
                 case _         => NotFound(s"Ask $aid not found")
               }
           )
       case _ => authenticationFailed
 
-  def form(aid: Ask.ID, view: Option[String], anon: Boolean) = OpenBody: _ ?=>
+  def form(aid: AskId, view: Option[String], anon: Boolean) = OpenBody: _ ?=>
     effectiveId(aid, anon).flatMap:
       case Some(id) =>
         env.ask.repo.setForm(aid, id, feedbackForm.bindFromRequest().value).map {
-          case Some(ask) => Ok(html.ask.renderOne(ask, intVec(view)))
+          case Some(ask) => Ok.snip(views.askUi.renderOne(ask, intVec(view)))
           case _         => NotFound(s"Ask $aid not found")
         }
       case _ => authenticationFailed
 
-  def unset(aid: Ask.ID, view: Option[String], anon: Boolean) = Open: _ ?=>
+  def unset(aid: AskId, view: Option[String], anon: Boolean) = Open: _ ?=>
     effectiveId(aid, anon).flatMap:
       case Some(id) =>
         env.ask.repo
           .unset(aid, id)
           .map:
-            case Some(ask) => Ok(html.ask.renderOne(ask, intVec(view)))
+            case Some(ask) => Ok.snip(views.askUi.renderOne(ask, intVec(view)))
             case _         => NotFound(s"Ask $aid not found")
 
       case _ => authenticationFailed
 
-  def admin(aid: Ask.ID) = Auth: _ ?=>
+  def admin(aid: AskId) = Auth: _ ?=>
     env.ask.repo
       .getAsync(aid)
       .map:
-        case Some(ask) => Ok(html.askAdmin.renderOne(ask))
+        case Some(ask) => Ok.snip(views.askAdminUi.renderOne(ask))
         case _         => NotFound(s"Ask $aid not found")
 
   def byUser(username: UserStr) = Auth: _ ?=>
     me ?=>
-      Ok.pageAsync:
+      Ok.async:
         for
           user <- env.user.lightUser(username.id)
           asks <- env.ask.repo.byUser(username.id)
           if (me.is(user)) || isGranted(_.ModerateForum)
-        yield html.askAdmin.show(asks, user.get)
+        yield views.askAdminUi.show(asks, user.get)
 
-  def json(aid: Ask.ID) = Auth: _ ?=>
+  def json(aid: AskId) = Auth: _ ?=>
     me ?=>
       env.ask.repo
         .getAsync(aid)
@@ -81,7 +82,7 @@ final class Ask(env: Env) extends LilaController(env):
             else JsonBadRequest(jsonError(s"Not authorized to view ask $aid"))
           case _ => JsonBadRequest(jsonError(s"Ask $aid not found"))
 
-  def delete(aid: Ask.ID) = Auth: _ ?=>
+  def delete(aid: AskId) = Auth: _ ?=>
     me ?=>
       env.ask.repo
         .getAsync(aid)
@@ -89,15 +90,15 @@ final class Ask(env: Env) extends LilaController(env):
           case Some(ask) =>
             if (me.is(ask.creator)) || isGranted(_.ModerateForum) then
               env.ask.repo.delete(aid)
-              Ok(lila.ask.AskEmbed.askNotFoundFrag)
+              Ok
             else Unauthorized
           case _ => NotFound(s"Ask id ${aid} not found")
 
-  def conclude(aid: Ask.ID) = authorized(aid, env.ask.repo.conclude)
+  def conclude(aid: AskId) = authorized(aid, env.ask.repo.conclude)
 
-  def reset(aid: Ask.ID) = authorized(aid, env.ask.repo.reset)
+  def reset(aid: AskId) = authorized(aid, env.ask.repo.reset)
 
-  private def effectiveId(aid: Ask.ID, anon: Boolean)(using ctx: Context) =
+  private def effectiveId(aid: AskId, anon: Boolean)(using ctx: Context) =
     ctx.myId match
       case Some(u) => fuccess((if anon then Ask.anonHash(u.toString, aid) else u.toString).some)
       case _ =>
@@ -107,7 +108,7 @@ final class Ask(env: Env) extends LilaController(env):
             case true  => Ask.anonHash(ctx.ip.toString, aid).some
             case false => none[String]
 
-  private def authorized(aid: Ask.ID, action: lila.ask.Ask.ID => Fu[Option[lila.ask.Ask]]) = Auth: _ ?=>
+  private def authorized(aid: AskId, action: AskId => Fu[Option[lila.core.ask.Ask]]) = Auth: _ ?=>
     me ?=>
       env.ask.repo
         .getAsync(aid)
@@ -115,7 +116,7 @@ final class Ask(env: Env) extends LilaController(env):
           case Some(ask) =>
             if (me.is(ask.creator)) || isGranted(_.ModerateForum) then
               action(ask._id).map:
-                case Some(newAsk) => Ok(html.ask.renderOne(newAsk))
+                case Some(newAsk) => Ok.snip(views.askUi.renderOne(newAsk))
                 case _            => NotFound(s"Ask id ${aid} not found")
             else fuccess(Unauthorized)
           case _ => fuccess(NotFound(s"Ask id $aid not found"))

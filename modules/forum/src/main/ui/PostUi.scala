@@ -6,7 +6,10 @@ import scalalib.paginator.Paginator
 import lila.ui.*
 import ScalatagsTemplate.{ *, given }
 
-final class PostUi(helpers: Helpers, bits: ForumBits)(askRender: (Frag) => Context ?=> Frag):
+final class PostUi(helpers: Helpers, bits: ForumBits)(
+    askRender: (Frag) => Context ?=> Frag,
+    unfreeze: String => String
+):
   import helpers.{ *, given }
 
   def show(
@@ -115,7 +118,7 @@ final class PostUi(helpers: Helpers, bits: ForumBits)(askRender: (Frag) => Conte
                 cls            := "post-text-area edit-post-box",
                 minlength      := 3,
                 required
-              )(env.ask.embed.unfreeze(post.text)),
+              )(unfreeze(post.text)),
               div(cls := "edit-buttons")(
                 a(
                   cls   := "edit-post-cancel",

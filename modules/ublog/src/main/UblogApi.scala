@@ -3,7 +3,6 @@ package lila.ublog
 import reactivemongo.akkastream.{ AkkaStreamCursor, cursorProducer }
 import reactivemongo.api.*
 
-import lila.ask.AskEmbed
 import lila.common.Markdown
 import lila.db.dsl.{ *, given }
 import lila.core.shutup.{ ShutupApi, PublicSource }
@@ -17,7 +16,7 @@ final class UblogApi(
     picfitApi: PicfitApi,
     shutupApi: ShutupApi,
     irc: lila.core.irc.IrcApi,
-    askEmbed: lila.ask.AskEmbed
+    askEmbed: lila.core.ask.AskEmbed
 )(using Executor)
     extends lila.core.ublog.UblogApi:
 

@@ -1,6 +1,7 @@
 package lila.ask
 
 import lila.db.dsl.{ *, given }
+import lila.core.id.AskId
 import lila.core.ask.*
 
 /* the freeze process transforms form text prior to database storage and creates/updates collection
@@ -28,7 +29,10 @@ final class AskEmbed(val repo: lila.ask.AskRepo)(using Executor) extends lila.co
     Frozen(sb.toString, asks)
 
   // commit flushes the asks to repo and optionally sets the timeline entry link (for poll conclusion)
-  def commit(frozen: Frozen, url: Option[String] = none[String]): Fu[Iterable[Ask]] =
+  def commit(
+      frozen: Frozen,
+      url: Option[String] = none[String]
+  ): Fu[Iterable[Ask]] = // TODO need return value?
     frozen.asks.map(ask => repo.upsert(ask.copy(url = url))).parallel
 
   def freezeAndCommit(text: String, creator: UserId, url: Option[String] = none[String]): Fu[String] =
@@ -59,7 +63,7 @@ final class AskEmbed(val repo: lila.ask.AskRepo)(using Executor) extends lila.co
     val it = extractIds(text).map(repo.get).iterator
     frozenIdRe.replaceAllIn(text, _ => it.next().fold(askNotFoundFrag)(askToText))
 
-  def isOpen(aid: Ask.ID): Fu[Boolean] = repo.isOpen(aid)
+  def isOpen(aid: AskId): Fu[Boolean] = repo.isOpen(aid)
 
   def stripAsks(text: String, n: Int = -1): String           = AskEmbed.stripAsks(text, n)
   def bake(text: String, askFrags: Iterable[String]): String = AskEmbed.bake(text, askFrags)
@@ -94,7 +98,7 @@ object AskEmbed:
 
   def tag(html: String) = html.slice(1, html.indexOf(">"))
 
-  def extractIds(t: String): List[Ask.ID] =
+  def extractIds(t: String): List[AskId] =
     frozenOffsets(t).map(off => lila.core.id.AskId(t.substring(off._1 + 5, off._2 - 1)))
 
   // render ask as markup text

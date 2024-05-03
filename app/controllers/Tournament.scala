@@ -380,14 +380,14 @@ final class Tournament(env: Env, apiC: => Api)(using akka.stream.Materializer) e
           json <- env.tournament.apiJsonView.featured(spotlight)
         yield Ok(json)
 
-  def list = Open: ctx ?=>
-    ctx.userId
-      .so(env.team.cached.teamIdsList)
-      .flatMap: teamIds =>
-        env.tournament.featuring.homepage
-          .get(teamIds)
-          .flatMap: tours =>
-            Ok.page(html.lobby.bits.tournaments(tours))
+  // def list = Open: ctx ?=>
+  //   ctx.userId
+  //     .so(env.team.cached.teamIdsList)
+  //     .flatMap: teamIds =>
+  //       env.tournament.featuring.homepage
+  //         .get(teamIds)
+  //         .flatMap: tours =>
+  //           Ok.page(views.tournament.list(tours))
 
   def shields = Open:
     for

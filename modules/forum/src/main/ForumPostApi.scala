@@ -2,7 +2,6 @@ package lila.forum
 
 import scala.util.chaining.*
 
-import lila.ask.AskEmbed
 import lila.common.Bus
 import lila.db.dsl.{ *, given }
 import lila.core.shutup.{ ShutupApi, PublicSource }
@@ -22,7 +21,7 @@ final class ForumPostApi(
     promotion: lila.core.security.PromotionApi,
     shutupApi: lila.core.shutup.ShutupApi,
     detectLanguage: DetectLanguage,
-    askEmbed: AskEmbed
+    askEmbed: lila.core.ask.AskEmbed
 )(using Executor)(using scheduler: Scheduler)
     extends lila.core.forum.ForumPostApi:
 

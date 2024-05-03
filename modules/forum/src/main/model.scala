@@ -1,6 +1,6 @@
 package lila.forum
 
-import lila.ask.AskEmbed
+import lila.core.ask.AskEmbed
 
 case class CategView(
     categ: ForumCateg,
@@ -42,7 +42,9 @@ case class PostView(
     categ: ForumCateg
 ):
 
-  def show         = post.showUserIdOrAuthor + " @ " + topic.name + " - " + AskEmbed.stripAsks(post.text, 80)
+  def show = post.showUserIdOrAuthor + " @ " + topic.name + " - " + post.text.take(
+    80
+  ) // AskEmbed.stripAsks(post.text, 80)
   def logFormatted = "%s / %s#%s / %s".format(categ.name, topic.name, post.number, post.text)
 
 object PostView:

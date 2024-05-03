@@ -5,7 +5,7 @@ import scalatags.Text.all.{ Frag, raw }
 import lila.common.RawHtml
 import lila.core.config.NetDomain
 
-final class ForumTextExpand(askEmbed: lila.ask.AskEmbed)(using Executor, Scheduler):
+final class ForumTextExpand(askEmbed: lila.core.ask.AskEmbed)(using Executor, Scheduler):
 
   private def one(post: ForumPost)(using NetDomain): Fu[ForumPost.WithFrag] =
     lila.common.Bus

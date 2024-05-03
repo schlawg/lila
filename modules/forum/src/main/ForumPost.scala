@@ -3,7 +3,7 @@ package lila.forum
 import scalalib.ThreadLocalRandom
 import reactivemongo.api.bson.Macros.Annotations.Key
 
-import lila.ask.AskEmbed
+//import lila.core.ask.AskEmbed
 import lila.core.perm.Granter
 
 import lila.core.forum.ForumPostMini

@@ -7,7 +7,8 @@ import lila.core.i18n.Language
 
 final class UblogPostUi(helpers: Helpers, ui: UblogUi)(
     ublogRank: UblogRank,
-    connectLinks: Frag
+    connectLinks: Frag,
+    askRender: (Frag) => Context ?=> Frag
 ):
   import helpers.{ *, given }
 
@@ -25,7 +26,9 @@ final class UblogPostUi(helpers: Helpers, ui: UblogUi)(
     Page(s"${trans.ublog.xBlog.txt(user.username)} • ${post.title}")
       .cssTag("ublog")
       .cssTag(hasAsks.option("ask"))
-      .js(EsmInit("bits.expandText") ++ ctx.isAuth.so(EsmInit("bits.ublog")) ++ hasAsks.so(EsmInit("bits.ask")))
+      .js(
+        EsmInit("bits.expandText") ++ ctx.isAuth.so(EsmInit("bits.ublog")) ++ hasAsks.so(EsmInit("bits.ask"))
+      )
       .graph(
         OpenGraph(
           `type` = "article",
@@ -103,7 +106,7 @@ final class UblogPostUi(helpers: Helpers, ui: UblogUi)(
                 a(href := routes.Ublog.topic(topic.url, 1))(topic.value)
             ),
             strong(cls := "ublog-post__intro")(post.intro),
-            div(cls := "ublog-post__markup expand-text")(views.html.ask.render(markup)),
+            div(cls := "ublog-post__markup expand-text")(askRender(markup)),
             post.isLichess.option(
               div(cls := "ublog-post__lichess")(
                 connectLinks,

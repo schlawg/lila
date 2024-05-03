@@ -1,4 +1,6 @@
 $gap: 6px;
+$theme-light: false;
+$theme: 'dark';
 $c-contrast-font: if($theme-light, #444, #ddd);
 $c-neutral: if($theme-light, #ccc, #777);
 $c-box-border: if($theme-light, #ddd, #484848);
@@ -183,7 +185,7 @@ div.ask__footer {
   }
 
   .form-results {
-    grid-column: 1/3; // wtf is htis?
+    grid-column: 1/3;
     display: grid;
     grid-template-columns: max-content auto;
     padding: 0 (2 * $gap) $gap $gap;

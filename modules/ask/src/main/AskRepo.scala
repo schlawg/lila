@@ -4,8 +4,9 @@ import scala.concurrent.duration.*
 import scala.collection.concurrent.TrieMap
 import reactivemongo.api.bson.*
 
-import lila.core.ask.*
 import lila.db.dsl.{ *, given }
+import lila.core.id.AskId
+import lila.core.ask.*
 import lila.core.timeline.{ AskConcluded, Propagate }
 
 final class AskRepo(
@@ -20,7 +21,7 @@ final class AskRepo(
 
   given BSONDocumentHandler[Ask] = Macros.handler[Ask]
 
-  private val cache = cacheApi.sync[Ask.ID, Option[Ask]](
+  private val cache = cacheApi.sync[AskId, Option[Ask]](
     name = "ask",
     initialCapacity = 1000,
     compute = getDb,
@@ -29,29 +30,29 @@ final class AskRepo(
     expireAfter = lila.memo.Syncache.ExpireAfter.Access(1 hour)
   )
 
-  def get(aid: Ask.ID): Option[Ask] = cache.sync(aid)
+  def get(aid: AskId): Option[Ask] = cache.sync(aid)
 
-  def getAsync(aid: Ask.ID): Fu[Option[Ask]] = cache.async(aid)
+  def getAsync(aid: AskId): Fu[Option[Ask]] = cache.async(aid)
 
   def preload(text: String*): Fu[Boolean] =
     val ids = text.flatMap(AskEmbed.extractIds)
     ids.map(getAsync).parallel.inject(ids.nonEmpty)
 
   // vid (voter id) are sometimes anonymous hashes.
-  def setPicks(aid: Ask.ID, vid: String, picks: Option[Vector[Int]]): Fu[Option[Ask]] =
+  def setPicks(aid: AskId, vid: String, picks: Option[Vector[Int]]): Fu[Option[Ask]] =
     update(aid, vid, picks, modifyPicksCached, writePicks)
 
-  def setForm(aid: Ask.ID, vid: String, form: Option[String]): Fu[Option[Ask]] =
+  def setForm(aid: AskId, vid: String, form: Option[String]): Fu[Option[Ask]] =
     update(aid, vid, form, modifyFormCached, writeForm)
 
-  def unset(aid: Ask.ID, vid: String): Fu[Option[Ask]] =
+  def unset(aid: AskId, vid: String): Fu[Option[Ask]] =
     update(aid, vid, none[Unit], unsetCached, writeUnset)
 
-  def delete(aid: Ask.ID): Funit = askDb: coll =>
+  def delete(aid: AskId): Funit = askDb: coll =>
     cache.invalidate(aid)
     coll.delete.one($id(aid)).void
 
-  def conclude(aid: Ask.ID): Fu[Option[Ask]] = askDb: coll =>
+  def conclude(aid: AskId): Fu[Option[Ask]] = askDb: coll =>
     coll
       .findAndUpdateSimplified[Ask]($id(aid), $addToSet("tags" -> "concluded"), fetchNewObject = true)
       .collect:
@@ -63,7 +64,7 @@ final class AskRepo(
               .exceptUser(ask.creator)*/
           ask.some
 
-  def reset(aid: Ask.ID): Fu[Option[Ask]] = askDb: coll =>
+  def reset(aid: AskId): Fu[Option[Ask]] = askDb: coll =>
     coll
       .findAndUpdateSimplified[Ask](
         $id(aid),
@@ -96,7 +97,7 @@ final class AskRepo(
     val ids = AskEmbed.extractIds(text)
     ids.map(getAsync).parallel.inject(ids.map(get))
 
-  def isOpen(aid: Ask.ID): Fu[Boolean] = askDb: coll =>
+  def isOpen(aid: AskId): Fu[Boolean] = askDb: coll =>
     getAsync(aid).map(_.exists(_.isOpen))
 
   // call this after freezeAsync on form submission for edits
@@ -110,15 +111,15 @@ final class AskRepo(
   private val emptyPicks = Map.empty[String, Vector[Int]]
   private val emptyForm  = Map.empty[String, String]
 
-  private def getDb(aid: Ask.ID) = askDb: coll =>
+  private def getDb(aid: AskId) = askDb: coll =>
     coll.byId[Ask](aid)
 
   private def update[A](
-      aid: Ask.ID,
+      aid: AskId,
       vid: String,
       value: Option[A],
       cached: (Ask, String, Option[A]) => Ask,
-      writeField: (Ask.ID, String, Option[A], Boolean) => Fu[Option[Ask]]
+      writeField: (AskId, String, Option[A], Boolean) => Fu[Option[Ask]]
   ) =
     cache.sync(aid) match
       case Some(ask) =>
@@ -143,16 +144,16 @@ final class AskRepo(
   private def unsetCached(ask: Ask, vid: String, unused: Option[Unit]) =
     ask.copy(picks = ask.picks.fold(emptyPicks)(_ - vid).some, form = ask.form.fold(emptyForm)(_ - vid).some)
 
-  private def writePicks(aid: Ask.ID, vid: String, picks: Option[Vector[Int]], fetchNew: Boolean) =
+  private def writePicks(aid: AskId, vid: String, picks: Option[Vector[Int]], fetchNew: Boolean) =
     updateAsk(aid, picks.fold($unset(s"picks.$vid"))(r => $set(s"picks.$vid" -> r)), fetchNew)
 
-  private def writeForm(aid: Ask.ID, vid: String, form: Option[String], fetchNew: Boolean) =
+  private def writeForm(aid: AskId, vid: String, form: Option[String], fetchNew: Boolean) =
     updateAsk(aid, form.fold($unset(s"form.$vid"))(f => $set(s"form.$vid" -> f)), fetchNew)
 
-  private def writeUnset(aid: Ask.ID, vid: String, unused: Option[Unit], fetchNew: Boolean) =
+  private def writeUnset(aid: AskId, vid: String, unused: Option[Unit], fetchNew: Boolean) =
     updateAsk(aid, $unset(s"picks.$vid", s"form.$vid"), fetchNew)
 
-  private def updateAsk(aid: Ask.ID, update: BSONDocument, fetchNew: Boolean) = askDb: coll =>
+  private def updateAsk(aid: AskId, update: BSONDocument, fetchNew: Boolean) = askDb: coll =>
     coll.update
       .one($and($id(aid), $doc("tags" -> $ne("concluded"))), update)
       .flatMap:

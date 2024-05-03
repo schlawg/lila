@@ -1,24 +1,22 @@
-package views.html
+package lila.ask
+package ui
 
 import lila.ui.{ *, given }
 import ScalatagsTemplate.{ *, given }
-import lila.ask.Ask
-import views.html.ask.*
+import lila.core.ask.Ask
 
-object askAdmin:
+final class AskAdminUi(helpers: Helpers)(askRender: (Ask) => Context ?=> Frag):
+  import helpers.{ *, given }
 
-  def show(asks: List[Ask], user: lila.core.LightUser)(using Me, PageContext) =
-    views.html.base.layout(
-      title = s"${user.titleName} polls",
-      modules = jsModuleInit("bits.ask"),
-      moreCss = cssTag("ask"),
-      csp = defaultCsp.withInlineIconFont.some
-    ):
-      val askmap = asks.sortBy(_.createdAt).groupBy(_.url)
-      main(cls := "page-small box box-pad")(
-        h1(s"${user.titleName} polls"),
-        askmap.keys.map(url => showAsks(url, askmap.get(url).get)).toSeq
-      )
+  def show(asks: List[Ask], user: lila.core.LightUser)(using Me, Context) =
+    val askmap = asks.sortBy(_.createdAt).groupBy(_.url)
+    Page(s"${user.titleName} polls")
+      .cssTag("ask")
+      .js(EsmInit("bits.ask")):
+        main(cls := "page-small box box-pad")(
+          h1(s"${user.titleName} polls"),
+          askmap.keys.map(url => showAsks(url, askmap.get(url).get)).toSeq
+        )
 
   def showAsks(urlopt: Option[String], asks: List[Ask])(using Me, Context) =
     div(
@@ -38,20 +36,20 @@ object askAdmin:
       div(cls := "header")(
         ask.question,
         div(cls := "url-actions")(
-          button(formaction := routes.Ask.delete(ask._id))("Delete"),
-          button(formaction := routes.Ask.reset(ask._id))("Reset"),
-          (!ask.isConcluded).option(button(formaction := routes.Ask.conclude(ask._id))("Conclude")),
-          a(href := routes.Ask.json(ask._id))("JSON")
+          button(formaction := routes.Ask.delete(ask._id.value))("Delete"),
+          button(formaction := routes.Ask.reset(ask._id.value))("Reset"),
+          (!ask.isConcluded).option(button(formaction := routes.Ask.conclude(ask._id.value))("Conclude")),
+          a(href := routes.Ask.json(ask._id.value))("JSON")
         )
       ),
       div(cls := "inset")(
-        isGranted(_.ModerateForum).option(property("id:", ask._id)),
+        Granter.opt(_.ModerateForum).option(property("id:", ask._id.value)),
         (!me.is(ask.creator)).option(property("creator:", ask.creator)),
         property("created at:", showInstant(ask.createdAt)),
         ask.tags.nonEmpty.option(property("tags:", ask.tags.mkString(", "))),
         ask.picks.map(p => (p.size > 0).option(property("responses:", p.size.toString))),
         p,
-        renderGraph(ask)
+        askRender(ask)
       ),
       frag:
         ask.form.map: fbmap =>

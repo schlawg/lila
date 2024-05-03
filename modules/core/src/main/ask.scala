@@ -18,6 +18,7 @@ trait AskEmbed:
   def isOpen(aid: AskId): Fu[Boolean]
   def stripAsks(text: String, n: Int = -1): String
   def bake(text: String, askFrags: Iterable[String]): String
+  val repo: AskRepo
 
 trait AskRepo:
   def get(aid: AskId): Option[Ask]
@@ -29,9 +30,13 @@ trait AskRepo:
   def delete(aid: AskId): Funit
   def conclude(aid: AskId): Fu[Option[Ask]]
   def reset(aid: AskId): Fu[Option[Ask]]
+  def deleteAll(text: String): Funit
+  def asksIn(text: String): Fu[List[Option[Ask]]]
+  def isOpen(aid: AskId): Fu[Boolean]
+  def setUrl(text: String, url: Option[String]): Funit
 
 case class Ask(
-    _id: Ask.ID,
+    _id: AskId,
     question: String,
     choices: Ask.Choices,
     tags: Ask.Tags,
@@ -168,7 +173,7 @@ case class Ask(
 
 object Ask:
 
-  type ID      = AskId
+  // type ID      = AskId
   type Tags    = Set[String]
   type Choices = Vector[String]
   type Picks   = Map[String, Vector[Int]] // ranked list of indices into Choices vector
@@ -195,7 +200,7 @@ object Ask:
     url = None
   )
 
-  def anonHash(text: String, aid: Ask.ID): String =
+  def anonHash(text: String, aid: AskId): String =
     "anon-" + base64
       .encodeToString(
         java.security.MessageDigest.getInstance("SHA-1").digest(s"$text-$aid".getBytes("UTF-8"))

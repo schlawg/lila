@@ -20,7 +20,7 @@ final class Env(
     cacheApi: lila.memo.CacheApi,
     langList: lila.core.i18n.LangList,
     net: NetConfig,
-    askEmbed: lila.ask.AskEmbed
+    askEmbed: lila.core.ask.AskEmbed
 )(using Executor, Scheduler, akka.stream.Materializer, play.api.Mode):
 
   export net.{ assetBaseUrl, baseUrl, domain, assetDomain }

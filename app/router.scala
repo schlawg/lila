@@ -30,6 +30,7 @@ given Conversion[String, UblogPostId]                                    = Ublog
 given Conversion[String, ForumCategId]                                   = ForumCategId(_)
 given Conversion[String, ForumTopicId]                                   = ForumTopicId(_)
 given Conversion[String, ForumPostId]                                    = ForumPostId(_)
+given Conversion[String, AskId]                                          = AskId(_)
 given Conversion[String, lila.cms.CmsPage.Id]                            = lila.cms.CmsPage.Id(_)
 given Conversion[String, lila.cms.CmsPage.Key]                           = lila.cms.CmsPage.Key(_)
 given Conversion[String, Sri]                                            = Sri(_)

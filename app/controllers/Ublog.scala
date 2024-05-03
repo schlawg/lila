@@ -55,7 +55,7 @@ final class Ublog(env: Env) extends LilaController(env):
                   .zip(env.ask.repo.preload(post.markdown.value))
                 viewedPost = env.ublog.viewCounter(post, ctx.ip)
                 page <- renderPage:
-                  html.ublog.post.page(
+                  views.ublog.post.page(
                     user,
                     blog,
                     viewedPost,

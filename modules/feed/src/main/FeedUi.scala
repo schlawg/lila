@@ -50,7 +50,7 @@ final class FeedUi(helpers: Helpers, atomUi: AtomUi)(
         updates(ups, editor = Granter.opt(_.Feed))
       )
 
-  def lobbyUpdates(ups: List[Feed.Update])(using PageContext) =
+  def lobbyUpdates(ups: List[Feed.Update])(using Context) =
     div(cls := "daily-feed__updates")(
       ups.map: update =>
         div(cls := "daily-feed__update")(

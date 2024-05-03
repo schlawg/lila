@@ -11,26 +11,6 @@ object bits:
     div(cls := "lobby__app__content")
   )
 
-  def tournaments(tours: List[lila.tournament.Tournament])(using ctx: Context) =
-    div(cls := "lobby__tournaments lobby__box")(
-      a(cls := "lobby__box__top", href := routes.Tournament.home)(
-        h2(cls := "title text", dataIcon := Icon.Trophy)(trans.site.openTournaments()),
-        span(cls := "more")(trans.site.more(), " »")
-      ),
-      div(cls := "enterable_list"):
-        views.html.tournament.bits.enterable(tours)
-    ) // TODO - move to views/tournament
-
-  def simuls(simuls: List[lila.simul.Simul])(using ctx: Context) =
-    div(cls := "lobby__simuls lobby__box")(
-      a(cls := "lobby__box__top", href := routes.Simul.home)(
-        h2(cls := "title text", dataIcon := Icon.Group)(trans.site.simultaneousExhibitions()),
-        span(cls := "more")(trans.site.more(), " »")
-      ),
-      div(cls := "enterable_list"):
-        views.html.simul.bits.allCreated(simuls, withName = false)
-    ) // TODO - move to views/simul
-
   def underboards(
       tours: List[lila.tournament.Tournament],
       simuls: List[lila.simul.Simul],
@@ -38,7 +18,7 @@ object bits:
       tournamentWinners: List[lila.tournament.Winner]
   )(using ctx: Context) =
     frag(
-      /*ctx.pref.showRatings.option(
+      ctx.pref.showRatings.option(
         div(cls := "lobby__leaderboard lobby__box")(
           div(cls := "lobby__box__top")(
             h2(cls := "title text", dataIcon := Icon.CrownElite)(trans.site.leaderboard()),
@@ -72,7 +52,7 @@ object bits:
                       a(title := w.tourName, href := routes.Tournament.show(w.tourId)):
                         views.tournament.ui.scheduledTournamentNameShortHtml(w.tourName)
                   )
-      ),*/
+      ),
       div(cls := "lobby__tournaments-simuls")(
         div(cls := "lobby__tournaments lobby__box")(
           a(cls := "lobby__box__top", href := routes.Tournament.home)(
@@ -94,31 +74,6 @@ object bits:
         )
       )
     )
-  /*def lastPosts(
-      lichess: Option[lila.blog.MiniPost],
-      uposts: List[lila.ublog.UblogPost.PreviewPost]
-  )(using ctx: Context): Frag =
-    div(cls := "lobby__blog ublog-post-cards")(
-      lichess.map: post =>
-        val imgSize = UblogPost.thumbnail.Size.Small
-        a(cls := "ublog-post-card ublog-post-card--link", href := routes.Blog.show(post.id, post.slug))(
-          img(
-            src     := post.image,
-            cls     := "ublog-post-card__image",
-            widthA  := imgSize.width,
-            heightA := imgSize.height
-          ),
-          span(cls := "ublog-post-card__content")(
-            h2(cls := "ublog-post-card__title")(post.title),
-            semanticDate(post.date)(using ctx.lang)(cls := "ublog-post-card__over-image")
-          )
-        )
-      ,
-      ctx.kid.no option uposts
-        .take(if lichess.isEmpty then 6 else 5)
-        .map:
-          views.html.ublog.post.card(_, showAuthor = views.html.ublog.post.ShowAt.bottom, showIntro = false)
-    )*/
 
   def showUnreadLichessMessage(using Context) =
     nopeInfo(

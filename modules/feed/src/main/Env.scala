@@ -10,7 +10,7 @@ final class Env(
     cacheApi: lila.memo.CacheApi,
     db: lila.db.Db,
     flairApi: lila.core.user.FlairApi,
-    askEmbed: lila.ask.AskEmbed
+    askEmbed: lila.core.ask.AskEmbed
 )(using Executor):
 
   private val feedColl = db(CollName("daily_feed"))

@@ -124,7 +124,7 @@ export class Microphone implements Voice.Microphone {
     this.recId = recId;
     if (!this.isListening) return;
     this.recs.set(recId);
-    this.vosk?.set(recId);
+    this.vosk?.select(recId);
   }
 
   async start(listen = true): Promise<void> {
@@ -135,7 +135,7 @@ export class Microphone implements Voice.Microphone {
       if (!this.busy) throw '';
       for (const [recId, rec] of this.recs.group) this.initKaldi(recId, rec);
       this.recs.set(listen && this.recId);
-      this.vosk?.set(listen && this.recId);
+      this.vosk?.select(listen && this.recId);
       this.micTrack!.enabled = listen;
       this.busy = false;
       this.broadcast(listen ? 'Listening...' : '', 'start');
@@ -152,7 +152,7 @@ export class Microphone implements Voice.Microphone {
     this.download = undefined;
     this.busy = false;
     this.recs.set(false);
-    this.vosk?.set(false);
+    this.vosk?.select(false);
     this.broadcast(...reason);
   }
 
