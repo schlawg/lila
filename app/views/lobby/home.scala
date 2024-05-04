@@ -75,7 +75,7 @@ object home:
             ctx.blind.option(h2("Highlights")),
             div(cls := "lobby__spotlights")(
               events.map(bits.spotlight),
-              views.relay.bits.spotlight(relays),
+              views.relay.ui.spotlight(relays),
               ctx.noBot.option {
                 val nbManual = events.size + relays.size
                 val simulBBB = simuls.find(isFeaturable(_) && nbManual < 4)

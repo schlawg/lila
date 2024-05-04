@@ -3,7 +3,6 @@ import throttle from 'common/throttle';
 import { isTouchDevice } from 'common/device';
 
 export default function initModule() {
-  console.log('gobutter');
   site.load.then(() => $('.ask-container').each((_, e: EleLoose) => new Ask(e.firstElementChild!)));
 }
 

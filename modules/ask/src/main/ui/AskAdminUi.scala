@@ -12,7 +12,7 @@ final class AskAdminUi(helpers: Helpers)(askRender: (Ask) => Context ?=> Frag):
     val askmap = asks.sortBy(_.createdAt).groupBy(_.url)
     Page(s"${user.titleName} polls")
       .cssTag("ask")
-      .js(EsmInit("bits.ask")):
+      .js(jsModuleInit("bits.ask")):
         main(cls := "page-small box box-pad")(
           h1(s"${user.titleName} polls"),
           askmap.keys.map(url => showAsks(url, askmap.get(url).get)).toSeq

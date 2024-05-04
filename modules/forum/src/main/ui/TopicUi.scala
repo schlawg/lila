@@ -94,7 +94,7 @@ final class TopicUi(helpers: Helpers, bits: ForumBits, postUi: PostUi)(
       .csp(_.withInlineIconFont.withTwitter)
       .js(
         EsmInit("bits.forum") ++ EsmInit("bits.expandText") ++ hasAsks.so(
-          EsmInit("bits.ask")
+          jsModuleInit("bits.ask")
         ) ++ formWithCaptcha.isDefined.so(captchaEsmInit)
       )
       .graph(

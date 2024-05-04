@@ -24,7 +24,7 @@ final class FeedUi(helpers: Helpers, atomUi: AtomUi)(
       .cssTag("dailyFeed")
       .cssTag(hasAsks.option("ask"))
       .js(infiniteScrollEsmInit)
-      .js(hasAsks.option(EsmInit("bits.ask")))
+      .js(hasAsks.option(jsModuleInit("bits.ask")))
       .js(edit.option(EsmInit("bits.flatpickr")))
       .js(edit.option(EsmInit("bits.dailyFeed")))
 

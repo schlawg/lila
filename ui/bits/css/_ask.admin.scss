@@ -1,5 +1,10 @@
-$c-contrast-font: $c-font-clear; //if($theme-light, #444, #ddd);
-$c-box-border: if($theme-light, #ddd, #484848);
+:root {
+  --c-box-border: #484848;
+
+  @include if-light {
+    --c-box-border: #ddd;
+  }
+}
 
 // someone, please delete all of this
 div.ask-admin {
@@ -45,7 +50,7 @@ div.ask-admin {
   }
   .inset-box {
     padding: 1em;
-    border: solid 1px $c-box-border;
+    border: solid 1px var(--c-box-border);
     background: $c-bg-box;
     > p {
       margin-inline-start: 2em;

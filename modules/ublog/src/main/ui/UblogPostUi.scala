@@ -27,7 +27,9 @@ final class UblogPostUi(helpers: Helpers, ui: UblogUi)(
       .cssTag("ublog")
       .cssTag(hasAsks.option("ask"))
       .js(
-        EsmInit("bits.expandText") ++ ctx.isAuth.so(EsmInit("bits.ublog")) ++ hasAsks.so(EsmInit("bits.ask"))
+        EsmInit("bits.expandText") ++ ctx.isAuth.so(EsmInit("bits.ublog")) ++ hasAsks.so(
+          jsModuleInit("bits.ask")
+        )
       )
       .graph(
         OpenGraph(
