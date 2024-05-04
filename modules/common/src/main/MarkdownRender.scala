@@ -50,6 +50,7 @@ final class MarkdownRender(
     code: Boolean = false,
     pgnExpand: Option[MarkdownRender.PgnSourceExpand] = None,
     assetDomain: Option[AssetDomain] = None
+    // baseUrl: Option[BaseUrl] = None
 ):
 
   private val extensions = java.util.ArrayList[Extension]()
@@ -87,6 +88,9 @@ final class MarkdownRender(
   private val logger = lila.log("markdown")
 
   private def mentionsToLinks(markdown: Markdown): Markdown =
+    // i think this commented code was to fix an issue with bad mention links in atom views
+    // val replaceWith = baseUrl.fold("[@$1](/@/$1)")(base => s"[@$$1](${base.value}/@/$$1)")
+    // Markdown(RawHtml.atUsernameRegex.replaceAllIn(markdown.value, replaceWith))
     Markdown(RawHtml.atUsernameRegex.replaceAllIn(markdown.value, "[@$1](/@/$1)"))
 
   // https://github.com/vsch/flexmark-java/issues/496

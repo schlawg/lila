@@ -8,25 +8,28 @@ import lila.ui.{ *, given }
 import ScalatagsTemplate.{ *, given }
 
 final class FeedUi(helpers: Helpers, atomUi: AtomUi)(
-    sitePage: String => Context ?=> Page
+    sitePage: String => Context ?=> Page,
+    askRender: (Frag) => Context ?=> Frag
 )(using Executor):
   import helpers.{ *, given }
 
-  private def renderCache[A](ttl: FiniteDuration)(toFrag: A => Frag): A => Frag =
-    val cache = lila.memo.CacheApi.scaffeineNoScheduler
-      .expireAfterWrite(1 minute)
-      .build[A, String]()
-    from => raw(cache.get(from, from => toFrag(from).render))
+  // private def renderCache[A](ttl: FiniteDuration)(toFrag: A => Frag): A => Frag =
+  //   val cache = lila.memo.CacheApi.scaffeineNoScheduler
+  //     .expireAfterWrite(1 minute)
+  //     .build[A, String]()
+  //   from => raw(cache.get(from, from => toFrag(from).render))
 
-  private def page(title: String, edit: Boolean = false)(using Context): Page =
+  private def page(title: String, hasAsks: Boolean, edit: Boolean = false)(using Context): Page =
     sitePage(title)
       .cssTag("dailyFeed")
+      .cssTag(hasAsks.option("ask"))
       .js(infiniteScrollEsmInit)
+      .js(hasAsks.option(jsModuleInit("bits.ask")))
       .js(edit.option(EsmInit("bits.flatpickr")))
       .js(edit.option(EsmInit("bits.dailyFeed")))
 
-  def index(ups: Paginator[Feed.Update])(using Context) =
-    page("Updates"):
+  def index(ups: Paginator[Feed.Update], hasAsks: Boolean)(using Context) =
+    page("Updates", hasAsks):
       div(cls := "daily-feed box box-pad")(
         boxTop(
           h1("Lichess updates"),
@@ -47,7 +50,7 @@ final class FeedUi(helpers: Helpers, atomUi: AtomUi)(
         updates(ups, editor = Granter.opt(_.Feed))
       )
 
-  val lobbyUpdates = renderCache[List[Feed.Update]](1 minute): ups =>
+  def lobbyUpdates(ups: List[Feed.Update])(using Context) =
     div(cls := "daily-feed__updates")(
       ups.map: update =>
         div(cls := "daily-feed__update")(
@@ -56,7 +59,7 @@ final class FeedUi(helpers: Helpers, atomUi: AtomUi)(
             a(cls := "daily-feed__update__day", href := s"/feed#${update.id}"):
               momentFromNow(update.at)
             ,
-            rawHtml(update.rendered)
+            askRender(rawHtml(update.rendered))
           )
         ),
       div(cls := "daily-feed__update")(
@@ -68,7 +71,7 @@ final class FeedUi(helpers: Helpers, atomUi: AtomUi)(
     )
 
   def create(form: Form[?])(using Context) =
-    page("Lichess updates: New", true):
+    page("Lichess updates: New", true, true):
       main(cls := "daily-feed page-small box box-pad")(
         boxTop(
           h1(
@@ -82,7 +85,7 @@ final class FeedUi(helpers: Helpers, atomUi: AtomUi)(
       )
 
   def edit(form: Form[?], update: Feed.Update)(using Context) =
-    page(s"Lichess update ${update.id}", true):
+    page(s"Lichess update ${update.id}", true, true):
       main(cls := "daily-feed page-small")(
         div(cls := "box box-pad")(
           boxTop(
@@ -146,7 +149,9 @@ final class FeedUi(helpers: Helpers, atomUi: AtomUi)(
                   )
                 )
               ),
-              div(cls := "daily-feed__update__markup")(rawHtml(update.rendered))
+              div(cls := "daily-feed__update__markup")(
+                askRender(rawHtml(update.rendered))
+              )
             )
           ),
       pagerNext(ups, np => routes.Feed.index(np).url)

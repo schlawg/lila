@@ -1,4 +1,4 @@
-import { h } from 'snabbdom';
+import { looseH as h } from 'common/snabbdom';
 import LobbyController from '../ctrl';
 import { NowPlaying } from '../interfaces';
 

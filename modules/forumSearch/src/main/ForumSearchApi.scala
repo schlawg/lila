@@ -30,7 +30,7 @@ final class ForumSearchApi(
         client.store(view.post.id.into(Id), toDoc(view))
 
   private def toDoc(view: ForumPostMiniView) = Json.obj(
-    Fields.body    -> view.post.text.take(10000),
+    Fields.body    -> view.post.text.take(10000), // TODO clean take
     Fields.topic   -> view.topic.name,
     Fields.author  -> view.post.userId,
     Fields.topicId -> view.topic.id,

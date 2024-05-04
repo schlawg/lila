@@ -147,7 +147,6 @@ final class layout(helpers: Helpers, assetHelper: lila.web.ui.AssetFullHelper)(
       )
     )
 
-  // consolidate script packaging here to dedup chunk dependencies
   def sitePreload(modules: EsmList, isInquiry: Boolean)(using ctx: Context) =
     scriptsPreload("site" :: (isInquiry.option("mod.inquiry") :: modules.map(_.map(_.key))).flatten)
 
@@ -163,7 +162,7 @@ final class layout(helpers: Helpers, assetHelper: lila.web.ui.AssetFullHelper)(
     script(tpe := "module", src := staticAssetUrl(s"compiled/${jsName(key)}"))
 
   def modulesInit(modules: EsmList)(using ctx: PageContext) =
-    modules.flatMap(_.map(_.init(ctx.nonce))) // in body
+    modules.flatMap(_.map(_.init(ctx.nonce)))
 
   private def hrefLang(langStr: String, path: String) =
     s"""<link rel="alternate" hreflang="$langStr" href="$netBaseUrl$path"/>"""

@@ -7,7 +7,6 @@ import play.api.libs.ws.StandaloneWSClient
 import lila.common.autoconfig.{ *, given }
 import lila.core.config.*
 import lila.core.relation.RelationApi
-
 import lila.core.forum.ForumPostMiniView
 
 @Module
@@ -31,7 +30,8 @@ final class Env(
     userApi: lila.core.user.UserApi,
     teamApi: lila.core.team.TeamApi,
     cacheApi: lila.memo.CacheApi,
-    ws: StandaloneWSClient
+    ws: StandaloneWSClient,
+    askEmbed: lila.core.ask.AskEmbed
 )(using Executor, Scheduler, akka.stream.Materializer):
 
   private val config = appConfig.get[ForumConfig]("forum")(AutoConfig.loader)

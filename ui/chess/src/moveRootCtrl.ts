@@ -21,3 +21,9 @@ export interface MoveUpdate {
   canMove: boolean;
   cg?: CgApi;
 }
+
+export interface MoveUpdate {
+  fen: string;
+  canMove: boolean;
+  cg?: CgApi;
+}

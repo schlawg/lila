@@ -75,7 +75,8 @@ final class TopicUi(helpers: Helpers, bits: ForumBits, postUi: PostUi)(
       unsub: Option[Boolean],
       canModCateg: Boolean,
       formText: Option[String] = None,
-      replyBlocked: Boolean = false
+      replyBlocked: Boolean = false,
+      hasAsks: Boolean = false
   )(using ctx: Context) =
     val isDiagnostic = categ.isDiagnostic && (canModCateg || ctx.me.exists(topic.isAuthor))
     val headerText   = if isDiagnostic then "Diagnostics" else topic.name
@@ -89,8 +90,13 @@ final class TopicUi(helpers: Helpers, bits: ForumBits, postUi: PostUi)(
     val pager = paginationByQuery(routes.ForumTopic.show(categ.slug, topic.slug, 1), posts, showPost = true)
     Page(s"${topic.name} • page ${posts.currentPage}/${posts.nbPages} • ${categ.name}")
       .cssTag("forum")
+      .cssTag(hasAsks.option("ask"))
       .csp(_.withInlineIconFont.withTwitter)
-      .js(EsmInit("bits.forum") ++ EsmInit("bits.expandText") ++ formWithCaptcha.isDefined.so(captchaEsmInit))
+      .js(
+        EsmInit("bits.forum") ++ EsmInit("bits.expandText") ++ hasAsks.so(
+          jsModuleInit("bits.ask")
+        ) ++ formWithCaptcha.isDefined.so(captchaEsmInit)
+      )
       .graph(
         OpenGraph(
           title = topic.name,

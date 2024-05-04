@@ -12,7 +12,8 @@ final class Feed(env: Env) extends LilaController(env):
     Reasonable(page):
       for
         updates      <- env.feed.paginator.recent(isGrantedOpt(_.Feed), page)
-        renderedPage <- renderPage(views.feed.index(updates))
+        hasAsks      <- env.ask.repo.preload(updates.currentPageResults.map(_.content.value)*)
+        renderedPage <- renderPage(views.feed.index(updates, hasAsks))
       yield Ok(renderedPage)
 
   def createForm = Secure(_.Feed) { _ ?=> _ ?=>

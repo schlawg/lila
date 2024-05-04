@@ -43,6 +43,9 @@ case class UblogPostLike(userId: UserId, id: String, title: String) extends Atom
   def userIds = List(userId)
 case class StreamStart(id: UserId, name: String) extends Atom("streamStart", false):
   def userIds = List(id)
+case class AskConcluded(userId: UserId, question: String, askUrl: String)
+    extends Atom(s"askConcluded:${question}", false):
+  def userIds = List(userId)
 
 enum Propagation:
   case Users(users: List[UserId])

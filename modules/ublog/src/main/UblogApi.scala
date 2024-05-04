@@ -3,6 +3,7 @@ package lila.ublog
 import reactivemongo.akkastream.{ AkkaStreamCursor, cursorProducer }
 import reactivemongo.api.*
 
+import lila.common.Markdown
 import lila.db.dsl.{ *, given }
 import lila.core.shutup.{ ShutupApi, PublicSource }
 import lila.core.timeline.Propagate
@@ -14,29 +15,34 @@ final class UblogApi(
     userApi: lila.core.user.UserApi,
     picfitApi: PicfitApi,
     shutupApi: ShutupApi,
-    irc: lila.core.irc.IrcApi
+    irc: lila.core.irc.IrcApi,
+    askEmbed: lila.core.ask.AskEmbed
 )(using Executor)
     extends lila.core.ublog.UblogApi:
 
   import UblogBsonHandlers.{ *, given }
 
   def create(data: UblogForm.UblogPostData, author: User): Fu[UblogPost] =
-    val post = data.create(author)
-    colls.post.insert
-      .one(
+    val frozen = askEmbed.freeze(data.markdown.value, author.id)
+    val post   = data.create(author, Markdown(frozen.text))
+    (askEmbed.commit(frozen, s"/ublog/${post.id}/redirect".some) >>
+      colls.post.insert.one(
         bsonWriteObjTry[UblogPost](post).get ++ $doc("likers" -> List(author.id))
-      )
-      .inject(post)
+      )).inject(post)
 
   def getByPrismicId(id: String): Fu[Option[UblogPost]] = colls.post.one[UblogPost]($doc("prismicId" -> id))
 
   def update(data: UblogForm.UblogPostData, prev: UblogPost)(using me: Me): Fu[UblogPost] =
-    getUserBlog(me.value, insertMissing = true).flatMap { blog =>
-      val post = data.update(me.value, prev)
-      (colls.post.update.one($id(prev.id), $set(bsonWriteObjTry[UblogPost](post).get)) >> {
-        (post.live && prev.lived.isEmpty).so(onFirstPublish(me.value, blog, post))
-      }).inject(post)
-    }
+    askEmbed
+      .freezeAndCommit(data.markdown.value, me)
+      .flatMap { frozen =>
+        getUserBlog(me, insertMissing = true).flatMap { blog =>
+          val post = data.update(me.value, prev, Markdown(frozen))
+          (colls.post.update.one($id(prev.id), $set(bsonWriteObjTry[UblogPost](post).get)) >> {
+            (post.live && prev.lived.isEmpty).so(onFirstPublish(me.value, blog, post))
+          }).inject(post.copy(markdown = Markdown(askEmbed.unfreeze(frozen)))) // for the ask /id
+        }
+      }
 
   private def onFirstPublish(user: User, blog: UblogBlog, post: UblogPost): Funit =
     rank
@@ -166,7 +172,9 @@ final class UblogApi(
       .list(30)
 
   def delete(post: UblogPost): Funit =
-    colls.post.delete.one($id(post.id)) >> image.deleteAll(post)
+    colls.post.delete.one($id(post.id)) >>
+      image.deleteAll(post) >>
+      askEmbed.repo.deleteAll(post.markdown.value)
 
   def setTier(blog: UblogBlog.Id, tier: UblogRank.Tier): Funit =
     colls.blog.update

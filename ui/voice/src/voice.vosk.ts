@@ -2,13 +2,13 @@ import { KaldiRecognizer, createModel, Model } from 'vosk-browser';
 import { ServerMessageResult, ServerMessagePartialResult } from 'vosk-browser/dist/interfaces';
 import { RecognizerOpts, VoskModule } from './interfaces';
 
-// IMPORTANT: We can't have code splitting here and I don't want a separate esbuild pass.
+// IMPORTANT: We don't want code splitting here and I don't want a separate esbuild pass.
 // Do not import code, just paste it in if needed.
 
 const LOG_LEVEL = -1; // -1 errors only. 0 includes warnings, 3 is just insane
 
 export function initModule(): VoskModule {
-  const recs = new Selector<KaldiRec>();
+  const recs = new KaldiSelector();
   let voiceModel: Model;
   let lang: string;
 
@@ -68,7 +68,7 @@ export function initModule(): VoskModule {
   }
 }
 
-class KaldiRec implements Selectable {
+class KaldiRec {
   kaldi: KaldiRecognizer;
   node: ScriptProcessorNode;
   partial: boolean;
@@ -93,42 +93,24 @@ class KaldiRec implements Selectable {
   }
 }
 
-export interface Selectable<C = any> {
-  select?: (ctx?: C) => void;
-  deselect?: (ctx?: C) => void;
-  close?: (ctx?: C) => void;
-}
-
-export class Selector<T extends Selectable, C = any> {
-  group = new Map<string, T>();
-  context?: C;
+class KaldiSelector {
+  group = new Map<string, KaldiRec>();
   key: string | false = false;
 
-  set ctx(ctx: any) {
-    if (this.context === ctx) return;
-    this.selected?.deselect?.(this.context);
-    this.context = ctx;
-    this.selected?.select?.(this.context);
-  }
-
-  get selected(): T | undefined {
+  get selected(): KaldiRec | undefined {
     return this.key ? this.group.get(this.key) : undefined;
   }
 
   select(key: string | false) {
     if (this.key) {
       if (this.key === key) return;
-      this.selected?.deselect?.(this.context);
+      this.selected?.deselect?.();
     }
     this.key = key;
-    this.selected?.select?.(this.context);
+    this.selected?.select?.();
   }
 
-  get(key: string): T | undefined {
-    return this.group.get(key);
-  }
-
-  set(key: string, val: T) {
+  set(key: string, val: KaldiRec) {
     const reselect = this.key === key;
     this.close(key);
     this.group.set(key, val);
@@ -141,10 +123,10 @@ export class Selector<T extends Selectable, C = any> {
       return;
     }
     if (key === this.key) {
-      this.group.get(key)?.deselect?.(this.context);
+      this.group.get(key)?.deselect?.();
       this.key = false;
     }
-    this.group.get(key)?.close?.(this.context);
+    this.group.get(key)?.close?.();
   }
 
   delete(key?: string) {

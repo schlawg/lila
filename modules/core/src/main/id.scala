@@ -94,3 +94,6 @@ object id:
 
   opaque type ChallengeId = String
   object ChallengeId extends OpaqueString[ChallengeId]
+
+  opaque type AskId = String
+  object AskId extends OpaqueString[AskId]

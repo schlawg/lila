@@ -38,6 +38,11 @@ cg-board::before {
   body[data-board3d='#{$name}'] .is3d .main-board {
     cg-board::before {
       background-image: img-url('staunton/board/#{$name}.png');
+      filter: brightness(var(---board-brightness));
+      @include if-transp {
+        opacity: var(---board-opacity);
+        filter: unset;
+      }
     }
 
     $coord-color-white: map-get($board-theme, coord-color-white);

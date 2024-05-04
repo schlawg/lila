@@ -162,6 +162,8 @@ final class Env(
 
   lazy val cli = wire[Cli]
 
+  // lazy val authLockdown = // dev setting not in SecurityConfig
+  //  (!net.isProd) && ~appConfig.getOptional[Boolean]("security.auth_lockdown")
   lazy val coreApi = new lila.core.security.SecurityApi:
     export api.shareAnIpOrFp
     export userLogins.getUserIdsWithSameIpAndPrint

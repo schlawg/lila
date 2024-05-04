@@ -51,6 +51,13 @@ body {
   }
 }
 
+#main-wrap {
+  margin-top: $site-header-margin;
+  @media (prefers-reduced-motion: no-preference) and (min-height: $tall) {
+    margin-top: $site-header-outer-height;
+  }
+}
+
 main {
   grid-area: main;
 

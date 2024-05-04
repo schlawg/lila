@@ -1,10 +1,10 @@
 .lobby__feed {
   @extend %box-neat;
   @include hoverflow;
-  background: $c-bg-box;
   overflow-y: auto;
-  min-height: 20em;
+  min-height: 14em;
 }
+
 .daily-feed {
   &__updates {
     margin-inline-start: 24px;

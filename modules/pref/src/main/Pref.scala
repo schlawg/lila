@@ -85,7 +85,7 @@ case class Pref(
       case _              => 70
 
   def bgImgOrDefault =
-    bgImg | Pref.defaultBgImg
+    bgImg | f"//lichess1.org/assets/lifat/background/gallery/bg17.webp"
 
   def pieceNotationIsLetter: Boolean = pieceNotation == PieceNotation.LETTER
 

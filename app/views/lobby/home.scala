@@ -30,7 +30,9 @@ object home:
             )
         )
       )
+      .js(homepage.hasAsks.option(EsmInit("ask")))
       .cssTag("lobby")
+      .cssTag(homepage.hasAsks.option("ask"))
       .graph(
         OpenGraph(
           image = assetUrl("logo/lichess-tile-wide.png").some,
@@ -48,11 +50,16 @@ object home:
             "lobby-nope" -> (playban.isDefined || currentGame.isDefined || homepage.hasUnreadLichessMessage)
           )
         )(
-          div(cls := "lobby__table")(
+          div(cls := "lobby__buttons")(
+            div(cls := "lobby__counters")(a, a),
             div(cls := "lobby__start")(
               button(cls := "button button-metal", tpe := "button", trans.site.createAGame()),
               button(cls := "button button-metal", tpe := "button", trans.site.playWithAFriend()),
               button(cls := "button button-metal", tpe := "button", trans.site.playWithTheMachine())
+            ),
+            a(cls := "lobby__support", href := routes.Plan.index)(
+              iconTag(patronIconChar),
+              div(strong(trans.patron.donate()), span(trans.patron.lichessPatron()))
             )
           ),
           currentGame
@@ -66,17 +73,6 @@ object home:
           ,
           div(cls := "lobby__side")(
             ctx.blind.option(h2("Highlights")),
-            ctx.kid.no.option(
-              st.section(cls := "lobby__streams")(
-                views.streamer.bits.liveStreams(streams),
-                streams.live.streams.nonEmpty.option(
-                  a(href := routes.Streamer.index(), cls := "more")(
-                    trans.site.streamersMenu(),
-                    " »"
-                  )
-                )
-              )
-            ),
             div(cls := "lobby__spotlights")(
               events.map(bits.spotlight),
               views.relay.ui.spotlight(relays),
@@ -93,6 +89,17 @@ object home:
                   simulBBB.map(views.simul.ui.homepageSpotlight)
                 )
               }
+            ),
+            ctx.kid.no.option(
+              st.section(cls := "lobby__streams")(
+                views.streamer.bits.liveStreams(streams),
+                streams.live.streams.nonEmpty.option(
+                  a(href := routes.Streamer.index(), cls := "more")(
+                    trans.site.streamersMenu(),
+                    " »"
+                  )
+                )
+              )
             ),
             if ctx.isAuth then
               div(cls := "lobby__timeline")(
@@ -125,30 +132,15 @@ object home:
           div(cls := "lobby__blog ublog-post-cards"):
             ublogPosts
               .filter(_.isLichess || ctx.kid.no)
-              .take(3)
+              .take(9)
               .map:
                 views.ublog.ui.card(_, showAuthor = views.ublog.ui.ShowAt.bottom, showIntro = false)
           ,
+          // bits.lastPosts(lastPost, ublogPosts),
           ctx.noBot.option(bits.underboards(tours, simuls, leaderboard, tournamentWinners)),
           div(cls := "lobby__feed"):
             views.feed.lobbyUpdates(lastUpdates)
           ,
-          div(cls := "lobby__support")(
-            a(href := routes.Plan.index)(
-              iconTag(patronIconChar),
-              span(cls := "lobby__support__text")(
-                strong(trans.patron.donate()),
-                span(trans.patron.becomePatron())
-              )
-            ),
-            a(href := "https://shop.spreadshirt.com/lichess-org")(
-              iconTag(Icon.Tshirt),
-              span(cls := "lobby__support__text")(
-                strong("Swag Store"),
-                span(trans.site.playChessInStyle())
-              )
-            )
-          ),
           div(cls := "lobby__about")(
             ctx.blind.option(h2("About")),
             a(href := "/about")(trans.site.aboutX("Lichess")),
@@ -163,47 +155,47 @@ object home:
           )
         )
 
-  private val i18nKeys = List(
-    trans.site.realTime,
-    trans.site.correspondence,
-    trans.site.unlimited,
-    trans.site.timeControl,
-    trans.site.incrementInSeconds,
-    trans.site.minutesPerSide,
-    trans.site.daysPerTurn,
-    trans.site.ratingRange,
-    trans.site.nbPlayers,
-    trans.site.nbGamesInPlay,
-    trans.site.player,
-    trans.site.time,
-    trans.site.joinTheGame,
-    trans.site.cancel,
-    trans.site.casual,
-    trans.site.rated,
-    trans.site.perfRatingX,
-    trans.site.variant,
-    trans.site.mode,
-    trans.site.list,
-    trans.site.graph,
-    trans.site.filterGames,
-    trans.site.youNeedAnAccountToDoThat,
-    trans.site.oneDay,
-    trans.site.nbDays,
-    trans.site.aiNameLevelAiLevel,
-    trans.site.yourTurn,
-    trans.site.rating,
-    trans.site.createAGame,
-    trans.site.playWithAFriend,
-    trans.site.playWithTheMachine,
-    trans.site.strength,
-    trans.site.pasteTheFenStringHere,
-    trans.site.quickPairing,
-    trans.site.lobby,
-    trans.site.custom,
-    trans.site.anonymous,
-    trans.site.side,
-    trans.site.white,
-    trans.site.randomColor,
-    trans.site.black,
-    trans.site.boardEditor
-  )
+private val i18nKeys = List(
+  trans.site.realTime,
+  trans.site.correspondence,
+  trans.site.unlimited,
+  trans.site.timeControl,
+  trans.site.incrementInSeconds,
+  trans.site.minutesPerSide,
+  trans.site.daysPerTurn,
+  trans.site.ratingRange,
+  trans.site.nbPlayers,
+  trans.site.nbGamesInPlay,
+  trans.site.player,
+  trans.site.time,
+  trans.site.joinTheGame,
+  trans.site.cancel,
+  trans.site.casual,
+  trans.site.rated,
+  trans.site.perfRatingX,
+  trans.site.variant,
+  trans.site.mode,
+  trans.site.list,
+  trans.site.graph,
+  trans.site.filterGames,
+  trans.site.youNeedAnAccountToDoThat,
+  trans.site.oneDay,
+  trans.site.nbDays,
+  trans.site.aiNameLevelAiLevel,
+  trans.site.yourTurn,
+  trans.site.rating,
+  trans.site.createAGame,
+  trans.site.playAFriend,
+  trans.site.playTheComputer,
+  trans.site.strength,
+  trans.site.pasteTheFenStringHere,
+  trans.site.quickPairing,
+  trans.site.lobby,
+  trans.site.custom,
+  trans.site.anonymous,
+  trans.site.side,
+  trans.site.white,
+  trans.site.randomColor,
+  trans.site.black,
+  trans.site.boardEditor
+)

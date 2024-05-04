@@ -32,6 +32,12 @@ object page:
         crossorigin = false
       )
     )
+    /*(env.security.authLockdown && !ctx.isAuth).option {
+      raw:
+        """<style id="bg-data">body.transp::before{background-image:url("""" +
+          staticAssetUrl(f"lifat/background/gallery/bg${Math.abs(ctx.ip.hashCode % 28) + 1}%02d.webp") +
+          """");}</style>"""
+    },*/
   )
 
   private def current2dTheme(using ctx: Context) =

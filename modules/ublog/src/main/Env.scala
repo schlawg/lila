@@ -19,7 +19,8 @@ final class Env(
     captcha: lila.core.captcha.CaptchaApi,
     cacheApi: lila.memo.CacheApi,
     langList: lila.core.i18n.LangList,
-    net: NetConfig
+    net: NetConfig,
+    askEmbed: lila.core.ask.AskEmbed
 )(using Executor, Scheduler, akka.stream.Materializer, play.api.Mode):
 
   export net.{ assetBaseUrl, baseUrl, domain, assetDomain }
@@ -44,16 +45,14 @@ final class Env(
     cacheApi.unit[List[UblogPost.PreviewPost]]:
       _.refreshAfterWrite(10 seconds).buildAsyncFuture: _ =>
         import scalalib.ThreadLocalRandom
-        val lookInto = 7
-        val keep     = 3
+        val lookInto = 15
+        val keep     = 9
         api
           .pinnedPosts(2)
           .zip(
             api
               .latestPosts(lookInto)
-              .map:
-                _.groupBy(_.blog)
-                  .flatMap(_._2.headOption)
+              .map(_.groupBy(_.blog).flatMap(_._2.headOption))
               .map(ThreadLocalRandom.shuffle)
               .map(_.take(keep).toList)
           )

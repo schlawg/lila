@@ -81,7 +81,7 @@ lazy val modules = Seq(
   pool, lobby, relation, tv, coordinate, feed, history,
   shutup, appeal, irc, explorer, learn, event, coach,
   practice, evalCache, irwin, bot, racer, cms, i18n,
-  socket, bookmark, studySearch, gameSearch, forumSearch, teamSearch,
+  socket, bookmark, studySearch, gameSearch, forumSearch, teamSearch, ask
 )
 
 lazy val moduleRefs = modules map projectToRef
@@ -175,12 +175,12 @@ lazy val coordinate = module("coordinate",
 )
 
 lazy val feed = module("feed",
-  Seq(memo, ui),
+  Seq(memo, ui, ask),
   Seq()
 )
 
 lazy val ublog = module("ublog",
-  Seq(coreI18n, memo, ui),
+  Seq(coreI18n, memo, ui, ask),
   Seq(bloomFilter)
 )
 
@@ -424,8 +424,13 @@ lazy val msg = module("msg",
   Seq()
 )
 
+lazy val ask = module("ask",
+  Seq(memo, ui, security),
+  reactivemongo.bundle
+)
+
 lazy val forum = module("forum",
-  Seq(memo, ui),
+  Seq(memo, ui, ask),
   Seq()
 )
 

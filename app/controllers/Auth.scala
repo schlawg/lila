@@ -165,7 +165,7 @@ final class Auth(
   def signupLang = LangPage(routes.Auth.signup)(serveSignup)
   private def serveSignup(using Context) = NoTor:
     forms.signup.website.flatMap: form =>
-      Ok.page(views.auth.signup(form))
+      /*if env.security.authLockdown then NotFound else*/ Ok.page(views.auth.signup(form))
 
   private def authLog(user: UserName, email: Option[EmailAddress], msg: String) =
     lila.log("auth").info(s"$user ${email.fold("-")(_.value)} $msg")

@@ -8,8 +8,8 @@ body > header {
   display: flex;
   justify-content: space-between;
   position: relative;
+
   z-index: z('site-header');
-  max-width: 1800px;
   margin: 0 auto;
   user-select: none;
 
@@ -88,8 +88,8 @@ body > header {
     margin: 0 1rem;
     text-transform: uppercase;
     line-height: $site-header-height;
-    @media (max-width: at-most($xx-small)) {
+    /*@media (max-width: at-most($xx-small)) {
       display: none;
-    }
+    }*/
   }
 }
