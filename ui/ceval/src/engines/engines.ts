@@ -77,9 +77,9 @@ export class Engines {
             requires: ['simd', 'allowLsfw'],
             minMem: 1536,
             assets: {
-              version: 'sfw003',
+              version: 'sfw004',
               root: 'npm/lila-stockfish-web',
-              js: 'linrock-nnue-7.js',
+              js: 'sf16-7.js',
             },
           },
           make: (e: BrowserEngineInfo) => new StockfishWebEngine(e, this.status),
@@ -93,9 +93,9 @@ export class Engines {
             requires: ['simd', 'allowLsfw'],
             minMem: 2048,
             assets: {
-              version: 'sfw003',
+              version: 'sfw004',
               root: 'npm/lila-stockfish-web',
-              js: 'sf-nnue-40.js',
+              js: 'sf16-40.js',
             },
           },
           make: (e: BrowserEngineInfo) => new StockfishWebEngine(e, this.status),
@@ -127,9 +127,9 @@ export class Engines {
             requires: ['simd', 'allowLsfw'],
             variants: variants.map(v => v[0]),
             assets: {
-              version: 'sfw003',
+              version: 'sfw004',
               root: 'npm/lila-stockfish-web',
-              js: 'fsf.js',
+              js: 'fsf14.js',
             },
           },
           make: (e: BrowserEngineInfo) =>

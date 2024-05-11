@@ -35,8 +35,6 @@ export class StockfishWebEngine implements CevalEngine {
         .default({
           wasmMemory: sharedWasmMemory(this.info.minMem!),
           onError: (msg: string) => reject(new Error(msg)),
-          locateFile: (name: string) =>
-            site.asset.url(`${root}/${name}`, { version, sameDomain: name.endsWith('.worker.js') }),
         })
         .then(resolve)
         .catch(reject);
