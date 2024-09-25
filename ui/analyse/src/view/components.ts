@@ -30,7 +30,7 @@ import * as pgnExport from '../pgnExport';
 import { spinnerVdom as spinner } from 'common/spinner';
 import * as Prefs from 'common/prefs';
 import statusView from 'game/view/status';
-import { stepwiseScroll } from 'common/scroll';
+import { stepwiseScroll } from 'common/controls';
 import { renderNextChapter } from '../study/nextChapter';
 import { render as renderTreeView } from '../treeView/treeView';
 import * as gridHacks from './gridHacks';
@@ -39,6 +39,9 @@ import serverSideUnderboard from '../serverSideUnderboard';
 import StudyCtrl from '../study/studyCtrl';
 import RelayCtrl from '../study/relay/relayCtrl';
 import type * as studyDeps from '../study/studyDeps';
+import { renderPgnError } from '../pgnImport';
+import { storage } from 'common/storage';
+import { makeChat } from 'chat';
 
 export interface ViewContext {
   ctrl: AnalyseCtrl;
@@ -48,7 +51,6 @@ export interface ViewContext {
   allowVideo?: boolean;
   concealOf?: ConcealOf;
   showCevalPvs: boolean;
-  menuIsOpen: boolean;
   gamebookPlayView?: VNode;
   playerBars: VNode[] | undefined;
   playerStrips: [VNode, VNode] | undefined;
@@ -76,7 +78,6 @@ export function viewContext(ctrl: AnalyseCtrl, deps?: typeof studyDeps): ViewCon
     relay: ctrl.study?.relay,
     concealOf: makeConcealOf(ctrl),
     showCevalPvs: !ctrl.retro?.isSolving() && !ctrl.practice,
-    menuIsOpen: ctrl.actionMenu(),
     gamebookPlayView: ctrl.study?.gamebookPlay && deps?.gbPlay.render(ctrl.study.gamebookPlay),
     playerBars,
     playerStrips: playerBars ? undefined : renderPlayerStrips(ctrl),
@@ -101,7 +102,7 @@ export function renderMain(
           if (!!playerBars != document.body.classList.contains('header-margin')) {
             $('body').toggleClass('header-margin', !!playerBars);
           }
-          !hasRelayTour && makeChat(ctrl, c => elm.appendChild(c));
+          !hasRelayTour && makeChatEl(ctrl, c => elm.appendChild(c));
           gridHacks.start(elm);
         },
         update(_, _2) {
@@ -135,13 +136,13 @@ export function renderTools({ ctrl, deps, concealOf, allowVideo }: ViewContext, 
     ...(ctrl.actionMenu()
       ? [...cevalView.renderCeval(ctrl), h('div'), actionMenu(ctrl)]
       : [
-          ...cevalView.renderCeval(ctrl),
-          !ctrl.retro?.isSolving() && !ctrl.practice && cevalView.renderPvs(ctrl),
-          renderMoveList(ctrl, deps, concealOf),
-          deps?.gbEdit.running(ctrl) ? deps?.gbEdit.render(ctrl) : undefined,
-          forkView(ctrl, concealOf),
-          retroView(ctrl) || practiceView(ctrl) || explorerView(ctrl),
-        ]),
+        ...cevalView.renderCeval(ctrl),
+        !ctrl.retro?.isSolving() && !ctrl.practice && cevalView.renderPvs(ctrl),
+        renderMoveList(ctrl, deps, concealOf),
+        deps?.gbEdit.running(ctrl) ? deps?.gbEdit.render(ctrl) : undefined,
+        forkView(ctrl, concealOf),
+        retroView(ctrl) || practiceView(ctrl) || explorerView(ctrl),
+      ]),
   ]);
 }
 
@@ -150,25 +151,25 @@ export function renderBoard({ ctrl, study, playerBars, playerStrips }: ViewConte
     addChapterId(study, 'div.analyse__board.main-board'),
     {
       hook:
-        'ontouchstart' in window || !site.storage.boolean('scrollMoves').getOrDefault(true)
+        'ontouchstart' in window || !storage.boolean('scrollMoves').getOrDefault(true)
           ? undefined
           : bindNonPassive(
-              'wheel',
-              stepwiseScroll((e: WheelEvent, scroll: boolean) => {
-                if (ctrl.gamebookPlay()) return;
-                const target = e.target as HTMLElement;
-                if (
-                  target.tagName !== 'PIECE' &&
+            'wheel',
+            stepwiseScroll((e: WheelEvent, scroll: boolean) => {
+              if (ctrl.gamebookPlay()) return;
+              const target = e.target as HTMLElement;
+              if (
+                target.tagName !== 'PIECE' &&
                   target.tagName !== 'SQUARE' &&
                   target.tagName !== 'CG-BOARD'
-                )
-                  return;
-                e.preventDefault();
-                if (e.deltaY > 0 && scroll) control.next(ctrl);
-                else if (e.deltaY < 0 && scroll) control.prev(ctrl);
-                ctrl.redraw();
-              }),
-            ),
+              )
+                return;
+              e.preventDefault();
+              if (e.deltaY > 0 && scroll) control.next(ctrl);
+              else if (e.deltaY < 0 && scroll) control.prev(ctrl);
+              ctrl.redraw();
+            }),
+          ),
     },
     [
       ...(playerStrips || []),
@@ -197,7 +198,7 @@ export function renderInputs(ctrl: AnalyseCtrl): VNode | undefined {
   return h('div.copyables', [
     h('div.pair', [
       h('label.name', 'FEN'),
-      h('input.copyable.autoselect.analyse__underboard__fen', {
+      h('input.copyable', {
         attrs: { spellcheck: 'false', enterkeyhint: 'done' },
         hook: {
           insert: vnode => {
@@ -226,6 +227,7 @@ export function renderInputs(ctrl: AnalyseCtrl): VNode | undefined {
         h('label.name', 'PGN'),
         h('textarea.copyable', {
           attrs: { spellcheck: 'false' },
+          class: { 'is-error': !!ctrl.pgnError },
           hook: {
             ...onInsert((el: HTMLTextAreaElement) => {
               el.value = defined(ctrl.pgnInput) ? ctrl.pgnInput : pgnExport.renderFullTxt(ctrl);
@@ -250,7 +252,7 @@ export function renderInputs(ctrl: AnalyseCtrl): VNode | undefined {
         }),
         !isMobile() &&
           h(
-            'button.button.button-thin.action.text',
+            'button.button.button-thin.bottom-item.bottom-action.text',
             {
               attrs: dataIcon(licon.PlayTriangle),
               hook: bind('click', _ => {
@@ -260,6 +262,11 @@ export function renderInputs(ctrl: AnalyseCtrl): VNode | undefined {
             },
             ctrl.trans.noarg('importPgn'),
           ),
+        h(
+          'div.bottom-item.bottom-error',
+          { attrs: dataIcon(licon.CautionTriangle), class: { 'is-error': !!ctrl.pgnError } },
+          renderPgnError(ctrl.pgnError),
+        ),
       ]),
     ]),
   ]);
@@ -282,11 +289,8 @@ export function renderControls(ctrl: AnalyseCtrl) {
           else if (action === 'explorer') ctrl.toggleExplorer();
           else if (action === 'practice') ctrl.togglePractice();
           else if (action === 'menu') ctrl.actionMenu.toggle();
-          else if (action === 'analysis' && ctrl.studyPractice) {
-            if (!window.open(ctrl.studyPractice.analysisUrl(), '_blank', 'noopener')) {
-              window.location.href = ctrl.studyPractice.analysisUrl(); //safari
-            }
-          }
+          else if (action === 'analysis' && ctrl.studyPractice)
+            window.open(ctrl.studyPractice.analysisUrl(), '_blank', 'noopener');
         }, ctrl.redraw),
       ),
     },
@@ -295,25 +299,26 @@ export function renderControls(ctrl: AnalyseCtrl) {
         'div.features',
         ctrl.studyPractice
           ? [
-              h('button.fbt', {
-                attrs: { title: noarg('analysis'), 'data-act': 'analysis', 'data-icon': licon.Microscope },
-              }),
-            ]
+            h('button.fbt', {
+              attrs: { title: noarg('analysis'), 'data-act': 'analysis', 'data-icon': licon.Microscope },
+            }),
+          ]
           : [
-              h('button.fbt', {
-                attrs: {
-                  title: noarg('openingExplorerAndTablebase'),
-                  'data-act': 'explorer',
-                  'data-icon': licon.Book,
-                },
-                class: {
-                  hidden: menuIsOpen || !ctrl.explorer.allowed() || !!ctrl.retro,
-                  active: ctrl.explorer.enabled(),
-                },
-              }),
-              ctrl.ceval.possible &&
+            h('button.fbt', {
+              attrs: {
+                title: noarg('openingExplorerAndTablebase'),
+                'data-act': 'explorer',
+                'data-icon': licon.Book,
+              },
+              class: {
+                hidden: menuIsOpen || !ctrl.explorer.allowed() || !!ctrl.retro,
+                active: ctrl.explorer.enabled(),
+              },
+            }),
+            ctrl.ceval.possible &&
                 ctrl.ceval.allowed() &&
                 !ctrl.isGamebook() &&
+                !ctrl.isEmbed &&
                 h('button.fbt', {
                   attrs: {
                     title: noarg('practiceWithComputer'),
@@ -322,7 +327,7 @@ export function renderControls(ctrl: AnalyseCtrl) {
                   },
                   class: { hidden: menuIsOpen || !!ctrl.retro, active: !!ctrl.practice },
                 }),
-            ],
+          ],
       ),
       h('div.jumps', [
         jumpButton(licon.JumpFirst, 'first', canJumpPrev),
@@ -333,9 +338,9 @@ export function renderControls(ctrl: AnalyseCtrl) {
       ctrl.studyPractice
         ? h('div.noop')
         : h('button.fbt', {
-            class: { active: menuIsOpen },
-            attrs: { title: noarg('menu'), 'data-act': 'menu', 'data-icon': licon.Hamburger },
-          }),
+          class: { active: menuIsOpen },
+          attrs: { title: noarg('menu'), 'data-act': 'menu', 'data-icon': licon.Hamburger },
+        }),
     ],
   );
 }
@@ -384,15 +389,15 @@ export const renderMaterialDiffs = (ctrl: AnalyseCtrl): [VNode, VNode] =>
 export const addChapterId = (study: StudyCtrl | undefined, cssClass: string) =>
   cssClass + (study && study.data.chapter ? '.' + study.data.chapter.id : '');
 
-export function makeChat(ctrl: AnalyseCtrl, insert: (chat: HTMLElement) => void) {
+export function makeChatEl(ctrl: AnalyseCtrl, insert: (chat: HTMLElement) => void) {
   if (ctrl.opts.chat) {
     const chatEl = document.createElement('section');
     chatEl.classList.add('mchat');
     insert(chatEl);
     const chatOpts = ctrl.opts.chat;
-    chatOpts.instance?.then(c => c.destroy());
+    chatOpts.instance?.destroy();
     chatOpts.enhance = { plies: true, boards: !!ctrl.study?.relay };
-    chatOpts.instance = site.makeChat(chatOpts);
+    chatOpts.instance = makeChat(chatOpts);
   }
 }
 
@@ -400,9 +405,9 @@ function makeConcealOf(ctrl: AnalyseCtrl): ConcealOf | undefined {
   const conceal =
     ctrl.study && ctrl.study.data.chapter.conceal !== undefined
       ? {
-          owner: ctrl.study.isChapterOwner(),
-          ply: ctrl.study.data.chapter.conceal,
-        }
+        owner: ctrl.study.isChapterOwner(),
+        ply: ctrl.study.data.chapter.conceal,
+      }
       : null;
   if (conceal)
     return (isMainline: boolean) => (path: Tree.Path, node: Tree.Node) => {

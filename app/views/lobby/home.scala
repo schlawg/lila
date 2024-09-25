@@ -2,9 +2,8 @@ package views.lobby
 
 import play.api.libs.json.Json
 
-import lila.app.mashup.Preload.Homepage
 import lila.app.UiEnv.{ *, given }
-
+import lila.app.mashup.Preload.Homepage
 import lila.core.perf.UserWithPerfs
 
 object home:
@@ -30,13 +29,13 @@ object home:
             )
         )
       )
-      .js(homepage.hasAsks.option(EsmInit("ask")))
-      .cssTag("lobby")
-      .cssTag(homepage.hasAsks.option("ask"))
+      .css("lobby")
+      .css(homepage.hasAsks.option("bits.ask"))
+      .js(homepage.hasAsks.option(Esm("bits.ask")))
       .graph(
         OpenGraph(
-          image = assetUrl("logo/lichess-tile-wide.png").some,
-          twitterImage = assetUrl("logo/lichess-tile.png").some,
+          image = staticAssetUrl("logo/lichess-tile-wide.png").some,
+          twitterImage = staticAssetUrl("logo/lichess-tile.png").some,
           title = "The best free, adless Chess server",
           url = netBaseUrl.value,
           description = trans.site.siteDescription.txt()
@@ -57,7 +56,7 @@ object home:
               button(cls := "button button-metal", tpe := "button", trans.site.playWithAFriend()),
               button(cls := "button button-metal", tpe := "button", trans.site.playWithTheMachine())
             ),
-            a(cls := "lobby__support", href := routes.Plan.index)(
+            a(cls := "lobby__support", href := routes.Plan.index())(
               iconTag(patronIconChar),
               div(strong(trans.patron.donate()), span(trans.patron.lichessPatron()))
             )

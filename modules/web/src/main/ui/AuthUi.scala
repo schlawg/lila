@@ -1,13 +1,13 @@
 package lila.web
 package ui
 
-import play.api.data.{ Form, Field }
-import play.api.libs.json.Json
+import play.api.data.{ Field, Form }
 
-import lila.ui.*
-import ScalatagsTemplate.{ *, given }
 import lila.common.HTTPRequest
 import lila.core.security.HcaptchaForm
+import lila.ui.*
+
+import ScalatagsTemplate.{ *, given }
 
 final class AuthUi(helpers: Helpers):
   import helpers.{ *, given }
@@ -15,8 +15,8 @@ final class AuthUi(helpers: Helpers):
   def login(form: Form[?], referrer: Option[String])(using Context) =
     def addReferrer(url: String): String = referrer.fold(url)(addQueryParam(url, "referrer", _))
     Page(trans.site.signIn.txt())
-      .js(jsModuleInit("bits.login", "login"))
-      .cssTag("auth")
+      .js(esmInit("bits.login", "login"))
+      .css("bits.auth")
       .hrefLangs(lila.ui.LangPath(routes.Auth.login)):
         main(cls := "auth auth-login box box-pad")(
           h1(cls := "box__top")(trans.site.signIn()),
@@ -61,10 +61,10 @@ final class AuthUi(helpers: Helpers):
 
   def signup(form: lila.core.security.HcaptchaForm[?])(using ctx: Context) =
     Page(trans.site.signUp.txt())
-      .js(jsModuleInit("bits.login", "signup"))
+      .js(esmInit("bits.login", "signup"))
       .js(hcaptchaScript(form))
       .iife(fingerprintTag)
-      .cssTag("auth")
+      .css("bits.auth")
       .csp(_.withHcaptcha)
       .hrefLangs(lila.ui.LangPath(routes.Auth.signup)):
         main(cls := "auth auth-signup box box-pad")(
@@ -91,7 +91,9 @@ final class AuthUi(helpers: Helpers):
                 ),
                 br,
                 trans.site.readAboutOur(
-                  a(href := routes.Cms.menuPage("privacy"))(trans.site.privacyPolicy())
+                  a(href := routes.Cms.menuPage(lila.core.id.CmsPageKey("privacy")))(
+                    trans.site.privacyPolicy()
+                  )
                 ),
                 br
               )
@@ -107,14 +109,8 @@ final class AuthUi(helpers: Helpers):
       form: Option[Form[?]] = None
   )(using ctx: Context) =
     Page("Check your email")
-      .cssTag("email-confirm")
-      .js(embedJsUnsafeLoadThen("""
-var email = document.getElementById("new-email");
-var currentError = "This is already your current email.";
-email.setCustomValidity(currentError);
-email.addEventListener("input", function() {
-email.setCustomValidity(email.validity.patternMismatch ? currentError : "");
-      });""")):
+      .css("bits.email-confirm")
+      .js(esmInitBit("validateEmail")):
         main(
           cls := s"page-small box box-pad email-confirm ${if form.exists(_.hasErrors) then "error" else "anim"}"
         )(
@@ -164,7 +160,7 @@ email.setCustomValidity(email.validity.patternMismatch ? currentError : "");
 
   def passwordReset(form: HcaptchaForm[?], fail: Boolean)(using Context) =
     Page(trans.site.passwordReset.txt())
-      .cssTag("auth")
+      .css("bits.auth")
       .js(hcaptchaScript(form))
       .csp(_.withHcaptcha):
         main(cls := "auth auth-signup box box-pad")(
@@ -195,8 +191,8 @@ email.setCustomValidity(email.validity.patternMismatch ? currentError : "");
       Context
   )(using me: Me) =
     Page(s"${me.username} - ${trans.site.changePassword.txt()}")
-      .cssTag("form3")
-      .js(jsModuleInit("bits.passwordComplexity")):
+      .css("bits.auth")
+      .js(esmInit("bits.login", "reset")):
         main(cls := "page-small box box-pad")(
           boxTop(
             (ok match
@@ -226,7 +222,7 @@ email.setCustomValidity(email.validity.patternMismatch ? currentError : "");
 
   def magicLink(form: HcaptchaForm[?], fail: Boolean)(using Context) =
     Page("Log in by email")
-      .cssTag("auth")
+      .css("bits.auth")
       .js(hcaptchaScript(form))
       .csp(_.withHcaptcha):
         main(cls := "auth auth-signup box box-pad")(
@@ -255,7 +251,7 @@ email.setCustomValidity(email.validity.patternMismatch ? currentError : "");
       )
 
   def tokenLoginConfirmation(user: User, token: String, referrer: Option[String])(using Context) =
-    Page(s"Log in as ${user.username}").cssTag("form3"):
+    Page(s"Log in as ${user.username}").css("bits.form3"):
       main(cls := "page-small box box-pad")(
         boxTop(h1("Log in as ", userLink(user))),
         postForm(action := routes.Auth.loginWithTokenPost(token, referrer))(
@@ -316,7 +312,7 @@ body { margin-top: 45px; }
         )
       )
 
-  val fingerprintTag: Frag = iifeModule("javascripts/fipr.js")
+  def fingerprintTag: Frag = iifeModule("javascripts/fipr.js")
 
   private def agreement(form: play.api.data.Field, error: Boolean)(using Context) =
     div(cls := "agreement")(

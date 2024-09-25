@@ -9,12 +9,12 @@
   <string name="location">موقعیت مکانی</string>
   <string name="languages">زبان ها</string>
   <string name="rating">درجه‌بندی</string>
-  <string name="hourlyRate">حق‌التدریس هر ساعت</string>
+  <string name="hourlyRate">نرخ ساعتی</string>
   <string name="availability">دسترس‌پذیری</string>
   <string name="accepting">دانشجوها را قبول می‌کنم</string>
   <string name="notAccepting">در حال حاضر پذیرای دانشجویان نیستم</string>
   <string name="xCoachesStudents">%s مربی شطرنج دانشجویان است</string>
-  <string name="viewXProfile">نمایه %s در Lichess را ببینید</string>
+  <string name="viewXProfile">رُخ‌نمای %s در Lichess را ببینید</string>
   <string name="sendPM">یک پیام خصوصی ارسال کنید</string>
   <string name="aboutMe">درباره من</string>
   <string name="playingExperience">سابقه بازی</string>

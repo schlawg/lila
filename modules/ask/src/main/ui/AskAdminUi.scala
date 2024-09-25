@@ -11,8 +11,8 @@ final class AskAdminUi(helpers: Helpers)(askRender: (Ask) => Context ?=> Frag):
   def show(asks: List[Ask], user: lila.core.LightUser)(using Me, Context) =
     val askmap = asks.sortBy(_.createdAt).groupBy(_.url)
     Page(s"${user.titleName} polls")
-      .cssTag("ask")
-      .js(jsModuleInit("bits.ask")):
+      .css("bits.ask")
+      .js(Esm("bits.ask")):
         main(cls := "page-small box box-pad")(
           h1(s"${user.titleName} polls"),
           askmap.keys.map(url => showAsks(url, askmap.get(url).get)).toSeq
@@ -36,15 +36,15 @@ final class AskAdminUi(helpers: Helpers)(askRender: (Ask) => Context ?=> Frag):
       div(cls := "header")(
         ask.question,
         div(cls := "url-actions")(
-          button(formaction := routes.Ask.delete(ask._id.value))("Delete"),
-          button(formaction := routes.Ask.reset(ask._id.value))("Reset"),
-          (!ask.isConcluded).option(button(formaction := routes.Ask.conclude(ask._id.value))("Conclude")),
-          a(href := routes.Ask.json(ask._id.value))("JSON")
+          button(formaction := routes.Ask.delete(ask._id))("Delete"),
+          button(formaction := routes.Ask.reset(ask._id))("Reset"),
+          (!ask.isConcluded).option(button(formaction := routes.Ask.conclude(ask._id))("Conclude")),
+          a(href := routes.Ask.json(ask._id))("JSON")
         )
       ),
       div(cls := "inset")(
         Granter.opt(_.ModerateForum).option(property("id:", ask._id.value)),
-        (!me.is(ask.creator)).option(property("creator:", ask.creator)),
+        (!me.is(ask.creator)).option(property("creator:", ask.creator.value)),
         property("created at:", showInstant(ask.createdAt)),
         ask.tags.nonEmpty.option(property("tags:", ask.tags.mkString(", "))),
         ask.picks.map(p => (p.size > 0).option(property("responses:", p.size.toString))),

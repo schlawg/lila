@@ -1,9 +1,10 @@
 package lila.clas
 package ui
 
-import lila.ui.*
-import ScalatagsTemplate.{ *, given }
 import lila.core.config.NetDomain
+import lila.ui.*
+
+import ScalatagsTemplate.{ *, given }
 
 final class StudentUi(helpers: Helpers, clasUi: ClasUi)(using NetDomain):
   import helpers.{ *, given }
@@ -12,7 +13,7 @@ final class StudentUi(helpers: Helpers, clasUi: ClasUi)(using NetDomain):
   def show(clas: Clas, students: List[Student], s: Student.WithUserAndManagingClas, activities: Frag)(using
       ctx: Context
   ) =
-    ClasPage(s.user.username, Left(clas.withStudents(students)), s.student.some)(cls := "student-show"):
+    ClasPage(s.user.username.value, Left(clas.withStudents(students)), s.student.some)(cls := "student-show"):
       frag(
         top(clas, s.withUser),
         div(cls := "box__pad")(
@@ -29,10 +30,10 @@ final class StudentUi(helpers: Helpers, clasUi: ClasUi)(using NetDomain):
             div(cls := "student-show__archived archived")(
               clasUi.showArchived(archived),
               div(cls := "student-show__archived__actions")(
-                postForm(action := routes.Clas.studentArchive(clas.id.value, s.user.username, v = false)):
+                postForm(action := routes.Clas.studentArchive(clas.id, s.user.username, v = false)):
                   form3.submit(trans.clas.inviteTheStudentBack(), icon = none)(cls := "confirm button-empty")
                 ,
-                postForm(action := routes.Clas.studentClosePost(clas.id.value, s.user.username)):
+                postForm(action := routes.Clas.studentClosePost(clas.id, s.user.username)):
                   form3.submit(trans.clas.removeStudent(), icon = none)(
                     cls   := "confirm button-red button-empty",
                     title := "Fully erase the student from the class archives."
@@ -47,7 +48,7 @@ final class StudentUi(helpers: Helpers, clasUi: ClasUi)(using NetDomain):
               div(cls := "student-show__managed")(
                 p(trans.clas.thisStudentAccountIsManaged()),
                 div(cls := "student-show__managed__actions")(
-                  postForm(action := routes.Clas.studentResetPassword(clas.id.value, s.user.username))(
+                  postForm(action := routes.Clas.studentResetPassword(clas.id, s.user.username))(
                     form3.submit(trans.clas.resetPassword(), icon = none)(
                       s.student.isArchived.option(disabled),
                       cls := List("confirm button button-empty" -> true, "disabled" -> s.student.isArchived),
@@ -55,7 +56,7 @@ final class StudentUi(helpers: Helpers, clasUi: ClasUi)(using NetDomain):
                     )
                   ),
                   a(
-                    href  := routes.Clas.studentRelease(clas.id.value, s.user.username),
+                    href  := routes.Clas.studentRelease(clas.id, s.user.username),
                     cls   := "button button-empty",
                     title := trans.clas.upgradeFromManaged.txt()
                   )(trans.clas.release())
@@ -65,7 +66,7 @@ final class StudentUi(helpers: Helpers, clasUi: ClasUi)(using NetDomain):
             .orElse(s.managingClas.map { managingClas =>
               div(cls := "student-show__managed")(
                 p(trans.clas.thisStudentAccountIsManaged()),
-                a(href := routes.Clas.studentShow(managingClas.id.value, s.user.username))(
+                a(href := routes.Clas.studentShow(managingClas.id, s.user.username))(
                   "Class: ",
                   managingClas.name
                 )
@@ -88,7 +89,7 @@ final class StudentUi(helpers: Helpers, clasUi: ClasUi)(using NetDomain):
       div(cls := "student-show__top__meta")(
         p(
           trans.clas.invitedToXByY(
-            a(href := routes.Clas.show(clas.id.value))(clas.name),
+            a(href := routes.Clas.show(clas.id))(clas.name),
             userIdLink(s.student.created.by.some, withOnline = false)
           ),
           " ",
@@ -100,7 +101,7 @@ final class StudentUi(helpers: Helpers, clasUi: ClasUi)(using NetDomain):
             cls  := "button button-empty"
           )(trans.site.message()),
           a(
-            href := routes.Clas.studentEdit(clas.id.value, s.user.username),
+            href := routes.Clas.studentEdit(clas.id, s.user.username),
             cls  := "button button-empty"
           )(trans.site.edit()),
           a(
@@ -108,14 +109,14 @@ final class StudentUi(helpers: Helpers, clasUi: ClasUi)(using NetDomain):
             cls  := "button button-empty"
           )(trans.site.profile()),
           a(
-            href := routes.Puzzle.dashboard(7, "home", s.user.username.value.some),
+            href := routes.Puzzle.dashboard(7, "home", s.user.username.some),
             cls  := "button button-empty"
           )(trans.puzzle.puzzleDashboard()),
           Granter
             .opt(_.Beta)
             .option(
               a(
-                href := routes.Tutor.user(s.user.username.value),
+                href := routes.Tutor.user(s.user.username),
                 cls  := "button button-empty"
               )("Tutor")
             )
@@ -124,7 +125,7 @@ final class StudentUi(helpers: Helpers, clasUi: ClasUi)(using NetDomain):
     )
 
   def invite(c: Clas, invite: ClasInvite)(using Context) =
-    Page(c.name).cssTag("clas"):
+    Page(c.name).css("bits.clas"):
       main(cls := "page-small box box-pad page clas-invitation")(
         h1(cls := "box__top")(c.name),
         p(c.desc),
@@ -140,7 +141,7 @@ final class StudentUi(helpers: Helpers, clasUi: ClasUi)(using NetDomain):
         invite.accepted
           .forall(false.==)
           .option(
-            postForm(cls := "form3", action := routes.Clas.invitationAccept(invite._id.value))(
+            postForm(cls := "form3", action := routes.Clas.invitationAccept(invite.id))(
               form3.actions(
                 if !invite.accepted.has(false) then
                   form3.submit(

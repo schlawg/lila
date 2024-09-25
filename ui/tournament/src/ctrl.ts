@@ -3,6 +3,9 @@ import * as xhr from './xhr';
 import { maxPerPage, myPage, players } from './pagination';
 import * as sound from './sound';
 import { TournamentData, TournamentOpts, Pages, PlayerInfo, TeamInfo, Standing, Player } from './interfaces';
+import { storage } from 'common/storage';
+import { trans } from 'common/i18n';
+import { pubsub } from 'common/pubsub';
 
 interface CtrlTeamInfo {
   requested?: string;
@@ -27,13 +30,13 @@ export default class TournamentController {
   redraw: () => void;
   nbWatchers = 0;
 
-  private lastStorage = site.storage.make('last-redirect');
+  private lastStorage = storage.make('last-redirect');
 
   constructor(opts: TournamentOpts, redraw: () => void) {
     this.opts = opts;
     this.data = opts.data;
     this.redraw = redraw;
-    this.trans = site.trans(opts.i18n);
+    this.trans = trans(opts.i18n);
     this.socket = makeSocket(opts.socketSend, this);
     this.page = this.data.standing.page;
     this.focusOnMe = this.isIn();
@@ -44,7 +47,7 @@ export default class TournamentController {
     sound.countDown(this.data);
     this.recountTeams();
     this.redirectToMyGame();
-    site.pubsub.on('socket.in.crowd', data => {
+    pubsub.on('socket.in.crowd', data => {
       this.nbWatchers = data.nb;
     });
   }

@@ -3,12 +3,12 @@ import * as button from '../view/button';
 import * as game from 'game';
 import RoundController from '../ctrl';
 import { bind, justIcon } from '../util';
-import { ClockElements, ClockController, Millis } from './clockCtrl';
+import { ClockElements, ClockController } from './clockCtrl';
 import { Hooks } from 'snabbdom';
-import { looseH as h } from 'common/snabbdom';
+import { looseH as h, VNode } from 'common/snabbdom';
 import { Position } from '../interfaces';
 
-export function renderClock(ctrl: RoundController, player: game.Player, position: Position) {
+export function renderClock(ctrl: RoundController, player: game.Player, position: Position): VNode {
   const clock = ctrl.clock!,
     millis = clock.millisOf(player.color),
     isPlayer = ctrl.data.player.color === player.color,
@@ -33,12 +33,12 @@ export function renderClock(ctrl: RoundController, player: game.Player, position
     clock.opts.nvui
       ? [h('div.time', { attrs: { role: 'timer' }, hook: timeHook })]
       : [
-          clock.showBar && game.bothPlayersHavePlayed(ctrl.data) ? showBar(ctrl, player.color) : undefined,
-          h('div.time', { class: { hour: millis > 3600 * 1000 }, hook: timeHook }),
-          renderBerserk(ctrl, player.color, position),
-          isPlayer ? goBerserk(ctrl) : button.moretime(ctrl),
-          clockSide(ctrl, player.color, position),
-        ],
+        clock.showBar && game.bothPlayersHavePlayed(ctrl.data) ? showBar(ctrl, player.color) : undefined,
+        h('div.time', { class: { hour: millis > 3600 * 1000 }, hook: timeHook }),
+        renderBerserk(ctrl, player.color, position),
+        isPlayer ? goBerserk(ctrl) : button.moretime(ctrl),
+        clockSide(ctrl, player.color, position),
+      ],
   );
 }
 
@@ -89,8 +89,13 @@ function showBar(ctrl: RoundController, color: Color) {
       const remaining = clock.millisOf(color);
       anim.currentTime = clock.barTime - remaining;
       if (color === clock.times.activeColor) {
-        // Calling play after animations finishes restarts anim
-        if (remaining > 0) anim.play();
+        if (remaining > clock.barTime) {
+          // Player was given more time than the duration of the animation. So we update the duration to reflect this.
+          el.style.animationDuration = String(remaining / 1000) + 's';
+        } else if (remaining > 0) {
+          // Calling play after animations finishes restarts anim
+          anim.play();
+        }
       } else anim.pause();
     } else {
       clock.elements[color].bar = el;
@@ -106,7 +111,7 @@ function showBar(ctrl: RoundController, color: Color) {
   });
 }
 
-export function updateElements(clock: ClockController, els: ClockElements, millis: Millis) {
+export function updateElements(clock: ClockController, els: ClockElements, millis: Millis): void {
   if (els.time) els.time.innerHTML = formatClockTime(millis, clock.showTenths(millis), true, clock.opts.nvui);
   if (els.bar) els.bar.style.transform = 'scale(' + clock.timeRatio(millis) + ',1)';
   if (els.clock) {

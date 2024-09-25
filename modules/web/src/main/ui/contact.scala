@@ -1,11 +1,11 @@
 package lila.web
 package ui
 
-import scala.util.chaining.*
-
+import lila.core.i18n.{ I18nKey as trans, Translate }
+import lila.core.id.ForumCategId
 import lila.ui.*
+
 import ScalatagsTemplate.{ *, given }
-import lila.core.i18n.{ Translate, I18nKey as trans }
 
 object contact:
 
@@ -36,7 +36,7 @@ object contact:
     frag(
       ul(
         li(
-          a(href := routes.ForumCateg.show("lichess-feedback"))(reportBugInForum())
+          a(href := routes.ForumCateg.show(ForumCategId("lichess-feedback")))(reportBugInForum())
         ),
         li(
           a(href := "https://github.com/lichess-org/lila/issues")(reportWebsiteIssue())
@@ -100,7 +100,7 @@ object contact:
               "title",
               wantTitle(),
               p(
-                a(href := routes.Cms.master)(visitTitleConfirmation()),
+                a(href := routes.TitleVerify.index)(visitTitleConfirmation()),
                 "."
               )
             ),
@@ -221,18 +221,6 @@ object contact:
             )
           )
         ),
-        Leaf(
-          "broadcast",
-          wantBroadcastTournament(),
-          frag(
-            p(a(href := routes.RelayTour.help)(learnHowToMakeBroadcasts()), "."),
-            p(
-              contactAboutOfficialBroadcasts(),
-              " ",
-              sendEmailAt(contactEmailLink("broadcast@lichess.org"))
-            )
-          )
-        ),
         frag(
           p(doNotMessageModerators()),
           p(sendAppealTo(a(href := routes.Appeal.home)(routes.Appeal.home.url))),
@@ -321,7 +309,7 @@ object contact:
               "dmca",
               "DMCA / Intellectual Property Take Down Notice",
               p(
-                a(href := dmcaUrl)("Complete this form"),
+                a(href := "/dmca")("Complete this form"),
                 " ",
                 "if you are the original copyright holder, or an agent acting on behalf of the copyright holder, and believe Lichess is hosting work(s) you hold the copyright to."
               )
@@ -338,5 +326,3 @@ object contact:
         )
       )
     )
-
-  val dmcaUrl = "/dmca"

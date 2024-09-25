@@ -1,6 +1,6 @@
 package lila.tv
 
-import chess.{ Ply, Color }
+import chess.{ Color, Ply }
 import monocle.syntax.all.*
 import scalalib.actor.SyncActor
 
@@ -45,8 +45,7 @@ final private[tv] class ChannelSyncActor(
 
     case TvSyncActor.Select =>
       candidateIds.keys
-        .map(proxyGame)
-        .parallel
+        .parallel(proxyGame)
         .map(
           _.view
             .collect {

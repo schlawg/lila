@@ -41,7 +41,6 @@
   <string name="imageAlt">图片备选文字</string>
   <string name="imageCredit">图片引自</string>
   <string name="deleteBlog">确定删除该博客</string>
-  <string name="deleteImage">删除图像</string>
   <string name="safeToUseImages">使用来自下列网站的图像是安全的： </string>
   <string name="selectPostTopics">选择帖子的主题</string>
   <string name="useImagesYouMadeYourself">你也可以使用你自己制作的图像，你拍摄的照片，Lichess 的屏幕截图... 任何不是他人版权所有的东西。</string>

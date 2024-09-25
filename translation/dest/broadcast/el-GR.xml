@@ -22,14 +22,10 @@
   <string name="tournamentDescription">Σύντομη περιγραφή τουρνουά</string>
   <string name="fullDescription">Πλήρης περιγραφή γεγονότος</string>
   <string name="fullDescriptionHelp">Προαιρετική αναλυτική περιγραφή της αναμετάδοσης. Η μορφή %1$s είναι διαθέσιμη. Το μήκος πρέπει μικρότερο από %2$s χαρακτήρες.</string>
-  <string name="sourceUrlOrGameIds">Διεύθυνση URL πηγής ή ID παιχνιδιού</string>
   <string name="sourceUrlHelp">URL για λήψη PGN ενημερώσεων. Πρέπει να είναι δημόσια προσβάσιμο μέσω διαδικτύου.</string>
-  <string name="gameIdsHelp">Εναλλακτικά, μπορείτε να εισάγετε έως 64 IDs παιχνιδιών Lichess, με κενά μεταξύ τους.</string>
   <string name="startDate">Ημερομηνία έναρξης στη δική σας ζώνη ώρας</string>
   <string name="startDateHelp">Προαιρετικό, εάν γνωρίζετε πότε αρχίζει η εκδήλωση</string>
   <string name="credits">Αναφέρετε την πηγή</string>
-  <string name="broadcastUrl">Διεύθυνση URL μετάδοσης</string>
-  <string name="currentRoundUrl">Διεύθυνση URL αυτού του γύρου</string>
   <string name="currentGameUrl">Διεύθυνση URL αυτού του παιχνιδιού</string>
   <string name="downloadAllRounds">Λήψη όλων των γύρων</string>
   <string name="resetRound">Επαναφορά αυτού του γύρου</string>
@@ -39,4 +35,11 @@
   <string name="editRoundStudy">Επεξεργασία μελέτης γύρου</string>
   <string name="deleteTournament">Διαγραφή αυτού του τουρνουά</string>
   <string name="definitivelyDeleteTournament">Σίγουρα διαγράψτε ολόκληρο τον διαγωνισμό, όλους τους γύρους του και όλα τα παιχνίδια του.</string>
+  <string name="fideFederations">Ομοσπονδίες FIDE</string>
+  <string name="fidePlayers">Παίκτες FIDE</string>
+  <string name="fidePlayerNotFound">Δε βρέθηκε παίκτης FIDE</string>
+  <string name="fideProfile">Προφίλ FIDE</string>
+  <string name="federation">Ομοσπονδία</string>
+  <string name="ageThisYear">Φετινή ηλικία</string>
+  <string name="recentTournaments">Πρόσφατα τουρνουά</string>
 </resources>

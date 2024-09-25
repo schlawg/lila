@@ -2,6 +2,7 @@ package lila.appeal
 package ui
 
 import lila.ui.*
+
 import ScalatagsTemplate.{ *, given }
 
 final class AppealUi(helpers: Helpers):
@@ -9,10 +10,10 @@ final class AppealUi(helpers: Helpers):
 
   def page(title: String)(using Context) =
     Page(title)
-      .cssTag("form3")
-      .cssTag("appeal")
-      .cssTag(Granter.opt(_.UserModView).option("mod.user"))
-      .js(EsmInit("bits.appeal") ++ Granter.opt(_.UserModView).so(EsmInit("mod.user")))
+      .css("bits.form3")
+      .css("bits.appeal")
+      .css(Granter.opt(_.UserModView).option("mod.user"))
+      .js(esmInitBit("appeal") ++ Granter.opt(_.UserModView).so(Esm("mod.user")))
 
   def renderMark(suspect: User)(using ctx: Context) =
     val query = Granter.opt(_.Appeals).so(ctx.req.queryString.toMap)
@@ -21,6 +22,8 @@ final class AppealUi(helpers: Helpers):
     else if suspect.marks.boost || query.contains("boost") then trans.appeal.boosterMarked()
     else if suspect.marks.troll || query.contains("shadowban") then trans.appeal.accountMuted()
     else if suspect.marks.rankban || query.contains("rankban") then trans.appeal.excludedFromLeaderboards()
+    else if suspect.marks.arenaBan || query.contains("arenaban") then trans.appeal.arenaBanned()
+    else if suspect.marks.prizeban || query.contains("prizeban") then trans.appeal.prizeBanned()
     else trans.appeal.cleanAllGood()
 
   def renderUser(appeal: Appeal, userId: UserId, asMod: Boolean)(using Context) =

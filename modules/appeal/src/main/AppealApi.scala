@@ -1,9 +1,9 @@
 package lila.appeal
 
+import lila.appeal.Appeal.Filter
+import lila.core.id.AppealId
+import lila.core.user.{ NoteApi, UserMark, UserRepo }
 import lila.db.dsl.{ *, given }
-import lila.core.user.{ UserMark, NoteApi, UserRepo }
-
-import Appeal.Filter
 
 final class AppealApi(
     coll: Coll,
@@ -25,7 +25,7 @@ final class AppealApi(
       case None =>
         val appeal =
           Appeal(
-            id = me.userId.into(Appeal.Id),
+            id = me.userId.into(AppealId),
             msgs = Vector(
               AppealMsg(
                 by = me,
@@ -130,7 +130,7 @@ final class AppealApi(
 
   def onAccountClose(user: User) = setReadById(user.id)
 
-  def snooze(appealId: Appeal.Id, duration: String)(using mod: Me): Unit =
+  def snooze(appealId: AppealId, duration: String)(using mod: Me): Unit =
     snoozer.set(Appeal.SnoozeKey(mod.userId, appealId), duration)
 
   object modFilter:

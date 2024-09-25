@@ -15,25 +15,17 @@ project/metals.sbt
 project/project
 project/target
 public/compiled
+public/hashed
 public/npm
 public/lifat
 public/css/
+public/json
 target
 data/
 dist/
 node_modules/
-local/
-gen/
-ui/common/**/*.js
-ui/common/**/*.d.ts
-ui/chess/**/*.js
-ui/chess/**/*.d.ts
-ui/game/**/*.js
-ui/game/**/*.d.ts
-ui/nvui/**/*.js
-ui/nvui/**/*.d.ts
-ui/puz/**/*.js
-ui/puz/**/*.d.ts
+ui/common/css/theme/gen/*.scss
+ui/.build/build
 ui/voice/.build/crowdv
 ui/*/npm-debug.log
 ui/*/tsconfig.tsbuildinfo
@@ -50,6 +42,9 @@ RUNNING_PID
 
 # VSCode auto-generated files
 .vscode/
+
+# VSCode workspaces
+*.code-workspace
 
 # IntelliJ auto-generated files
 .idea

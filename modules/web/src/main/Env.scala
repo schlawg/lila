@@ -1,7 +1,7 @@
 package lila.web
 
-import play.api.libs.ws.StandaloneWSClient
 import com.softwaremill.macwire.*
+import play.api.libs.ws.StandaloneWSClient
 
 @Module
 final class Env(
@@ -22,6 +22,8 @@ final class Env(
   val realPlayers = wire[RealPlayerApi]
 
   val referrerRedirect = wire[ReferrerRedirect]
+
+  val github = wire[GitHub]
 
   private lazy val influxEvent = new InfluxEvent(
     ws = ws,

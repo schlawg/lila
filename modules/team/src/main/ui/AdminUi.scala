@@ -4,10 +4,10 @@ package ui
 import play.api.data.{ Field, Form }
 
 import lila.ui.*
-import ScalatagsTemplate.{ *, given }
-import lila.core.config.NetDomain
 
-final class AdminUi(helpers: Helpers, bits: TeamUi)(using netDomain: NetDomain):
+import ScalatagsTemplate.{ *, given }
+
+final class AdminUi(helpers: Helpers, bits: TeamUi):
   import helpers.{ *, given }
   import trans.{ team as trt }
   import bits.{ TeamPage, menu }
@@ -15,11 +15,11 @@ final class AdminUi(helpers: Helpers, bits: TeamUi)(using netDomain: NetDomain):
   def leaders(
       t: Team.WithLeaders,
       addLeaderForm: Form[UserStr],
-      permsForm: Form[Seq[TeamSecurity.LeaderData]]
+      permsForm: Form[List[TeamSecurity.LeaderData]]
   )(using Context) =
     TeamPage(s"${t.name} • ${trans.team.teamLeaders.txt()}")
-      .js(EsmInit("mod.teamAdmin"))
-      .cssTag("tagify"):
+      .js(Esm("mod.teamAdmin"))
+      .css("bits.tagify"):
         val dataLabel = attrData("label")
         main(cls := "page-menu")(
           menu(none),
@@ -46,7 +46,7 @@ final class AdminUi(helpers: Helpers, bits: TeamUi)(using netDomain: NetDomain):
                       th(
                         userIdLink(l.user.some, withOnline = false),
                         form3.hidden(s"leaders[$i].name", l.user)
-                      ),
+                      )
                   )
                 ,
                 tbody:
@@ -78,8 +78,8 @@ final class AdminUi(helpers: Helpers, bits: TeamUi)(using netDomain: NetDomain):
 
   def kick(t: Team, form: Form[String], blocklistForm: Form[String])(using Context) =
     TeamPage(s"${t.name} • ${trans.team.kickSomeone.txt()}")
-      .js(EsmInit("mod.teamAdmin"))
-      .cssTag("tagify"):
+      .js(Esm("mod.teamAdmin"))
+      .css("bits.tagify"):
         main(cls := "page-menu page-small")(
           menu(none),
           div(cls := "page-menu__content")(

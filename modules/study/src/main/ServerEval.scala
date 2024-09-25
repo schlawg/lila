@@ -4,12 +4,10 @@ import chess.format.pgn.Glyphs
 import chess.format.{ Fen, Uci, UciCharPair, UciPath }
 import play.api.libs.json.*
 
-import lila.db.dsl.bsonWriteOpt
-import lila.core.fishnet.StudyChapterRequest
 import lila.core.perm.Granter
+import lila.db.dsl.bsonWriteOpt
 import lila.tree.Node.Comment
-import lila.tree.{ Branch, Node, Root }
-import lila.tree.{ Advice, Analysis, Info }
+import lila.tree.{ Advice, Analysis, Branch, Info, Node, Root }
 
 object ServerEval:
 
@@ -30,8 +28,8 @@ object ServerEval:
               fuccess(userId.is(UserId.lichess)) >>|
               userApi.me(userId).map(_.soUse(Granter.opt(_.Relay)))
             _ <- chapterRepo.startServerEval(chapter)
-          yield lila.common.Bus.named.fishnet.analyseStudyChapter(
-            StudyChapterRequest(
+          yield lila.common.Bus.pub(
+            lila.core.fishnet.Bus.StudyChapterRequest(
               studyId = study.id,
               chapterId = chapter.id,
               initialFen = chapter.root.fen.some,
@@ -69,7 +67,7 @@ object ServerEval:
                 .foldM(UciPath.root):
                   case (path, (node, (info, advOpt))) =>
                     saveAnalysis(chapter, node, path, info, advOpt)
-                .andDo(sendProgress(chapter, studyId, chapterId, analysis))
+                .andDo(sendProgress(studyId, chapterId, analysis))
                 .logFailure(logger)
             yield ()
       case _ => funit
@@ -155,7 +153,6 @@ object ServerEval:
       )
 
     private def sendProgress(
-        chapter: Chapter,
         studyId: StudyId,
         chapterId: StudyChapterId,
         analysis: Analysis

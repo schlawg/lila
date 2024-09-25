@@ -9,22 +9,26 @@ import {
   ChatData,
   NoteCtrl,
   ChatPalantir,
+  ChatPlugin,
 } from './interfaces';
 import { PresetCtrl, presetCtrl } from './preset';
 import { noteCtrl } from './note';
 import { moderationCtrl } from './moderation';
 import { prop } from 'common';
+import { trans } from 'common/i18n';
+import { storage, type LichessStorage } from 'common/storage';
+import { pubsub, PubsubEvent, PubsubCallback } from 'common/pubsub';
 
 export default class ChatCtrl {
   data: ChatData;
   private maxLines = 200;
   private maxLinesDrop = 50; // how many lines to drop at once
-  private subs: [string, PubsubCallback][];
+  private subs: [PubsubEvent, PubsubCallback][];
 
   allTabs: Tab[] = ['discussion'];
   palantir: ChatPalantir;
-  tabStorage = site.storage.make('chat.tab');
-  storedTab = this.tabStorage.get();
+  tabStorage: LichessStorage = storage.make('chat.tab');
+  storedTab: string | null = this.tabStorage.get();
   moderation: ModerationCtrl | undefined;
   note: NoteCtrl | undefined;
   preset: PresetCtrl;
@@ -43,8 +47,8 @@ export default class ChatCtrl {
       loaded: false,
       enabled: prop(!!this.data.palantir),
     };
-    this.trans = site.trans(this.opts.i18n);
-    const noChat = site.storage.get('nochat');
+    this.trans = trans(this.opts.i18n);
+    const noChat = storage.get('nochat');
     this.vm = {
       tab: this.allTabs.find(tab => tab === this.storedTab) || this.allTabs[0],
       enabled: opts.alwaysEnabled || !noChat,
@@ -58,11 +62,11 @@ export default class ChatCtrl {
 
     this.note = opts.noteId
       ? noteCtrl({
-          id: opts.noteId,
-          text: opts.noteText,
-          trans: this.trans,
-          redraw: this.redraw,
-        })
+        id: opts.noteId,
+        text: opts.noteText,
+        trans: this.trans,
+        redraw: this.redraw,
+      })
       : undefined;
 
     this.preset = presetCtrl({
@@ -85,12 +89,12 @@ export default class ChatCtrl {
       ['palantir.toggle', this.palantir.enabled],
     ];
 
-    this.subs.forEach(([eventName, callback]) => site.pubsub.on(eventName, callback));
+    this.subs.forEach(([eventName, callback]) => pubsub.on(eventName, callback));
 
     this.emitEnabled();
   }
 
-  get plugin() {
+  get plugin(): ChatPlugin | undefined {
     return this.opts.plugin;
   }
 
@@ -102,11 +106,11 @@ export default class ChatCtrl {
       alert('Max length: 140 chars. ' + text.length + ' chars used.');
       return false;
     }
-    site.pubsub.emit('socket.send', 'talk', text);
+    pubsub.emit('socket.send', 'talk', text);
     return true;
   };
 
-  onTimeout = (userId: string) => {
+  onTimeout = (userId: string): void => {
     let change = false;
     this.data.lines.forEach(l => {
       if (l.u && l.u.toLowerCase() == userId) {
@@ -121,14 +125,14 @@ export default class ChatCtrl {
     }
   };
 
-  onReinstate = (userId: string) => {
+  onReinstate = (userId: string): void => {
     if (userId == this.data.userId) {
       this.vm.timeout = false;
       this.redraw();
     }
   };
 
-  onMessage = (line: Line) => {
+  onMessage = (line: Line): void => {
     this.data.lines.push(line);
     const nb = this.data.lines.length;
     if (nb > this.maxLines) {
@@ -138,12 +142,12 @@ export default class ChatCtrl {
     this.redraw();
   };
 
-  onWriteable = (v: boolean) => {
+  onWriteable = (v: boolean): void => {
     this.vm.writeable = v;
     this.redraw();
   };
 
-  onPermissions = (obj: Permissions) => {
+  onPermissions = (obj: Permissions): void => {
     let p: keyof Permissions;
     for (p in obj) this.opts.permissions[p] = obj[p];
     this.instanciateModeration();
@@ -162,24 +166,24 @@ export default class ChatCtrl {
     }
   };
 
-  destroy = () => {
-    this.subs.forEach(([eventName, callback]) => site.pubsub.off(eventName, callback));
+  destroy = (): void => {
+    this.subs.forEach(([eventName, callback]) => pubsub.off(eventName, callback));
   };
 
-  emitEnabled = () => site.pubsub.emit('chat.enabled', this.vm.enabled);
+  emitEnabled = (): void => pubsub.emit('chat.enabled', this.vm.enabled);
 
-  setTab = (t: Tab) => {
+  setTab = (t: Tab): void => {
     this.vm.tab = t;
     this.vm.autofocus = true;
     this.tabStorage.set(t);
     this.redraw();
   };
 
-  setEnabled = (v: boolean) => {
+  setEnabled = (v: boolean): void => {
     this.vm.enabled = v;
     this.emitEnabled();
-    if (!v) site.storage.set('nochat', '1');
-    else site.storage.remove('nochat');
+    if (!v) storage.set('nochat', '1');
+    else storage.remove('nochat');
     this.redraw();
   };
 }

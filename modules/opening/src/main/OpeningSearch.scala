@@ -2,18 +2,18 @@ package lila.opening
 
 import chess.format.pgn.PgnMovesStr
 import chess.opening.{ Opening, OpeningDb }
+import scalalib.HeapSort.topN
 
 import java.text.Normalizer
 
 import lila.common.Chronometer
-import scalalib.HeapSort.topN
 import lila.memo.CacheApi
 
 case class OpeningSearchResult(opening: Opening):
   def pgn   = OpeningSearch.removePgnMoveNumbers(opening.pgn)
   def query = OpeningQuery.Query(opening.key.value, pgn.some)
 
-final class OpeningSearch(cacheApi: CacheApi)(using Executor):
+final class OpeningSearch(using Executor):
 
   val max = 32
 

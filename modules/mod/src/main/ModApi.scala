@@ -3,18 +3,18 @@ package lila.mod
 import chess.PlayerTitle
 
 import lila.common.Bus
-import lila.report.{ Room, Suspect }
-import lila.core.perm.{ Granter, Permission }
-import lila.user.{ LightUserApi, UserRepo }
+import lila.core.perm.Permission
 import lila.core.report.SuspectId
-import lila.core.user.UserMarks
-import lila.core.user.UserMark
+import lila.core.user.{ UserMark, UserMarks }
+import lila.report.{ Room, Suspect }
+import lila.user.{ LightUserApi, UserRepo }
 
 final class ModApi(
     userRepo: UserRepo,
     logApi: ModlogApi,
     reportApi: lila.report.ReportApi,
     noteApi: lila.user.NoteApi,
+    prefApi: lila.core.pref.PrefApi,
     notifier: ModNotifier,
     lightUserApi: LightUserApi,
     refunder: RatingRefund
@@ -73,23 +73,42 @@ final class ModApi(
         sus
 
   def setTroll(prev: Suspect, value: Boolean)(using me: MyId): Fu[Suspect] =
-    val changed = value != prev.user.marks.troll
-    val sus     = prev.set(_.withMarks(_.set(_.troll, value)))
-    changed
-      .so:
-        userRepo.updateTroll(sus.user).void.andDo {
-          logApi.troll(sus)
-          Bus.publish(lila.core.mod.Shadowban(sus.user.id, value), "shadowban")
-        }
-      .andDo:
-        if value then notifier.reporters(me.modId, sus)
-      .inject(sus)
+    if !value && prev.user.marks.isolate
+    then setIsolate(prev, value).flatMap(setTroll(_, value))
+    else
+      val changed = value != prev.user.marks.troll
+      val sus     = prev.set(_.withMarks(_.set(_.troll, value)))
+      changed
+        .so:
+          userRepo.updateTroll(sus.user).void.andDo {
+            logApi.troll(sus)
+            Bus.publish(lila.core.mod.Shadowban(sus.user.id, value), "shadowban")
+          }
+        .andDo:
+          if value then notifier.reporters(me.modId, sus)
+        .inject(sus)
 
   def autoTroll(sus: Suspect, note: String): Funit =
     given MyId = UserId.lichessAsMe
     setTroll(sus, true) >>
       noteApi.lichessWrite(sus.user, note)
       >> reportApi.autoProcess(sus, Set(Room.Comm))
+
+  def setIsolate(prev: Suspect, value: Boolean)(using me: MyId): Fu[Suspect] =
+    if value && !prev.user.marks.troll
+    then setTroll(prev, value).flatMap(setIsolate(_, value))
+    else
+      val changed = value != prev.user.marks.isolate
+      val sus     = prev.set(_.withMarks(_.set(_.isolate, value)))
+      changed
+        .so:
+          for
+            _ <- userRepo.setIsolate(sus.user.id, value)
+            _ <- prefApi.isolate(sus.user)
+          yield logApi.isolate(sus)
+        .andDo:
+          if value then notifier.reporters(me.modId, sus)
+        .inject(sus)
 
   def garbageCollect(userId: UserId): Funit =
     given MyId = UserId.lichessAsMe
@@ -120,8 +139,10 @@ final class ModApi(
     withUser(username): user =>
       title match
         case None =>
-          (userRepo.removeTitle(user.id) >>
-            logApi.removeTitle(user.id)).andDo(lightUserApi.invalidate(user.id))
+          for
+            _ <- userRepo.removeTitle(user.id)
+            _ <- logApi.removeTitle(user.id)
+          yield lightUserApi.invalidate(user.id)
         case Some(t) =>
           PlayerTitle.names.get(t).so { tFull =>
             for

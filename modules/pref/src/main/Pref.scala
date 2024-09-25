@@ -112,6 +112,15 @@ case class Pref(
       highlight &&
       coords == Coords.OUTSIDE
 
+  def isolate(value: Boolean) =
+    if !value then this
+    else
+      copy(
+        follow = false,
+        message = lila.core.pref.Message.FRIEND,
+        studyInvite = lila.core.pref.StudyInvite.NEVER
+      )
+
   def simpleBoard =
     board.hue == 0 && board.brightness == 100 && (board.opacity == 100 || bg != Bg.TRANSPARENT)
 
@@ -320,17 +329,20 @@ object Pref:
     val NONE    = 0
     val INSIDE  = 1
     val OUTSIDE = 2
+    val ALL     = 3
 
     val choices = Seq(
       NONE    -> "No",
       INSIDE  -> "Inside the board",
-      OUTSIDE -> "Outside the board"
+      OUTSIDE -> "Outside the board",
+      ALL     -> "Inside all squares of the board"
     )
 
     def classOf(v: Int) =
       v match
         case INSIDE  => "in"
         case OUTSIDE => "out"
+        case ALL     => "all"
         case _       => "no"
 
   object Replay:

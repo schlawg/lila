@@ -1,12 +1,11 @@
 import { Config as CgConfig } from 'chessground/config';
 import { DrawShape } from 'chessground/draw';
 import { prop, defined } from 'common';
-import throttle, { throttlePromiseDelay } from 'common/throttle';
-import debounce from 'common/debounce';
+import { debounce, throttle, throttlePromise } from 'common/timing';
 import AnalyseCtrl from '../ctrl';
 import { StudyMemberCtrl } from './studyMembers';
-import StudyPractice from './practice/studyPracticeCtrl';
-import { StudyPracticeData, StudyPracticeCtrl } from './practice/interfaces';
+import StudyPracticeCtrl from './practice/studyPracticeCtrl';
+import { StudyPracticeData } from './practice/interfaces';
 import { CommentForm } from './commentForm';
 import { GlyphForm } from './studyGlyph';
 import { StudyForm } from './studyForm';
@@ -16,7 +15,7 @@ import { StudyShare } from './studyShare';
 import { TagsForm } from './studyTags';
 import ServerEval from './serverEval';
 import * as xhr from './studyXhr';
-import { path as treePath } from 'tree';
+import { path as treePath, ops as treeOps } from 'tree';
 import {
   StudyVm,
   Tab,
@@ -37,6 +36,7 @@ import {
   StudyDataFromServer,
   StudyData,
   ChapterPreviewFromServer,
+  ChapterSelect,
 } from './interfaces';
 import GamebookPlayCtrl from './gamebook/gamebookPlayCtrl';
 import { DescriptionCtrl } from './description';
@@ -44,13 +44,14 @@ import RelayCtrl from './relay/relayCtrl';
 import { RelayData } from './relay/interfaces';
 import { MultiBoardCtrl } from './multiBoard';
 import { StudySocketSendParams } from '../socket';
-import { storedMap, storedBooleanProp } from 'common/storage';
+import { storedMap } from 'common/storage';
 import { opposite } from 'chessops/util';
 import StudyChaptersCtrl from './studyChapters';
 import { SearchCtrl } from './studySearch';
 import { GamebookOverride } from './gamebook/interfaces';
 import { EvalHitMulti, EvalHitMultiArray } from '../interfaces';
 import { MultiCloudEval } from './multiCloudEval';
+import { pubsub } from 'common/pubsub';
 
 interface Handlers {
   path(d: WithWhoAndPos): void;
@@ -83,7 +84,7 @@ interface Handlers {
 // data.position.path represents the server state
 // ctrl.path is the client state
 export default class StudyCtrl {
-  relayRecProp = storedBooleanProp('analyse.relay.rec', true);
+  relayRecProp = prop(false);
   nonRelayRecMapProp = storedMap<boolean>('study.rec', 100, () => true);
   chapterFlipMapProp = storedMap<boolean>('chapter.flip', 400, () => false);
   data: StudyData;
@@ -92,7 +93,7 @@ export default class StudyCtrl {
   members: StudyMemberCtrl;
   chapters: StudyChaptersCtrl;
   relay?: RelayCtrl;
-  multiCloudEval: MultiCloudEval;
+  multiCloudEval?: MultiCloudEval;
   multiBoard: MultiBoardCtrl;
   form: StudyForm;
   commentForm: CommentForm;
@@ -120,7 +121,7 @@ export default class StudyCtrl {
     const sticked = data.features.sticky && !ctrl.initialPath && !isManualChapter && !practiceData;
     this.vm = {
       loading: false,
-      tab: prop<Tab>(!relayData && data.chapters.length > 1 ? 'chapters' : 'members'),
+      tab: prop<Tab>(!relayData && data.chapters?.[1] ? 'chapters' : 'members'),
       toolTab: prop<ToolTab>(relayData ? 'multiBoard' : 'tags'),
       chapterId: sticked ? data.position.chapterId : data.chapter.id,
       // path is at ctrl.path
@@ -149,14 +150,16 @@ export default class StudyCtrl {
       trans: ctrl.trans,
     });
     this.chapters = new StudyChaptersCtrl(
-      data.chapters,
+      data.chapters!,
       this.send,
       () => this.setTab('chapters'),
       chapterId => xhr.chapterConfig(data.id, chapterId),
       () => this.data.federations,
       this.ctrl,
     );
-    this.multiCloudEval = new MultiCloudEval(this.redraw, this.chapters.list, this.send);
+    this.multiCloudEval = ctrl.ceval.possible
+      ? new MultiCloudEval(this.redraw, this.chapters.list, this.send)
+      : undefined;
     this.relay =
       relayData &&
       new RelayCtrl(
@@ -164,15 +167,17 @@ export default class StudyCtrl {
         relayData,
         this.send,
         (redrawOnly = false) => (redrawOnly ? this.redraw() : this.redrawAndUpdateAddressBar()),
+        ctrl.isEmbed,
         this.members,
         this.chapters.list,
         this.multiCloudEval,
         () => this.data.federations,
-        id => this.setChapter(id),
+        this.chapterSelect,
       );
     this.multiBoard = new MultiBoardCtrl(
       this.chapters.list,
       this.multiCloudEval,
+      this.relay?.tourShow() ? undefined : this.data.chapter.id,
       this.redraw,
       this.ctrl.trans,
     );
@@ -240,7 +245,7 @@ export default class StudyCtrl {
       ctrl.trans,
     );
 
-    this.practice = practiceData && new StudyPractice(ctrl, data, practiceData);
+    this.practice = practiceData && new StudyPracticeCtrl(ctrl, data, practiceData);
 
     if (this.vm.mode.sticky && !this.isGamebookPlay()) this.ctrl.userJump(this.data.position.path);
     else if (this.data.chapter.relayPath && !defined(this.ctrl.requestInitialPly))
@@ -259,10 +264,10 @@ export default class StudyCtrl {
   send = this.ctrl.socket.send;
   redraw = this.ctrl.redraw;
 
-  startTour = async () => {
+  startTour = async() => {
     const [tour] = await Promise.all([
       site.asset.loadEsm<StudyTour>('analyse.study.tour'),
-      site.asset.loadCssPath('shepherd'),
+      site.asset.loadCssPath('bits.shepherd'),
     ]);
 
     tour.study(this.ctrl);
@@ -301,10 +306,10 @@ export default class StudyCtrl {
     const canContribute = this.members.canContribute();
     // unwrite if member lost privileges
     this.vm.mode.write = this.vm.mode.write && canContribute;
-    site.pubsub.emit('chat.writeable', this.data.features.chat);
+    pubsub.emit('chat.writeable', this.data.features.chat);
     // official broadcasts cannot have local mods
-    site.pubsub.emit('chat.permissions', { local: canContribute && !this.relayData?.tour.official });
-    site.pubsub.emit('palantir.toggle', this.data.features.chat && !!this.members.myMember());
+    pubsub.emit('chat.permissions', { local: canContribute && !this.relayData?.tour.official });
+    pubsub.emit('palantir.toggle', this.data.features.chat && !!this.members.myMember());
     const computer: boolean =
       !this.isGamebookPlay() && !!(this.data.chapter.features.computer || this.data.chapter.practice);
     if (!computer) this.ctrl.getCeval().enabled(false);
@@ -328,6 +333,7 @@ export default class StudyCtrl {
     if (this.vm.mode.sticky) this.vm.behind = 0;
     this.data.position = s.position;
     this.data.name = s.name;
+    this.data.flair = s.flair;
     this.data.visibility = s.visibility;
     this.data.features = s.features;
     this.data.settings = s.settings;
@@ -339,7 +345,7 @@ export default class StudyCtrl {
     this.studyDesc.set(this.data.description);
     document.title = this.data.name;
     this.members.dict(s.members);
-    this.chapters.loadFromServer(s.chapters);
+    if (s.chapters) this.chapters.loadFromServer(s.chapters);
     this.ctrl.flipped = this.chapterFlipMapProp(this.data.chapter.id);
 
     const merge = !this.vm.mode.write && sameChapter;
@@ -376,19 +382,16 @@ export default class StudyCtrl {
     this.updateAddressBar();
   };
 
-  xhrReload = throttlePromiseDelay(
-    () => 500,
-    () => {
-      this.vm.loading = true;
-      return xhr
-        .reload(
-          this.practice ? 'practice/load' : 'study',
-          this.data.id,
-          this.vm.mode.sticky ? undefined : this.vm.chapterId,
-        )
-        .then(this.onReload, site.reload);
-    },
-  );
+  xhrReload = throttlePromise(() => {
+    this.vm.loading = true;
+    return xhr
+      .reload(
+        this.practice ? 'practice/load' : 'study',
+        this.data.id,
+        this.vm.mode.sticky ? undefined : this.vm.chapterId,
+      )
+      .then(this.onReload, site.reload);
+  });
 
   onSetPath = throttle(300, (path: Tree.Path) => {
     if (this.vm.mode.sticky && path !== this.data.position.path)
@@ -402,6 +405,12 @@ export default class StudyCtrl {
 
   instanciateGamebookPlay = () => {
     if (!this.isGamebookPlay()) return (this.gamebookPlay = undefined);
+    // ensure all original nodes have a gamebook entry,
+    // so we can differentiate original nodes from user-made ones
+    treeOps.updateAll(this.ctrl.tree.root, n => {
+      n.gamebook = n.gamebook || {};
+      if (n.shapes) n.gamebook.shapes = n.shapes.slice(0);
+    });
     if (this.gamebookPlay?.chapterId === this.vm.chapterId) return;
     this.gamebookPlay = new GamebookPlayCtrl(this.ctrl, this.vm.chapterId, this.ctrl.trans, this.redraw);
     this.vm.mode.sticky = false;
@@ -447,31 +456,45 @@ export default class StudyCtrl {
 
   likeToggler = debounce(() => this.send('like', { liked: this.data.liked }), 1000);
 
-  setChapter = (idOrNumber: ChapterId | number, force?: boolean): boolean => {
+  setChapter = async(idOrNumber: ChapterId | number, force?: boolean): Promise<boolean> => {
     const prev = this.chapters.list.get(idOrNumber);
     const id = prev?.id;
     if (!id) {
       console.warn(`Chapter ${idOrNumber} not found`);
       return false;
     }
+    const componentCallbacks = () => {
+      this.relay?.onChapterChange();
+      this.multiBoard.onChapterChange(this.data.chapter.id);
+    };
     const alreadySet = id === this.vm.chapterId && !force;
-    if (this.relay?.tourShow()) {
-      this.relay.tourShow(false);
-      if (alreadySet) this.redraw();
+    if (alreadySet) {
+      componentCallbacks();
+      this.redraw();
+      return true;
     }
-    if (alreadySet) return true;
-    if (!this.vm.mode.sticky || !this.makeChange('setChapter', id)) {
+    this.vm.nextChapterId = id;
+    this.vm.justSetChapterId = id;
+    if (this.vm.mode.sticky && this.makeChange('setChapter', id)) {
+      this.vm.loading = true;
+      this.redraw();
+    } else {
+      // not sticky, not sending the chapter change to the server
+      // so we need to apply the change locally immediately
+      // instead of awaiting the server chapter change event
       this.vm.mode.sticky = false;
       if (!this.vm.behind) this.vm.behind = 1;
       this.vm.chapterId = id;
-      this.xhrReload();
+      await this.xhrReload();
+      componentCallbacks();
     }
-    this.vm.loading = true;
-    this.vm.nextChapterId = id;
-    this.vm.justSetChapterId = id;
-    this.redraw();
     window.scrollTo(0, 0);
     return true;
+  };
+
+  chapterSelect: ChapterSelect = {
+    is: (idOrNumber: ChapterId | number) => defined(this.chapters.list.get(idOrNumber)),
+    set: this.setChapter,
   };
 
   private deltaChapter = (delta: number): ChapterPreview | undefined => {
@@ -550,6 +573,7 @@ export default class StudyCtrl {
     if (chapter) this.setChapter(chapter.id);
   };
   goToNextChapter = () => {
+    this.practice?.onComplete();
     const chapter = this.nextChapter();
     if (chapter) this.setChapter(chapter.id);
   };
@@ -569,6 +593,7 @@ export default class StudyCtrl {
     return studyIdOffset === -1 ? `/study/${this.data.id}` : current.slice(0, studyIdOffset + 9);
   };
   updateAddressBar = () => {
+    if (this.ctrl.isEmbed) return;
     const studyUrl = this.baseUrl();
     const chapterUrl = `${studyUrl}/${this.vm.chapterId}`;
     if (this.relay) this.relay.updateAddressBar(studyUrl, chapterUrl);
@@ -586,6 +611,13 @@ export default class StudyCtrl {
       return true;
     }
     return !!this.relay?.socketHandler(t, d);
+  };
+  embeddablePath = (path: string) => {
+    if (!this.ctrl.isEmbed) return path;
+    const p = `${path.startsWith('/embed/') ? '' : '/embed'}${path}`;
+    if (!location.search) return p;
+    const s = p.split('#');
+    return `${s[0]}${location.search}${s[1] ? `#${s[1]}` : ''}`;
   };
 
   socketHandlers: Handlers = {
@@ -606,6 +638,7 @@ export default class StudyCtrl {
       this.redraw();
     },
     addNode: d => {
+      if (d.relayPath == '!') d.relayPath = d.p.path + d.n.id;
       const position = d.p,
         node = {
           ...d.n,
@@ -615,7 +648,7 @@ export default class StudyCtrl {
         sticky = d.s;
       this.setMemberActive(who);
       this.chapters.addNode(d);
-      this.multiCloudEval.addNode(d);
+      this.multiCloudEval?.addNode(d);
       if (sticky && !this.vm.mode.sticky) this.vm.behind++;
       if (this.wrongChapter(d)) {
         if (sticky && !this.vm.mode.sticky) this.redraw();
@@ -629,13 +662,15 @@ export default class StudyCtrl {
       const newPath = this.ctrl.tree.addNode(node, position.path);
       if (!newPath) return this.xhrReload();
       this.ctrl.tree.addDests(d.d, newPath);
+      if (d.relayPath && !this.ctrl.tree.pathIsMainline(d.relayPath))
+        this.ctrl.tree.promoteAt(d.relayPath, true);
       if (sticky) this.data.position.path = newPath;
       if (
         (sticky && this.vm.mode.sticky) ||
         (position.path === this.ctrl.path && position.path === treePath.fromNodeList(this.ctrl.mainline))
       )
         this.ctrl.jump(newPath);
-      this.redraw();
+      return this.redraw();
     },
     deleteNode: d => {
       const position = d.p,
@@ -647,7 +682,7 @@ export default class StudyCtrl {
       if (!this.ctrl.tree.pathExists(d.p.path)) return this.xhrReload();
       this.ctrl.tree.deleteNodeAt(position.path);
       if (this.vm.mode.sticky) this.ctrl.jump(this.ctrl.path);
-      this.redraw();
+      return this.redraw();
     },
     promote: d => {
       const position = d.p,
@@ -658,8 +693,9 @@ export default class StudyCtrl {
       if (!this.ctrl.tree.pathExists(d.p.path)) return this.xhrReload();
       this.ctrl.tree.promoteAt(position.path, d.toMainline);
       if (this.vm.mode.sticky) this.ctrl.jump(this.ctrl.path);
+      else if (this.relay) this.ctrl.jump(d.p.path);
       this.ctrl.treeVersion++;
-      this.redraw();
+      return this.redraw();
     },
     reload: this.xhrReload,
     changeChapter: d => {
@@ -698,7 +734,7 @@ export default class StudyCtrl {
       this.setMemberActive(d.w);
       if (d.s && !this.vm.mode.sticky) this.vm.behind++;
       if (d.s) this.data.position = d.p;
-      else if (d.w && d.w.s === site.sri) {
+      if (d.w?.s === site.sri) {
         this.vm.mode.write = this.relayData ? this.relayRecProp() : this.nonRelayRecMapProp(this.data.id);
         this.vm.chapterId = d.p.chapterId;
       }
@@ -793,8 +829,7 @@ export default class StudyCtrl {
     },
     evalHitMulti: (e: EvalHitMulti | EvalHitMultiArray) => {
       ('multi' in e ? e.multi : [e]).forEach(ev => {
-        this.multiBoard.multiCloudEval.onCloudEval(ev);
-        this.relay?.teams?.multiCloudEval.onCloudEval(ev);
+        this.multiBoard.multiCloudEval?.onCloudEval(ev);
       });
     },
   };

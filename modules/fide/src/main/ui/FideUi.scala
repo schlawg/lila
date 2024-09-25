@@ -3,23 +3,25 @@ package ui
 
 import scalalib.paginator.Paginator
 
-import lila.ui.*
-import ScalatagsTemplate.{ *, given }
 import lila.core.fide.FideTC
+import lila.ui.*
+
+import ScalatagsTemplate.{ *, given }
 
 final class FideUi(helpers: Helpers)(menu: String => Context ?=> Frag):
   import helpers.{ *, given }
+  import trans.{ site as trs, broadcast as trb }
 
   private val tcTrans: List[(FideTC, lila.core.i18n.I18nKey)] =
     List(
-      FideTC.standard -> trans.site.classical,
-      FideTC.rapid    -> trans.site.rapid,
-      FideTC.blitz    -> trans.site.blitz
+      FideTC.standard -> trs.classical,
+      FideTC.rapid    -> trs.rapid,
+      FideTC.blitz    -> trs.blitz
     )
 
   private def page(title: String, active: String)(modifiers: Modifier*)(using Context): Page =
     Page(title)
-      .cssTag("fide")
+      .css("bits.fide")
       .js(infiniteScrollEsmInit):
         main(cls := "page-menu")(
           menu(active),
@@ -33,15 +35,15 @@ final class FideUi(helpers: Helpers)(menu: String => Context ?=> Frag):
         td(if stats.top10Rating > 0 then stats.top10Rating else "-")
       page("FIDE federations", "federations")(
         cls := "fide-federations",
-        boxTop(h1("FIDE federations")),
+        boxTop(h1(trb.fideFederations())),
         table(cls := "slist slist-pad")(
           thead:
             tr(
-              th("Name"),
-              th("Players"),
-              th("Classic"),
-              th("Rapid"),
-              th("Blitz")
+              th(trs.name()),
+              th(trs.players()),
+              th(trs.classical()),
+              th(trs.rapid()),
+              th(trs.blitz())
             )
           ,
           tbody(cls := "infinite-scroll")(
@@ -63,7 +65,7 @@ final class FideUi(helpers: Helpers)(menu: String => Context ?=> Frag):
         cls := "fide-federation",
         div(cls := "box__top fide-federation__head")(
           flag(fed.id, none),
-          div(h1(fed.name), p(trans.site.nbPlayers.plural(fed.nbPlayers, fed.nbPlayers.localize))),
+          div(h1(fed.name), p(trs.nbPlayers.plural(fed.nbPlayers, fed.nbPlayers.localize))),
           (fed.id.value == "KOS").option(p(cls := "fide-federation__kosovo")(kosovoText))
         ),
         div(cls := "fide-cards fide-federation__cards box__pad")(
@@ -72,9 +74,9 @@ final class FideUi(helpers: Helpers)(menu: String => Context ?=> Frag):
             card(
               name(),
               frag(
-                p("Rank", strong(stats.get.rank)),
-                p("Top 10 rating", strong(stats.get.top10Rating)),
-                p("Players", strong(stats.get.nbPlayers.localize))
+                p(trs.rank(), strong(stats.get.rank)),
+                p(trb.top10Rating(), strong(stats.get.top10Rating)),
+                p(trs.players(), strong(stats.get.nbPlayers.localize))
               )
             )
         ),
@@ -104,11 +106,35 @@ final class FideUi(helpers: Helpers)(menu: String => Context ?=> Frag):
       page("FIDE players", "players")(
         cls := "fide-players",
         boxTop(
-          h1("FIDE players"),
+          h1(trb.fidePlayers()),
           div(cls := "box__top__actions"):
             searchForm(query)
         ),
         playerList(players, np => routes.Fide.index(np, query.some.filter(_.nonEmpty)))
+      )
+
+    def notFound(id: chess.FideId)(using Context) =
+      page("FIDE player not found", "players")(
+        cls := "fide-players",
+        boxTop(
+          h1(trb.fidePlayerNotFound()),
+          div(cls := "box__top__actions"):
+            searchForm("")
+        ),
+        div(cls := "box__pad")(
+          p(
+            "We could not find anyone with the FIDE ID \"",
+            strong(id),
+            "\", please make sure the number is correct."
+          ),
+          p(
+            "If the player appears on the ",
+            a(href := "https://ratings.fide.com/", targetBlank)("official FIDE website"),
+            ", then the player was not included in the latest rating export from FIDE.",
+            br,
+            "FIDE exports are provided once a month and includes players who have at least one official rating."
+          )
+        )
       )
 
     def searchForm(q: String) =
@@ -134,12 +160,12 @@ final class FideUi(helpers: Helpers)(menu: String => Context ?=> Frag):
       table(cls := "slist slist-pad")(
         thead:
           tr(
-            th(title),
+            th(trs.name()),
             withFlag.option(th(iconTag(Icon.FlagOutline))),
-            th("Classic"),
-            th("Rapid"),
-            th("Blitz"),
-            th("Age this year")
+            th(trs.classical()),
+            th(trs.rapid()),
+            th(trs.blitz()),
+            th(trb.ageThisYear())
           )
         ,
         tbody(cls := "infinite-scroll")(
@@ -170,23 +196,23 @@ final class FideUi(helpers: Helpers)(menu: String => Context ?=> Frag):
         div(cls := "fide-cards fide-player__cards")(
           player.fed.map: fed =>
             card(
-              "Federation",
+              trb.federation(),
               a(cls := "fide-player__federation", href := routes.Fide.federation(Federation.idToSlug(fed)))(
                 federation.flag(fed, none),
                 Federation.name(fed)
               )
             ),
           card(
-            "FIDE profile",
+            trb.fideProfile(),
             a(href := s"https://ratings.fide.com/profile/${player.id}")(player.id)
           ),
           card(
-            "Age this year",
+            trb.ageThisYear(),
             player.age
           ),
           tcTrans.map: (tc, name) =>
-            card(name(), player.ratingOf(tc).fold("-")(_.toString))
+            card(name(), player.ratingOf(tc).fold(trb.unrated())(_.toString))
         ),
         tours.map: tours =>
-          div(cls := "fide-player__tours")(h2("Recent tournaments"), tours)
+          div(cls := "fide-player__tours")(h2(trb.recentTournaments()), tours)
       )

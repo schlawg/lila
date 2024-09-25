@@ -3,9 +3,10 @@ package ui
 
 import scalalib.paginator.Paginator
 
-import lila.ui.*
-import ScalatagsTemplate.{ *, given }
 import lila.core.i18n.Language
+import lila.ui.*
+
+import ScalatagsTemplate.{ *, given }
 
 final class UblogUi(helpers: Helpers, atomUi: AtomUi)(picfitUrl: lila.core.misc.PicfitUrl):
   import helpers.{ *, given }
@@ -32,7 +33,10 @@ final class UblogUi(helpers: Helpers, atomUi: AtomUi)(picfitUrl: lila.core.misc.
       showAuthor: ShowAt = ShowAt.none,
       showIntro: Boolean = true
   )(using Context) =
-    a(cls := "ublog-post-card ublog-post-card--link", href := makeUrl(post))(
+    a(
+      cls  := s"ublog-post-card ublog-post-card--link ublog-post-card--by-${post.created.by}",
+      href := makeUrl(post)
+    )(
       span(cls := "ublog-post-card__top")(
         thumbnail(post, _.Size.Small)(cls := "ublog-post-card__image"),
         post.lived.map { live => semanticDate(live.at)(cls := "ublog-post-card__over-image") },
@@ -69,8 +73,8 @@ final class UblogUi(helpers: Helpers, atomUi: AtomUi)(picfitUrl: lila.core.misc.
   def blogPage(user: User, blog: UblogBlog, posts: Paginator[UblogPost.PreviewPost])(using ctx: Context) =
     val title = trans.ublog.xBlog.txt(user.username)
     Page(title)
-      .cssTag("ublog")
-      .js(posts.hasNextPage.option(infiniteScrollEsmInit) ++ ctx.isAuth.so(EsmInit("bits.ublog")))
+      .css("bits.ublog")
+      .js(posts.hasNextPage.option(infiniteScrollEsmInit) ++ ctx.isAuth.so(Esm("bits.ublog")))
       .copy(atomLinkTag = link(href := routes.Ublog.userAtom(user.username), st.title := title).some)
       .robots(blog.listed):
         main(cls := "page-menu")(
@@ -80,7 +84,7 @@ final class UblogUi(helpers: Helpers, atomUi: AtomUi)(picfitUrl: lila.core.misc.
               h1(trans.ublog.xBlog(userLink(user))),
               div(cls := "box__top__actions")(
                 blog.allows.moderate.option(tierForm(blog)),
-                blog.allows.create.option(
+                blog.allows.draft.option(
                   frag(
                     a(href := routes.Ublog.drafts(user.username))(trans.ublog.drafts()),
                     newPostLink(user)
@@ -105,14 +109,15 @@ final class UblogUi(helpers: Helpers, atomUi: AtomUi)(picfitUrl: lila.core.misc.
   def community(
       language: Option[Language],
       posts: Paginator[UblogPost.PreviewPost],
-      langSelections: List[(String, String)]
+      langSelections: List[(Language, String)]
   )(using ctx: Context) =
+    def languageOrAll = language | Language("all")
     Page("Community blogs")
-      .cssTag("ublog")
+      .css("bits.ublog")
       .js(posts.hasNextPage.option(infiniteScrollEsmInit))
       .copy(
         atomLinkTag = link(
-          href     := routes.Ublog.communityAtom(language.fold("all")(_.value)),
+          href     := routes.Ublog.communityAtom(languageOrAll),
           st.title := "Lichess community blogs"
         ).some
       )
@@ -130,13 +135,13 @@ final class UblogUi(helpers: Helpers, atomUi: AtomUi)(picfitUrl: lila.core.misc.
                     .map: (languageSel, name) =>
                       a(
                         href := {
-                          if languageSel == "all" then routes.Ublog.communityAll()
+                          if languageSel == Language("all") then routes.Ublog.communityAll()
                           else routes.Ublog.communityLang(languageSel)
                         },
-                        cls := (languageSel == language.fold("all")(_.value)).option("current")
+                        cls := (languageSel == languageOrAll).option("current")
                       )(name)
                 ),
-                atomUi.atomLink(routes.Ublog.communityAtom(language.fold("all")(_.value)))
+                atomUi.atomLink(routes.Ublog.communityAtom(languageOrAll))
               )
             ),
             if posts.nbResults > 0 then
@@ -154,23 +159,27 @@ final class UblogUi(helpers: Helpers, atomUi: AtomUi)(picfitUrl: lila.core.misc.
           )
         )
 
-  def drafts(user: User, posts: Paginator[UblogPost.PreviewPost])(using Context) =
+  def drafts(user: User, blog: UblogBlog, posts: Paginator[UblogPost.PreviewPost])(using ctx: Context) =
     Page(trans.ublog.drafts.txt())
-      .cssTag("ublog")
+      .css("bits.ublog")
       .js(posts.hasNextPage.option(infiniteScrollEsmInit)):
         main(cls := "page-menu")(
           menu(Left(user.id)),
           div(cls := "page-menu__content box box-pad ublog-index")(
             boxTop(
-              h1(trans.ublog.drafts()),
+              h1(
+                ctx.isnt(user).option(frag(userLink(user), "'s ")),
+                trans.ublog.drafts()
+              ),
               div(cls := "box__top__actions")(
                 a(href := routes.Ublog.index(user.username))(trans.ublog.published()),
                 newPostLink(user)
               )
             ),
             if posts.nbResults > 0 then
+              val url = if blog.allows.edit then editUrlOfPost else urlOfPost
               div(cls := "ublog-index__posts ublog-index__posts--drafts ublog-post-cards infinite-scroll")(
-                posts.currentPageResults.map { card(_, editUrlOfPost) },
+                posts.currentPageResults.map { card(_, url) },
                 pagerNext(posts, np => routes.Ublog.drafts(user.username, np).url)
               )
             else
@@ -214,7 +223,7 @@ final class UblogUi(helpers: Helpers, atomUi: AtomUi)(picfitUrl: lila.core.misc.
       byDate: Option[Boolean] = None
   )(using Context) =
     Page(title)
-      .cssTag("ublog")
+      .css("bits.ublog")
       .js(posts.hasNextPage.option(infiniteScrollEsmInit)):
         main(cls := "page-menu")(
           menu(Right(menuItem)),
@@ -240,7 +249,7 @@ final class UblogUi(helpers: Helpers, atomUi: AtomUi)(picfitUrl: lila.core.misc.
         )
 
   def topics(tops: List[UblogTopic.WithPosts])(using Context) =
-    Page("All blog topics").cssTag("ublog"):
+    Page("All blog topics").css("bits.ublog"):
       main(cls := "page-menu")(
         menu(Right("topics")),
         div(cls := "page-menu__content box")(
@@ -306,7 +315,7 @@ final class UblogUi(helpers: Helpers, atomUi: AtomUi)(picfitUrl: lila.core.misc.
         .ifTrue(ctx.kid.no)
         .map: me =>
           a(cls := mine.option("active"), href := routes.Ublog.index(me.username))("My blog"),
-      a(cls := lichess.option("active"), href := routes.Ublog.index("Lichess"))("Lichess blog")
+      a(cls := lichess.option("active"), href := routes.Ublog.index(UserName.lichess))("Lichess blog")
     )
 
   object atom:
@@ -323,11 +332,11 @@ final class UblogUi(helpers: Helpers, atomUi: AtomUi)(picfitUrl: lila.core.misc.
       ): post =>
         renderPost(post, authorOfBlog(post.blog))
 
-    def community(code: String, posts: Seq[UblogPost.PreviewPost]) =
+    def community(language: Language, posts: Seq[UblogPost.PreviewPost]) =
       atomUi.feed(
         elems = posts,
-        htmlCall = routes.Ublog.communityLang(code),
-        atomCall = routes.Ublog.communityAtom(code),
+        htmlCall = routes.Ublog.communityLang(language),
+        atomCall = routes.Ublog.communityAtom(language),
         title = "Lichess community blogs",
         updated = posts.headOption.flatMap(_.lived).map(_.at)
       ) { post =>

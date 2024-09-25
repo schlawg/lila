@@ -44,7 +44,6 @@
   <string name="imageAlt">Text alternatiu de la imatge</string>
   <string name="imageCredit">Crèdits de la imatge</string>
   <string name="deleteBlog">Elimina aquesta entrada del blog definitivament</string>
-  <string name="deleteImage">Elimina la imatge</string>
   <string name="safeToUseImages">Es segur utilitzar imatges dels següents llocs web: </string>
   <string name="selectPostTopics">Seleccioneu els temes dels quals tracta la vostra entrada</string>
   <string name="useImagesYouMadeYourself">També podeu utilitzar imatges que heu fet vosaltres mateixos, fotos que heu fet, captures del lichess... Qualsevol cosa que no té drets de còpia d\'algú altre.</string>

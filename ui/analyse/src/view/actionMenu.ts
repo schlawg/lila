@@ -1,6 +1,7 @@
 import { isEmpty } from 'common';
 import * as licon from 'common/licon';
 import { isTouchDevice } from 'common/device';
+import { domDialog } from 'common/dialog';
 import { bind, dataIcon, MaybeVNodes, looseH as h } from 'common/snabbdom';
 import { VNode } from 'snabbdom';
 import { AutoplayDelay } from '../autoplay';
@@ -97,7 +98,8 @@ export function view(ctrl: AnalyseCtrl): VNode {
     noarg = ctrl.trans.noarg,
     canContinue = !ctrl.ongoing && d.game.variant.key === 'standard',
     ceval = ctrl.getCeval(),
-    mandatoryCeval = ctrl.mandatoryCeval();
+    mandatoryCeval = ctrl.mandatoryCeval(),
+    linkAttrs = { rel: ctrl.isEmbed ? '' : 'nofollow', target: ctrl.isEmbed ? '_blank' : '' };
 
   const tools: MaybeVNodes = [
     h('div.action-menu__tools', [
@@ -120,7 +122,7 @@ export function view(ctrl: AnalyseCtrl): VNode {
                   })
                 : `/${d.game.id}/edit?fen=${ctrl.node.fen}`,
               'data-icon': licon.Pencil,
-              rel: 'nofollow',
+              ...linkAttrs,
             },
           },
           noarg('boardEditor'),
@@ -129,9 +131,7 @@ export function view(ctrl: AnalyseCtrl): VNode {
         h(
           'a',
           {
-            hook: bind('click', () =>
-              site.dialog.dom({ cash: $('.continue-with.g_' + d.game.id), show: 'modal' }),
-            ),
+            hook: bind('click', () => domDialog({ cash: $('.continue-with.g_' + d.game.id), show: 'modal' })),
             attrs: dataIcon(licon.Swords),
           },
           noarg('continueFromHere'),
@@ -155,42 +155,42 @@ export function view(ctrl: AnalyseCtrl): VNode {
   const cevalConfig: MaybeVNodes =
     ceval?.possible && ceval.allowed()
       ? [
-          h('h2', noarg('computerAnalysis')),
-          ctrlToggle(
-            {
-              name: 'enable',
-              title: (mandatoryCeval ? 'Required by practice mode' : 'Stockfish') + ' (Hotkey: z)',
-              id: 'all',
-              checked: ctrl.showComputer(),
-              disabled: mandatoryCeval,
-              change: ctrl.toggleComputer,
-            },
-            ctrl,
-          ),
-          ...(ctrl.showComputer()
-            ? [
-                ctrlToggle(
-                  {
-                    name: 'bestMoveArrow',
-                    title: 'Hotkey: a',
-                    id: 'shapes',
-                    checked: ctrl.showAutoShapes(),
-                    change: ctrl.toggleAutoShapes,
-                  },
-                  ctrl,
-                ),
-                ctrlToggle(
-                  {
-                    name: 'evaluationGauge',
-                    id: 'gauge',
-                    checked: ctrl.showGauge(),
-                    change: ctrl.toggleGauge,
-                  },
-                  ctrl,
-                ),
-              ]
-            : []),
-        ]
+        h('h2', noarg('computerAnalysis')),
+        ctrlToggle(
+          {
+            name: 'enable',
+            title: (mandatoryCeval ? 'Required by practice mode' : 'Stockfish') + ' (Hotkey: z)',
+            id: 'all',
+            checked: ctrl.showComputer(),
+            disabled: mandatoryCeval,
+            change: ctrl.toggleComputer,
+          },
+          ctrl,
+        ),
+        ...(ctrl.showComputer()
+          ? [
+            ctrlToggle(
+              {
+                name: 'bestMoveArrow',
+                title: 'Hotkey: a',
+                id: 'shapes',
+                checked: ctrl.showAutoShapes(),
+                change: ctrl.toggleAutoShapes,
+              },
+              ctrl,
+            ),
+            ctrlToggle(
+              {
+                name: 'evaluationGauge',
+                id: 'gauge',
+                checked: ctrl.showGauge(),
+                change: ctrl.toggleGauge,
+              },
+              ctrl,
+            ),
+          ]
+          : []),
+      ]
       : [];
 
   const displayConfig = [
@@ -246,7 +246,7 @@ export function view(ctrl: AnalyseCtrl): VNode {
               href: d.userAnalysis
                 ? '/?fen=' + ctrl.encodeNodeFen() + '#ai'
                 : contRoute(d, 'ai') + '?fen=' + ctrl.node.fen,
-              rel: 'nofollow',
+              ...linkAttrs,
             },
           },
           noarg('playWithTheMachine'),
@@ -258,7 +258,7 @@ export function view(ctrl: AnalyseCtrl): VNode {
               href: d.userAnalysis
                 ? '/?fen=' + ctrl.encodeNodeFen() + '#friend'
                 : contRoute(d, 'friend') + '?fen=' + ctrl.node.fen,
-              rel: 'nofollow',
+              ...linkAttrs,
             },
           },
           noarg('playWithAFriend'),

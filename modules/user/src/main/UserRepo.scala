@@ -1,18 +1,19 @@
 package lila.user
 
-import com.roundeights.hasher.Implicits.*
 import chess.PlayerTitle
-import scalalib.ThreadLocalRandom
+import com.roundeights.hasher.Implicits.*
 import reactivemongo.api.*
 import reactivemongo.api.bson.*
+import scalalib.ThreadLocalRandom
+import scalalib.model.Days
 
-import lila.core.net.ApiVersion
-import lila.core.email.NormalizedEmailAddress
 import lila.core.LightUser
-import lila.db.dsl.{ *, given }
-import lila.core.userId.UserSearch
-import lila.core.user.{ Profile, PlayTime, TotpSecret, Plan, UserMark }
+import lila.core.email.NormalizedEmailAddress
+import lila.core.net.ApiVersion
 import lila.core.security.HashedPassword
+import lila.core.user.{ Plan, PlayTime, Profile, TotpSecret, UserMark, RoleDbKey }
+import lila.core.userId.UserSearch
+import lila.db.dsl.{ *, given }
 
 final class UserRepo(c: Coll)(using Executor) extends lila.core.user.UserRepo(c):
 
@@ -27,7 +28,7 @@ final class UserRepo(c: Coll)(using Executor) extends lila.core.user.UserRepo(c)
   def byId[U: UserIdOf](u: U): Fu[Option[User]] =
     u.id.noGhost.so:
       coll
-        .byId[User](u)
+        .byId[User](u.id)
         .recover:
           case _: reactivemongo.api.bson.exceptions.BSONValueNotFoundException =>
             none // probably GDPRed user
@@ -40,7 +41,7 @@ final class UserRepo(c: Coll)(using Executor) extends lila.core.user.UserRepo(c)
     coll.byIds[User, UserId](ids, _.sec)
 
   def enabledById[U: UserIdOf](u: U): Fu[Option[User]] =
-    u.id.noGhost.so(coll.one[User](enabledSelect ++ $id(u)))
+    u.id.noGhost.so(coll.one[User](enabledSelect ++ $id(u.id)))
 
   def enabledByIds[U: UserIdOf](us: Iterable[U]): Fu[List[User]] =
     val ids = us.map(_.id).filter(_.noGhost)
@@ -104,7 +105,7 @@ final class UserRepo(c: Coll)(using Executor) extends lila.core.user.UserRepo(c)
   def usernameById(id: UserId): Fu[Option[UserName]] =
     coll.primitiveOne[UserName]($id(id), F.username)
 
-  def usernamesByIds(ids: List[UserId]) =
+  def usernamesByIds(ids: List[UserId]): Fu[List[UserName]] =
     coll.distinctEasy[UserName, List](F.username, $inIds(ids), _.sec)
 
   def createdAtById(id: UserId): Fu[Option[Instant]] =
@@ -135,35 +136,38 @@ final class UserRepo(c: Coll)(using Executor) extends lila.core.user.UserRepo(c)
         _.fold(ThreadLocalRandom.nextBoolean()): doc =>
           doc.string("_id") contains u1
       .addEffect: v =>
-        incColor(u1, if v then 1 else -1)
-        incColor(u2, if v then -1 else 1)
+        val u1Color = Color.fromWhite(v)
+        incColor(u1, u1Color)
+        incColor(u2, !u1Color)
 
   def firstGetsWhite(u1O: Option[UserId], u2O: Option[UserId]): Fu[Boolean] =
     (u1O, u2O).mapN(firstGetsWhite) | fuccess(ThreadLocalRandom.nextBoolean())
 
-  def incColor(userId: UserId, value: Int): Unit =
+  def incColor(userId: UserId, color: Color): Unit =
     coll
       .update(ordered = false, WriteConcern.Unacknowledged)
       .one(
         // limit to -3 <= colorIt <= 5 but set when undefined
-        $id(userId) ++ $doc(F.colorIt -> $not(if value < 0 then $lte(-3) else $gte(5))),
-        $inc(F.colorIt -> value)
+        $id(userId) ++ $doc(F.colorIt -> $not(color.fold($gte(5), $lte(-3)))),
+        $inc(F.colorIt -> color.fold(1, -1))
       )
 
   def setProfile(id: UserId, profile: Profile): Funit =
     coll.updateField($id(id), F.profile, profile).void
+
+  def setRealName(id: UserId, name: String): Funit =
+    coll.updateField($id(id), s"${F.profile}.realName", name).void
 
   def setUsernameCased(id: UserId, name: UserName): Funit =
     if id.is(name) then
       coll.update
         .one(
           $id(id) ++ F.changedCase.$exists(false),
-          $set(F.username -> name, F.changedCase -> true)
+          $set(F.username -> name.value, F.changedCase -> true)
         )
-        .flatMap { result =>
+        .flatMap: result =>
           if result.n == 0 then fufail(s"You have already changed your username")
           else funit
-        }
     else fufail(s"Proposed username $name does not match old username $id")
 
   def setTitle(id: UserId, title: PlayerTitle): Funit =
@@ -244,7 +248,7 @@ final class UserRepo(c: Coll)(using Executor) extends lila.core.user.UserRepo(c)
   def filterExists(ids: Set[UserId]): Fu[List[UserId]] =
     coll.primitive[UserId]($inIds(ids), F.id)
 
-  def userIdsLikeWithRole(text: UserSearch, role: String, max: Int = 10): Fu[List[UserId]] =
+  def userIdsLikeWithRole(text: UserSearch, role: RoleDbKey, max: Int = 10): Fu[List[UserId]] =
     userIdsLikeFilter(text, $doc(F.roles -> role), max)
 
   private[user] def userIdsLikeFilter(text: UserSearch, filter: Bdoc, max: Int): Fu[List[UserId]] =
@@ -265,6 +269,7 @@ final class UserRepo(c: Coll)(using Executor) extends lila.core.user.UserRepo(c)
   def setEngine    = setMark(UserMark.engine)
   def setBoost     = setMark(UserMark.boost)
   def setTroll     = setMark(UserMark.troll)
+  def setIsolate   = setMark(UserMark.isolate)
   def setReportban = setMark(UserMark.reportban)
   def setRankban   = setMark(UserMark.rankban)
   def setArenaBan  = setMark(UserMark.arenaban)
@@ -273,7 +278,7 @@ final class UserRepo(c: Coll)(using Executor) extends lila.core.user.UserRepo(c)
 
   def setKid(user: User, v: Boolean) = coll.updateField($id(user.id), F.kid, v).void
 
-  def isKid[U: UserIdOf](id: U) = coll.exists($id(id) ++ $doc(F.kid -> true))
+  def isKid[U: UserIdOf](u: U) = coll.exists($id(u.id) ++ $doc(F.kid -> true))
 
   def updateTroll(user: User) = setTroll(user.id, user.marks.troll)
 
@@ -293,11 +298,21 @@ final class UserRepo(c: Coll)(using Executor) extends lila.core.user.UserRepo(c)
   def isCreatedSince(id: UserId, since: Instant): Fu[Boolean] =
     coll.exists($id(id) ++ $doc(F.createdAt.$lt(since)))
 
-  def setRoles(id: UserId, roles: List[String]): Funit =
+  def setRoles(id: UserId, roles: List[RoleDbKey]): Funit =
     coll.updateField($id(id), F.roles, roles).void
 
-  def getRoles[U: UserIdOf](u: U): Fu[List[String]] =
-    coll.primitiveOne[List[String]]($id(u), BSONFields.roles).dmap(_.orZero)
+  def getRoles[U: UserIdOf](u: U): Fu[List[RoleDbKey]] =
+    coll.primitiveOne[List[RoleDbKey]]($id(u.id), BSONFields.roles).dmap(_.orZero)
+
+  def addPermission(id: UserId, perm: lila.core.perm.Permission): Funit =
+    coll.update.one($id(id), $push(F.roles -> perm.dbKey)).void
+
+  def accountAge(id: UserId): Fu[Days] =
+    coll
+      .primitiveOne[Instant]($id(id), F.createdAt)
+      .map:
+        _.fold(Days(0)): date =>
+          Days(scalalib.time.daysBetween(date.withTimeAtStartOfDay, nowInstant.withTimeAtStartOfDay))
 
   def disableTwoFactor(id: UserId) = coll.update.one($id(id), $unset(F.totpSecret))
 
@@ -441,7 +456,7 @@ final class UserRepo(c: Coll)(using Executor) extends lila.core.user.UserRepo(c)
     userIds.nonEmpty.so:
       coll.secondaryPreferred.exists($inIds(userIds) ++ disabledSelect)
 
-  def userIdsWithRoles(roles: List[String]): Fu[Set[UserId]] =
+  def userIdsWithRoles(roles: List[RoleDbKey]): Fu[Set[UserId]] =
     coll.distinctEasy[UserId, Set]("_id", $doc("roles".$in(roles)))
 
   def countEngines(userIds: List[UserId]): Fu[Int] =
@@ -497,7 +512,7 @@ final class UserRepo(c: Coll)(using Executor) extends lila.core.user.UserRepo(c)
     val now             = nowInstant
     $doc(
       F.id                    -> name.id,
-      F.username              -> name,
+      F.username              -> name.value,
       F.email                 -> normalizedEmail,
       F.mustConfirmEmail      -> mustConfirmEmail.option(now),
       F.bpass                 -> passwordHash,

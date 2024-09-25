@@ -1,67 +1,37 @@
 package lila.gameSearch
 
-import play.api.libs.json.*
+import akka.stream.scaladsl.*
 
-import lila.common.Json.given
-import lila.search.*
+import lila.search.client.SearchClient
+import lila.search.spec.Query
+import lila.search.{ From, SearchReadApi, Size }
 
 final class GameSearchApi(
-    client: ESClient,
+    client: SearchClient,
     gameRepo: lila.core.game.GameRepo,
     userApi: lila.core.user.UserApi
-)(using Executor, Scheduler)
-    extends SearchReadApi[Game, Query]:
+)(using Executor)
+    extends SearchReadApi[Game, Query.Game]:
 
-  def search(query: Query, from: From, size: Size): Fu[List[Game]] =
-    client.search(query, from, size).flatMap { res =>
-      gameRepo.gamesFromSecondary(GameId.from(res.ids))
-    }
+  def search(query: Query.Game, from: From, size: Size): Fu[List[Game]] =
+    client
+      .search(query, from, size)
+      .flatMap: res =>
+        gameRepo.gamesFromSecondary(res.hitIds.map(id => GameId.apply(id.value)))
 
-  def count(query: Query) =
-    client.count(query).dmap(_.value)
+  def count(query: Query.Game) =
+    client.count(query).dmap(_.count)
 
-  def validateAccounts(query: Query, forMod: Boolean): Fu[Boolean] =
+  def validateAccounts(query: Query.Game, forMod: Boolean): Fu[Boolean] =
     fuccess(forMod) >>| userApi.containsDisabled(query.userIds).not
 
-  def store(game: Game) =
-    storable(game).so:
-      gameRepo.isAnalysed(game).flatMap { analysed =>
-        lila.common.LilaFuture
-          .retry(
-            () => client.store(game.id.into(Id), toDoc(game, analysed)),
-            delay = 20.seconds,
-            retries = 2,
-            logger.some
-          )
-      }
-
-  private def storable(game: Game) = game.finished || game.sourceIs(_.Import)
-
-  private def toDoc(game: Game, analysed: Boolean) =
-    Json
-      .obj(
-        Fields.status -> game.status
-          .match
-            case s if s.is(_.Timeout) => chess.Status.Resign
-            case s if s.is(_.NoStart) => chess.Status.Resign
-            case _                    => game.status
-          .id,
-        Fields.turns         -> (game.ply.value + 1) / 2,
-        Fields.rated         -> game.rated,
-        Fields.perf          -> game.perfKey.id,
-        Fields.uids          -> game.userIds.some.filterNot(_.isEmpty),
-        Fields.winner        -> game.winner.flatMap(_.userId),
-        Fields.loser         -> game.loser.flatMap(_.userId),
-        Fields.winnerColor   -> game.winner.fold(3)(_.color.fold(1, 2)),
-        Fields.averageRating -> game.averageUsersRating,
-        Fields.ai            -> game.aiLevel,
-        Fields.date          -> lila.search.Date.formatter.print(game.movedAt),
-        Fields.duration      -> game.durationSeconds, // for realtime games only
-        Fields.clockInit     -> game.clock.map(_.limitSeconds),
-        Fields.clockInc      -> game.clock.map(_.incrementSeconds),
-        Fields.analysed      -> analysed,
-        Fields.whiteUser     -> game.whitePlayer.userId,
-        Fields.blackUser     -> game.blackPlayer.userId,
-        Fields.source        -> game.source.map(_.id)
-      )
-      .noNull
+  def idStream(query: Query.Game, total: Size, batchSize: MaxPerPage): Source[List[GameId], ?] =
+    val pageSize = Size(batchSize.value.atMost(total.value))
+    Source.unfoldAsync(0): from =>
+      if from >= total.value then fuccess(none)
+      else
+        client
+          .search(query, From(from), pageSize)
+          .map: res =>
+            Option.when(res.hitIds.nonEmpty && from < total.value):
+              (from + pageSize.value) -> res.hitIds.map(id => GameId.apply(id.value))

@@ -1,4 +1,5 @@
 import { init, classModule, attributesModule, eventListenersModule } from 'snabbdom';
+import { requestIdleCallback } from 'common';
 import { LobbyOpts } from './interfaces';
 import makeCtrl from './ctrl';
 import appView from './view/main';
@@ -25,7 +26,7 @@ export default function main(opts: LobbyOpts) {
     countersVNode = patch(countersVNode, countersView(ctrl));
   }
 
-  site.requestIdleCallback(() => {
+  requestIdleCallback(() => {
     layoutHacks();
     window.addEventListener('resize', layoutHacks);
   });
@@ -44,7 +45,7 @@ let animationFrameId: number;
 const layoutHacks = () => {
   cancelAnimationFrame(animationFrameId); // avoid more than one call per frame
   animationFrameId = requestAnimationFrame(() => {
-    $('main.lobby').each(function (this: HTMLElement) {
+    $('main.lobby').each(function(this: HTMLElement) {
       const newCols = Number(window.getComputedStyle(this).getPropertyValue('---cols'));
       if (newCols != cols) {
         cols = newCols;

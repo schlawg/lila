@@ -38,8 +38,8 @@
   <string name="whitePlays">Hvid i trækket</string>
   <string name="blackPlays">Sort i trækket</string>
   <plurals name="opponentLeftCounter">
-    <item quantity="one">Din modstander har forladt partiet. Du kan kræve sejr om %s sekund.</item>
-    <item quantity="other">Din modstander har forladt partiet. Du kan kræve sejr om %s sekunder.</item>
+    <item quantity="one">Din modstander har forladt partiet. Du kan kræve at få tildelt sejren om %s sekund.</item>
+    <item quantity="other">Din modstander har forladt partiet. Du kan kræve at få tildelt sejren om %s sekunder.</item>
   </plurals>
   <string name="opponentLeftChoices">Din modstander har forladt partiet. Du kan fremtvinge modstanderens kapitulation eller vente.</string>
   <string name="forceResignation">Kræv sejr</string>
@@ -70,7 +70,9 @@
   <string name="promoteVariation">Forfrem variant</string>
   <string name="makeMainLine">Gør til hovedlinjen</string>
   <string name="deleteFromHere">Slet herfra</string>
-  <string name="forceVariation">Fremtving variant</string>
+  <string name="collapseVariations">Fold variationer sammen</string>
+  <string name="expandVariations">Udvid variationer</string>
+  <string name="forceVariation">Gennemtving variation</string>
   <string name="copyVariationPgn">Kopiér variant-PGN</string>
   <string name="move">Træk</string>
   <string name="variantLoss">Variant tab</string>
@@ -115,7 +117,7 @@
   <string name="realtimeReplay">Realtid</string>
   <string name="byCPL">CBT</string>
   <string name="openStudy">Åben studie</string>
-  <string name="enable">Aktiver</string>
+  <string name="enable">Aktivér</string>
   <string name="bestMoveArrow">Bedste træk pil</string>
   <string name="showVariationArrows">Vis variantpile</string>
   <string name="evaluationGauge">Evalueringsindikator</string>
@@ -178,6 +180,7 @@
   <string name="latestForumPosts">Seneste debatindlæg</string>
   <string name="players">Spillere</string>
   <string name="friends">Venner</string>
+  <string name="otherPlayers">andre spillere</string>
   <string name="discussions">Samtaler</string>
   <string name="today">I dag</string>
   <string name="yesterday">I går</string>
@@ -465,9 +468,6 @@
   <string name="safeTournamentName">Vælg et meget ufarligt navn til turneringen.</string>
   <string name="inappropriateNameWarning">Selv noget lidt upassende kan resultere i at din konto lukkes.</string>
   <string name="emptyTournamentName">Lad stå tomt for at navngive turneringen efter en tilfældig stormester.</string>
-  <string name="recommendNotTouching">Vi anbefaler at ikke ændre disse.</string>
-  <string name="fewerPlayers">Hvis du stiller betingelser for deltagelse, vil din turnering have færre spillere.</string>
-  <string name="showAdvancedSettings">Vis avancerede Indstillinger</string>
   <string name="makePrivateTournament">Gør turneringen privat og begræns adgang med en adgangskode</string>
   <string name="join">Deltag</string>
   <string name="withdraw">Frameld</string>
@@ -507,8 +507,7 @@
   <string name="ifNoneLeaveEmpty">Hvis ingen, lad den være tom</string>
   <string name="profile">Profil</string>
   <string name="editProfile">Redigér profil</string>
-  <string name="firstName">Fornavn</string>
-  <string name="lastName">Efternavn</string>
+  <string name="realName">Rigtige navn</string>
   <string name="setFlair">Indstil dit ikon</string>
   <string name="flair">Ikon</string>
   <string name="youCanHideFlair">Der er en indstilling til at skjule alle brugerikoner på tværs af hele webstedet.</string>
@@ -539,6 +538,8 @@
   <string name="descPrivateHelp">Tekst som kun holddeltagere vil se. Hvis den er udfyldt, erstatter den for holddeltagere den offentlige beskrivelse.</string>
   <string name="no">Nej</string>
   <string name="yes">Ja</string>
+  <string name="website">Websted</string>
+  <string name="mobile">Mobil</string>
   <string name="help">Hjælp:</string>
   <string name="createANewTopic">Opret et nyt emne</string>
   <string name="topics">Emner</string>
@@ -555,11 +556,11 @@
   <string name="reason">Årsag</string>
   <string name="whatIsIheMatter">Hvad drejer henvendelsen sig om?</string>
   <string name="cheat">Snyd</string>
-  <string name="insult">Fornærmelse</string>
   <string name="troll">Troll</string>
-  <string name="ratingManipulation">Manipulation af rating</string>
   <string name="other">Andet</string>
-  <string name="reportDescriptionHelp">Indsæt et link til partiet (eller partierne) og forklar hvad der er i vejen med brugerens opførsel.</string>
+  <string name="reportCheatBoostHelp">Indsæt linket til partiet (eller partierne) og forklar hvad der er i vejen med brugerens opførsel. Sig ikke blot \"de snyder\", men fortæl os, hvordan du nåede frem til den konklusion.</string>
+  <string name="reportUsernameHelp">Forklar, hvad der er stødende ved dette brugernavn. Sig ikke blot \"det er stødende/upassende\", men fortæl os, hvordan du nåede frem til denne konklusion, især hvis fornærmelsen er sløret, ikke er på engelsk, er slang eller er en historisk/kulturel reference.</string>
+  <string name="reportProcessedFasterInEnglish">Din indberetning vil blive behandlet hurtigere, hvis den er skrevet på engelsk.</string>
   <string name="error.provideOneCheatedGameLink">Angiv mindst ét link til et parti med snyd.</string>
   <string name="by">Af %s</string>
   <string name="importedByX">Importeret af %s</string>
@@ -592,6 +593,7 @@
   <string name="slow">Langsom</string>
   <string name="insideTheBoard">På brættet</string>
   <string name="outsideTheBoard">Uden for brættet</string>
+  <string name="allSquaresOfTheBoard">Alle felter på brættet</string>
   <string name="onSlowGames">I langsomme spil</string>
   <string name="always">Altid</string>
   <string name="never">Aldrig</string>
@@ -786,17 +788,20 @@
   <string name="yourScore">Din score: %s</string>
   <string name="language">Sprog</string>
   <string name="background">Baggrund</string>
-  <string name="light">Lyst</string>
-  <string name="dark">Mørkt</string>
+  <string name="light">Lys</string>
+  <string name="dark">Mørk</string>
   <string name="transparent">Gennemsigtigt</string>
   <string name="deviceTheme">Enhedstema</string>
   <string name="backgroundImageUrl">Baggrundsbillede URL:</string>
-  <string name="boardGeometry">Brætgeometri</string>
-  <string name="boardTheme">Brættema</string>
-  <string name="boardSize">Brætstørrelse</string>
+  <string name="board">Bræt</string>
+  <string name="size">Størrelse</string>
+  <string name="opacity">Uigennemsigtighed</string>
+  <string name="brightness">Lysstyrke</string>
+  <string name="hue">Farvetone</string>
+  <string name="boardReset">Nulstil farver til standard</string>
   <string name="pieceSet">Brikker</string>
   <string name="embedInYourWebsite">Indlejr på din hjemmeside</string>
-  <string name="usernameAlreadyUsed">Dette brugernavn er allerede i brug. Vælg venligst et andet og prøv igen.</string>
+  <string name="usernameAlreadyUsed">Dette brugernavn er allerede i brug. Vælg et andet og prøv igen.</string>
   <string name="usernamePrefixInvalid">Brugernavnet skal begynde med et bogstav.</string>
   <string name="usernameSuffixInvalid">Brugernavnet skal afsluttes med et bogstav eller et tal.</string>
   <string name="usernameCharsInvalid">Brugernavnet må kun indeholde bogstaver, tal, underscore og bindestreger.</string>

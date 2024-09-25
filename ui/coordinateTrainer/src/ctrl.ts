@@ -1,8 +1,9 @@
 import { sparkline } from '@fnando/sparkline';
 import * as xhr from 'common/xhr';
-import { throttlePromiseDelay } from 'common/throttle';
+import { throttlePromiseDelay } from 'common/timing';
+import { trans } from 'common/i18n';
 import { withEffect } from 'common';
-import { makeCtrl as makeVoiceCtrl, VoiceCtrl } from 'voice';
+import { makeVoice, VoiceCtrl } from 'voice';
 import { storedBooleanProp, storedProp } from 'common/storage';
 import { Api as CgApi } from 'chessground/api';
 import {
@@ -14,6 +15,7 @@ import {
   ModeScores,
   Redraw,
 } from './interfaces';
+import { pubsub } from 'common/pubsub';
 
 const orientationFromColorChoice = (colorChoice: ColorChoice): Color =>
   (colorChoice === 'random' ? ['white', 'black'][Math.round(Math.random())] : colorChoice) as Color;
@@ -71,7 +73,7 @@ export default class CoordinateTrainerCtrl {
   score = 0;
   timeAtStart: Date;
   timeLeft = DURATION;
-  trans: Trans = site.trans(this.config.i18n);
+  trans: Trans = trans(this.config.i18n);
   wrong: boolean;
   wrongTimeout: number;
   zen: boolean;
@@ -89,21 +91,20 @@ export default class CoordinateTrainerCtrl {
         }),
     );
 
-    site.pubsub.on('zen', () => {
+    pubsub.on('zen', () => {
       const zen = $('body').toggleClass('zen').hasClass('zen');
       window.dispatchEvent(new Event('resize'));
       setZen(zen);
     });
 
-    $('#zentog').on('click', () => site.pubsub.emit('zen'));
-    site.mousetrap.bind('z', () => site.pubsub.emit('zen'));
+    $('#zentog').on('click', () => pubsub.emit('zen'));
+    site.mousetrap.bind('z', () => pubsub.emit('zen'));
 
     site.mousetrap.bind('enter', () => (this.playing ? null : this.start()));
 
     window.addEventListener('resize', () => requestAnimationFrame(this.updateCharts), true);
-
-    this.voice = makeVoiceCtrl({ redraw: this.redraw, tpe: 'coords' });
-    site.mic.initRecognizer([...'abcdefgh', ...Object.keys(rankWords), 'start', 'stop'], {
+    this.voice = makeVoice({ redraw: this.redraw, tpe: 'coords' });
+    this.voice.mic.initRecognizer([...'abcdefgh', ...Object.keys(rankWords), 'start', 'stop'], {
       partial: true,
       listener: this.onVoice.bind(this),
     });
@@ -180,6 +181,16 @@ export default class CoordinateTrainerCtrl {
 
   onShowCoordinatesChange = (show: boolean) => {
     this.chessground?.set({ coordinates: show });
+    this.chessground?.redrawAll();
+  };
+
+  showCoordsOnAllSquares = withEffect<boolean>(
+    storedBooleanProp('coordinateTrainer.showCoordsOnAllSquares', document.body.classList.contains('kid')),
+    (show: boolean) => this.onShowCoordsOnAllSquaresChange(show),
+  );
+
+  onShowCoordsOnAllSquaresChange = (show: boolean) => {
+    this.chessground?.set({ coordinatesOnSquares: show });
     this.chessground?.redrawAll();
   };
 

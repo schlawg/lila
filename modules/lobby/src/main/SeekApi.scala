@@ -1,9 +1,7 @@
 package lila.lobby
-
-import lila.common.config.*
+import lila.core.perf.UserWithPerfs
 import lila.db.dsl.{ *, given }
 import lila.memo.CacheApi.*
-import lila.core.perf.UserWithPerfs
 
 final class SeekApi(
     userApi: lila.core.user.UserApi,
@@ -58,7 +56,7 @@ final class SeekApi(
       .foldLeft(List.empty[Seek] -> Set.empty[String]) {
         case ((res, h), seek) if seek.user.id == user.id => (seek :: res, h)
         case ((res, h), seek) =>
-          val seekH = List(seek.variant, seek.daysPerTurn, seek.mode, seek.color, seek.user.id).mkString(",")
+          val seekH = List(seek.variant, seek.daysPerTurn, seek.mode, seek.user.id).mkString(",")
           if h contains seekH then (res, h)
           else (seek :: res, h + seekH)
       }
@@ -68,11 +66,13 @@ final class SeekApi(
   def find(id: String): Fu[Option[Seek]] =
     coll.find($id(id)).one[Seek]
 
-  def insert(seek: Seek) =
-    (coll.insert.one(seek) >> findByUser(seek.user.id).flatMap {
-      case seeks if seeks.sizeIs <= maxPerUser.value => funit
-      case seeks                                     => seeks.drop(maxPerUser.value).map(remove).parallel
-    }.void).andDo(cacheClear())
+  def insert(seek: Seek) = for
+    _     <- coll.insert.one(seek)
+    seeks <- findByUser(seek.user.id)
+    _ <-
+      if seeks.sizeIs <= maxPerUser.value then funit
+      else seeks.drop(maxPerUser.value).sequentiallyVoid(remove)
+  yield cacheClear()
 
   def findByUser(userId: UserId): Fu[List[Seek]] =
     coll

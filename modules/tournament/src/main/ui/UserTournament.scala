@@ -3,10 +3,10 @@ package ui
 
 import scalalib.paginator.Paginator
 
-import lila.ui.*
-import ScalatagsTemplate.{ *, given }
-import lila.rating.PerfType
 import lila.core.i18n.Translate
+import lila.ui.*
+
+import ScalatagsTemplate.{ *, given }
 
 final class UserTournament(helpers: Helpers, ui: TournamentUi):
   import helpers.{ *, given }
@@ -164,7 +164,7 @@ final class UserTournament(helpers: Helpers, ui: TournamentUi):
 
   private def page(u: User, title: String, path: String)(using ctx: Context) =
     Page(title)
-      .cssTag("user-tournament")
+      .css("bits.user-tournament")
       .wrap: body =>
         main(cls := "page-menu")(
           lila.ui.bits.pageMenuSubnav(

@@ -127,7 +127,10 @@ function metadata(ctrl: StudyCtrl): VNode {
     title = `${d.name}: ${ctrl.currentChapter().name}`;
   return h('div.study__metadata', [
     h('h2', [
-      h('span.name', { attrs: { title } }, title),
+      h('span.name', { attrs: { title } }, [
+        d.flair && h('img.icon-flair', { attrs: { src: site.asset.flairSrc(d.flair) } }),
+        title,
+      ]),
       h(
         'span.liking.text',
         {
@@ -169,8 +172,7 @@ export function side(ctrl: StudyCtrl, withSearch: boolean): VNode {
 
   const tabs = h('div.tabs-horiz', { attrs: { role: 'tablist' } }, [
     chaptersTab,
-    (ctrl.members.canContribute() || ctrl.data.admin) &&
-      makeTab('members', ctrl.trans.pluralSame('nbMembers', ctrl.members.size())),
+    ctrl.members.size() > 0 && makeTab('members', ctrl.trans.pluralSame('nbMembers', ctrl.members.size())),
     withSearch &&
       h('span.search.narrow', {
         attrs: { ...dataIcon(licon.Search), title: 'Search' },
@@ -191,28 +193,28 @@ export function side(ctrl: StudyCtrl, withSearch: boolean): VNode {
 export function contextMenu(ctrl: StudyCtrl, path: Tree.Path, node: Tree.Node): VNode[] {
   return ctrl.vm.mode.write
     ? [
-        h(
-          'a',
-          {
-            attrs: dataIcon(licon.BubbleSpeech),
-            hook: bind('click', () => {
-              ctrl.vm.toolTab('comments');
-              ctrl.commentForm.start(ctrl.currentChapter().id, path, node);
-            }),
-          },
-          ctrl.trans.noarg('commentThisMove'),
-        ),
-        h(
-          'a.glyph-icon',
-          {
-            hook: bind('click', () => {
-              ctrl.vm.toolTab('glyphs');
-              ctrl.ctrl.userJump(path);
-            }),
-          },
-          ctrl.trans.noarg('annotateWithGlyphs'),
-        ),
-      ]
+      h(
+        'a',
+        {
+          attrs: dataIcon(licon.BubbleSpeech),
+          hook: bind('click', () => {
+            ctrl.vm.toolTab('comments');
+            ctrl.commentForm.start(ctrl.currentChapter().id, path, node);
+          }),
+        },
+        ctrl.trans.noarg('commentThisMove'),
+      ),
+      h(
+        'a.glyph-icon',
+        {
+          hook: bind('click', () => {
+            ctrl.vm.toolTab('glyphs');
+            ctrl.ctrl.userJump(path);
+          }),
+        },
+        ctrl.trans.noarg('annotateWithGlyphs'),
+      ),
+    ]
     : [];
 }
 
@@ -220,16 +222,16 @@ export const overboard = (ctrl: StudyCtrl) =>
   ctrl.chapters.newForm.isOpen()
     ? chapterNewFormView(ctrl.chapters.newForm)
     : ctrl.chapters.editForm.current()
-    ? chapterEditFormView(ctrl.chapters.editForm)
-    : ctrl.members.inviteForm.open()
-    ? inviteFormView(ctrl.members.inviteForm)
-    : ctrl.topics.open()
-    ? topicsFormView(ctrl.topics, ctrl.members.opts.myId)
-    : ctrl.form.open()
-    ? studyFormView(ctrl.form)
-    : ctrl.search.open()
-    ? searchView(ctrl.search)
-    : undefined;
+      ? chapterEditFormView(ctrl.chapters.editForm)
+      : ctrl.members.inviteForm.open()
+        ? inviteFormView(ctrl.members.inviteForm)
+        : ctrl.topics.open()
+          ? topicsFormView(ctrl.topics, ctrl.members.opts.myId)
+          : ctrl.form.open()
+            ? studyFormView(ctrl.form)
+            : ctrl.search.open()
+              ? searchView(ctrl.search)
+              : undefined;
 
 export function underboard(ctrl: AnalyseCtrl): MaybeVNodes {
   if (ctrl.studyPractice) return practiceView.underboard(ctrl.study!);
@@ -246,11 +248,11 @@ export function underboard(ctrl: AnalyseCtrl): MaybeVNodes {
       panel = study.vm.mode.write
         ? commentForm.view(ctrl)
         : commentForm.viewDisabled(
-            ctrl,
-            study.members.canContribute()
-              ? 'Press REC to comment moves'
-              : 'Only the study members can comment on moves',
-          );
+          ctrl,
+          study.members.canContribute()
+            ? 'Press REC to comment moves'
+            : 'Only the study members can comment on moves',
+        );
       break;
     case 'glyphs':
       panel = ctrl.path

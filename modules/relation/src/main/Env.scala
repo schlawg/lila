@@ -5,7 +5,6 @@ import com.softwaremill.macwire.*
 import play.api.Configuration
 
 import lila.common.autoconfig.{ *, given }
-import lila.common.config.*
 import lila.core.config.*
 import lila.db.dsl.Coll
 
@@ -25,7 +24,7 @@ final class Env(
     userApi: lila.core.user.UserApi,
     prefApi: lila.core.pref.PrefApi,
     cacheApi: lila.memo.CacheApi
-)(using Executor, ActorSystem, akka.stream.Materializer):
+)(using Executor, ActorSystem, akka.stream.Materializer, lila.core.config.RateLimit):
 
   private val config = appConfig.get[RelationConfig]("relation")(AutoConfig.loader)
 

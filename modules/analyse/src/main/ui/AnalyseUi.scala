@@ -1,10 +1,11 @@
 package lila.analyse
 package ui
 
-import play.api.libs.json.*
 import chess.variant.*
+import play.api.libs.json.*
 
 import lila.ui.*
+
 import ScalatagsTemplate.{ *, given }
 
 final class AnalyseUi(helpers: Helpers)(externalEngineEndpoint: String):
@@ -16,11 +17,11 @@ final class AnalyseUi(helpers: Helpers)(externalEngineEndpoint: String):
       withForecast: Boolean = false
   )(using ctx: Context) =
     Page(trans.site.analysis.txt())
-      .cssTag("analyse.free")
-      .cssTag((pov.game.variant == Crazyhouse).option("analyse.zh"))
-      .cssTag(withForecast.option("analyse.forecast"))
-      .cssTag(ctx.blind.option("round.nvui"))
-      .cssTag(ctx.pref.hasKeyboardMove.option("keyboardMove"))
+      .css("analyse.free")
+      .css((pov.game.variant == Crazyhouse).option("analyse.zh"))
+      .css(withForecast.option("analyse.forecast"))
+      .css(ctx.blind.option("round.nvui"))
+      .css(ctx.pref.hasKeyboardMove.option("keyboardMove"))
       .csp(csp.compose(_.withExternalAnalysisApis))
       .graph(
         title = "Chess analysis board",
@@ -43,11 +44,16 @@ final class AnalyseUi(helpers: Helpers)(externalEngineEndpoint: String):
                   a(
                     dataIcon := iconByVariant(v),
                     cls      := (pov.game.variant == v).option("current"),
-                    href     := routes.UserAnalysis.parseArg(v.key)
+                    href     := routes.UserAnalysis.parseArg(v.key.value)
                   )(v.name)
                 }
               ),
-              pov.game.variant.standard.option(div(cls := "analyse__wiki"))
+              pov.game.variant.standard.option(
+                fieldset(cls := "analyse__wiki empty toggle-box toggle-box--toggle", id := "wikibook-field")(
+                  legend(tabindex := 0)("WikiBook"),
+                  div(cls := "analyse__wiki-text")
+                )
+              )
             )
           ),
           div(cls := "analyse__board main-board")(chessgroundBoard),
@@ -67,7 +73,7 @@ final class AnalyseUi(helpers: Helpers)(externalEngineEndpoint: String):
 
   object embed:
 
-    def lpvJs(orientation: Option[chess.Color], getPgn: Boolean)(using Translate): WithNonce[Frag] =
+    def lpvJs(orientation: Option[Color], getPgn: Boolean)(using Translate): WithNonce[Frag] =
       lpvJs(lpvConfig(orientation, getPgn))
 
     def lpvJs(lpvConfig: JsObject)(using Translate): WithNonce[Frag] =
@@ -77,7 +83,7 @@ final class AnalyseUi(helpers: Helpers)(externalEngineEndpoint: String):
           )
         )})})""")
 
-    def lpvConfig(orientation: Option[chess.Color], getPgn: Boolean) = Json
+    def lpvConfig(orientation: Option[Color], getPgn: Boolean) = Json
       .obj(
         "menu" -> Json.obj(
           "getPgn" -> Json.obj("enabled" -> getPgn)

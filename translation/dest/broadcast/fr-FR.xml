@@ -23,14 +23,12 @@
   <string name="tournamentDescription">Brève description du tournoi</string>
   <string name="fullDescription">Description complète de l\'événement</string>
   <string name="fullDescriptionHelp">Description détaillée et optionnelle de la diffusion. %1$s est disponible. La longueur doit être inférieure à %2$s caractères.</string>
-  <string name="sourceUrlOrGameIds">URL source ou IDs de parties</string>
+  <string name="sourceSingleUrl">URL source de la partie en PGN</string>
   <string name="sourceUrlHelp">URL que Lichess interrogera pour obtenir les mises à jour du PGN. Elle doit être accessible publiquement depuis Internet.</string>
-  <string name="gameIdsHelp">Vous pouvez également entrer jusqu\'à 64 IDs de parties Lichess séparés par un espace.</string>
+  <string name="sourceGameIds">Jusqu\'à 64 ID de partie Lichess séparés par des espaces.</string>
   <string name="startDate">Date de début dans votre fuseau horaire</string>
   <string name="startDateHelp">Facultatif, si vous savez quand l\'événement commence</string>
   <string name="credits">Créditer la source</string>
-  <string name="broadcastUrl">URL de diffusion</string>
-  <string name="currentRoundUrl">Ronde actuelle</string>
   <string name="currentGameUrl">URL de la partie en cours</string>
   <string name="downloadAllRounds">Télécharger toutes les rondes</string>
   <string name="resetRound">Réinitialiser cette ronde</string>
@@ -40,9 +38,17 @@
   <string name="editRoundStudy">Modifier l\'étude de la ronde</string>
   <string name="deleteTournament">Supprimer ce tournoi</string>
   <string name="definitivelyDeleteTournament">Supprimer définitivement le tournoi, toutes ses rondes et toutes ses parties.</string>
-  <string name="automaticLeaderboard">Classement automatique</string>
-  <string name="automaticLeaderboardHelp">Calculer et afficher un classement sommaire sur la base des résultats des parties</string>
+  <string name="showScores">Afficher les résultats des joueurs en fonction des résultats des parties</string>
   <string name="replacePlayerTags">Facultatif : remplacer les noms des joueurs, les classements et les titres</string>
   <string name="periodInSeconds">Période en secondes</string>
   <string name="periodInSecondsHelp">Facultatif : temps d\'attente entre les requêtes. Min. 2 sec, max. 60 sec. Par défaut automatique selon le nombre de spectateurs.</string>
+  <string name="fideFederations">Fédérations FIDE</string>
+  <string name="top10Rating">10 plus hauts classements</string>
+  <string name="fidePlayers">Joueurs FIDE</string>
+  <string name="fidePlayerNotFound">Joueur FIDE introuvable</string>
+  <string name="fideProfile">Profil FIDE</string>
+  <string name="federation">Fédération</string>
+  <string name="ageThisYear">Âge cette année</string>
+  <string name="unrated">Non classé</string>
+  <string name="recentTournaments">Tournois récents</string>
 </resources>

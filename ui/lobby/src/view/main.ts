@@ -14,11 +14,12 @@ function renderVariant(ctrl: LobbyController) {
   return h('div.lobby__variant', []);
 }
 
-export default function (ctrl: LobbyController) {
+export default function(ctrl: LobbyController) {
   let body,
     data: VNodeData = {},
     cls: string = String(ctrl.tab.primary);
-  if (ctrl.redirecting) body = spinner();
+  const redirBlock = ctrl.redirecting && !ctrl.tab.showingHooks;
+  if (redirBlock) body = spinner();
   else
     switch (ctrl.tab.primary) {
       case 'pools':
@@ -30,8 +31,8 @@ export default function (ctrl: LobbyController) {
           ctrl.tab.active === 'real_time'
             ? renderRealTime(ctrl)
             : ctrl.tab.active === 'variant'
-            ? renderVariant(ctrl)
-            : renderCorrespondence(ctrl);
+              ? renderVariant(ctrl)
+              : renderCorrespondence(ctrl);
         cls = String(ctrl.tab.active);
         break;
       case 'events':
@@ -46,6 +47,6 @@ export default function (ctrl: LobbyController) {
     }
   return h('div.lobby__app.lobby__app-' + ctrl.tab.primary, [
     ...renderTabs(ctrl),
-    h('div.lobby__app__content.l' + (ctrl.redirecting ? 'redir' : cls), data, body),
+    h('div.lobby__app__content.l' + (redirBlock ? 'redir' : cls), data, body),
   ]);
 }

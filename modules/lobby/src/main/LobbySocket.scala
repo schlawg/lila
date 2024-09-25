@@ -1,15 +1,14 @@
 package lila.lobby
 
 import play.api.libs.json.*
+import scalalib.actor.SyncActor
 
 import lila.common.Json.given
-
-import scalalib.actor.SyncActor
+import lila.core.game.ChangeFeatured
+import lila.core.pool.PoolConfigId
+import lila.core.socket.{ protocol as P, * }
 import lila.core.timeline.*
 import lila.rating.RatingRange
-import lila.core.game.ChangeFeatured
-import lila.core.socket.{ protocol as P, * }
-import lila.core.pool.PoolConfigId
 
 case class LobbyCounters(members: Int, rounds: Int)
 
@@ -21,7 +20,7 @@ final class LobbySocket(
     lobby: LobbySyncActor,
     relationApi: lila.core.relation.RelationApi,
     poolApi: lila.core.pool.PoolApi
-)(using ec: Executor, scheduler: Scheduler):
+)(using ec: Executor, scheduler: Scheduler)(using lila.core.config.RateLimit):
 
   import LobbySocket.*
   import Protocol.*
@@ -291,7 +290,7 @@ private object LobbySocket:
       def pairings(pairings: List[lila.core.pool.Pairing]) =
         val redirs = for
           pairing <- pairings
-          color   <- chess.Color.all
+          color   <- Color.all
           sri    = pairing.players(color)._1
           fullId = pairing.players(color)._2
         yield s"$sri:$fullId"

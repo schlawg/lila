@@ -15,9 +15,10 @@ import {
   ChartOptions,
 } from 'chart.js';
 import { currentTheme } from 'common/theme';
-import { gridColor, tooltipBgColor, fontFamily, maybeChart, resizePolyfill } from 'chart';
+import { gridColor, tooltipBgColor, fontFamily, maybeChart, resizePolyfill, colorSeries } from 'chart';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { formatNumber } from './table';
+import { spinnerHtml } from 'common/spinner';
 
 resizePolyfill();
 Chart.register(BarController, CategoryScale, LinearScale, BarElement, Tooltip, Legend, ChartDataLabels);
@@ -30,19 +31,7 @@ const resultColors = {
   Draw: '#007599',
   Defeat: '#dc322f',
 };
-const theme = [
-  '#2b908f',
-  '#90ee7e',
-  '#f45b5b',
-  '#7798BF',
-  '#aaeeee',
-  '#ff0066',
-  '#eeaaee',
-  '#55BF3B',
-  '#DF5353',
-  '#7798BF',
-  '#aaeeee',
-];
+
 const sizeColor = 'rgba(120,120,120,0.2)';
 const tooltipFontColor = light ? '#4d4d4d' : '#cccccc';
 
@@ -96,7 +85,7 @@ function datasetBuilder(d: InsightData) {
   const color = (i: number, name: string, stack: boolean) => {
     if (d.valueYaxis.name == 'Game result') return resultColors[name as 'Victory' | 'Draw' | 'Defeat'];
     else if (!stack && light) return '#7cb5ec';
-    return theme[i % theme.length];
+    return colorSeries[i % colorSeries.length];
   };
   return [
     ...d.series.map((serie, i) =>
@@ -126,15 +115,15 @@ function barBuilder(
       id == 'y2'
         ? { display: false }
         : {
-            color: tooltipFontColor,
-            textStrokeColor: tooltipBgColor,
-            textShadowBlur: 10,
-            textShadowColor: tooltipBgColor,
-            textStrokeWidth: 1.2,
-            font: fontFamily(12, 'bold'),
-            formatter: val =>
-              val == 0 && percent ? '' : formatNumber(serie.dataType, val * (percent ? 100 : 1)),
-          },
+          color: tooltipFontColor,
+          textStrokeColor: tooltipBgColor,
+          textShadowBlur: 10,
+          textShadowColor: tooltipBgColor,
+          textStrokeWidth: 1.2,
+          font: fontFamily(12, 'bold'),
+          formatter: val =>
+            val == 0 && percent ? '' : formatNumber(serie.dataType, val * (percent ? 100 : 1)),
+        },
   };
 }
 
@@ -200,14 +189,14 @@ let chart: InsightChart;
 function chartHook(vnode: VNode, ctrl: Ctrl) {
   const el = vnode.elm as HTMLCanvasElement;
   if (ctrl.vm.loading || !ctrl.vm.answer) {
-    $(el).html(site.spinnerHtml);
+    $(el).html(spinnerHtml);
   } else {
     if (!maybeChart(el)) chart = insightChart(el, ctrl.vm.answer);
     else if (chart) chart.updateData(ctrl.vm.answer);
   }
 }
 
-export default function (ctrl: Ctrl) {
+export default function(ctrl: Ctrl) {
   if (!ctrl.validCombinationCurrent()) return empty('Invalid dimension/metric combination');
   if (!ctrl.vm.answer?.series.length) return empty('No data. Try widening or clearing the filters.');
   return h(

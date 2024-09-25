@@ -1,98 +1,53 @@
-// eslint-disable-next-line
 /// <reference path="./tree.d.ts" />
-
-// eslint-disable-next-line
 /// <reference path="./chessground.d.ts" />
-// eslint-disable-next-line
-/// <reference path="./dialog.d.ts" />
-// eslint-disable-next-line
-/// <reference path="./voice.d.ts" />
-// eslint-disable-next-line
 /// <reference path="./cash.d.ts" />
 
 // file://./../../site/src/site.ts
 interface Site {
   debug: boolean;
-  info: any;
-  StrongSocket: {
-    // file://./../../site/src/socket.ts
-    new (url: string, version: number | false, cfg?: any): any;
-    firstConnect: Promise<(tpe: string, data: any) => void>;
-    defaultParams: Record<string, any>;
+  info: {
+    commit: string;
+    message: string;
+    date: string;
   };
   mousetrap: LichessMousetrap; // file://./../../site/src/mousetrap.ts
-  requestIdleCallback(f: () => void, timeout?: number): void;
   sri: string;
-  storage: LichessStorageHelper;
-  tempStorage: LichessStorageHelper;
-  once(key: string, mod?: 'always'): boolean;
   powertip: LichessPowertip; // file://./../../site/src/powertip.ts
-  clockWidget(el: HTMLElement, opts: { time: number; pause?: boolean }): void;
-  spinnerHtml: string;
   asset: {
-    // file://./../../site/src/assets.ts
+    // file://./../../site/src/asset.ts
     baseUrl(): string;
     url(url: string, opts?: AssetUrlOpts): string;
     flairSrc(flair: Flair): string;
-    loadCss(path: string): Promise<void>;
-    loadCssPath(path: string): Promise<void>;
-    removeCssPath(path: string): void;
+    loadCss(href: string): Promise<void>;
+    loadCssPath(key: string): Promise<void>;
+    removeCss(href: string): void;
+    removeCssPath(key: string): void;
     jsModule(name: string): string;
     loadIife(path: string, opts?: AssetUrlOpts): Promise<void>;
-    loadEsm<T, ModuleOpts = any>(name: string, opts?: { init?: ModuleOpts; url?: AssetUrlOpts }): Promise<T>;
-    userComplete(opts: UserCompleteOpts): Promise<UserComplete>;
+    loadEsm<T>(key: string, opts?: EsmModuleOpts): Promise<T>;
   };
-  idleTimer(delay: number, onIdle: () => void, onWakeUp: () => void): void;
-  pubsub: Pubsub; // file://./../../site/src/pubsub.ts
   unload: { expected: boolean };
   redirect(o: RedirectTo, beep?: boolean): void;
-  reload(): void;
-  watchers(el: HTMLElement): void;
-  escapeHtml(str: string): string;
+  reload(err?: any): void;
   announce(d: LichessAnnouncement): void;
-  trans(i18n: I18nDict): Trans;
+  trans: Trans; // file://./../../common/src/i18n.ts
   sound: SoundI; // file://./../../site/src/sound.ts
-  mic: Voice.Microphone; // file://./../../site/src/mic.ts
-  miniBoard: {
-    // file://./../../common/src/miniBoard.ts
-    init(node: HTMLElement): void;
-    initAll(parent?: HTMLElement): void;
-  };
-  miniGame: {
-    // file://./../../site/src/miniGame.ts
-    init(node: HTMLElement): string | null;
-    initAll(parent?: HTMLElement): void;
-    update(node: HTMLElement, data: MiniGameUpdateData): void;
-    finish(node: HTMLElement, win?: Color): void;
-  };
-  timeago(date: number | Date): string;
-  dateFormat: () => (date: Date) => string;
-  contentLoaded(parent?: HTMLElement): void;
+  displayLocale: string; // file://./../../common/src/i18n.ts
   blindMode: boolean;
-  makeChat(data: any): any;
-  makeChessground(el: HTMLElement, config: CgConfig): CgApi;
-  log: LichessLog; // file://./../../site/src/log.ts
-  dialog: {
-    // file://./../../site/src/dialog.ts
-    ready: Promise<boolean>;
-    dom(opts: DomDialogOpts): Promise<Dialog>;
-    snab(opts: SnabDialogOpts): _Snabbdom.VNode;
-  };
 
-  // the remaining are not set in site.lichess.globals.ts
+  // the following are not set in site.ts
   load: Promise<void>; // DOMContentLoaded promise
   quantity(n: number): 'zero' | 'one' | 'few' | 'many' | 'other';
   siteI18n: I18nDict;
-  socket: any;
+  socket: SocketI;
   quietMode?: boolean;
   analysis?: any; // expose the analysis ctrl
-  manifest: { css: Record<string, string>; js: Record<string, string> };
+  manifest: { css: Record<string, string>; js: Record<string, string>; hashed: Record<string, string> };
 }
 
-interface LichessLog {
-  (...args: any[]): Promise<void>;
-  clear(): Promise<void>;
-  get(): Promise<string>;
+interface EsmModuleOpts extends AssetUrlOpts {
+  init?: any;
+  npm?: boolean;
 }
 
 type PairOf<T> = [T, T];
@@ -103,8 +58,6 @@ type I18nKey = string;
 type Flair = string;
 
 type RedirectTo = string | { url: string; cookie: Cookie };
-
-type UserComplete = (opts: UserCompleteOpts) => void;
 
 interface LichessMousetrap {
   // file://./../../site/src/mousetrap.ts
@@ -124,19 +77,6 @@ interface LichessPowertip {
   manualUserIn(parent: HTMLElement): void;
 }
 
-interface UserCompleteOpts {
-  input: HTMLInputElement;
-  tag?: 'a' | 'span';
-  minLength?: number;
-  populate?: (result: LightUser) => string;
-  onSelect?: (result: LightUser) => void;
-  focus?: boolean;
-  friend?: boolean;
-  tour?: string;
-  swiss?: string;
-  team?: string;
-}
-
 interface QuestionChoice {
   // file://./../../round/src/ctrl.ts
   action: () => void;
@@ -150,21 +90,26 @@ interface QuestionOpts {
   no?: QuestionChoice;
 }
 
-type SoundMove = (opts?: {
-  // file://./../../site/src/sound.ts
+type SoundMoveOpts = {
   name?: string; // either provide this or valid san/uci
   san?: string;
   uci?: string;
-  filter?: 'music' | 'game'; // undefined allows either
-}) => void;
+  volume?: number;
+  filter?: 'music' | 'game';
+};
+
+type SoundMove = (opts?: SoundMoveOpts) => void;
+
+type SoundListener = (event: 'start' | 'stop', text?: string) => void;
 
 interface SoundI {
   // file://./../../site/src/sound.ts
-  ctx?: AudioContext;
-  load(name: string, path?: string): void;
+  listeners: Set<SoundListener>;
+  theme: string;
+  move: SoundMove;
+  load(name: string, path?: string): Promise<any>;
   play(name: string, volume?: number): Promise<void>;
   playOnce(name: string): void;
-  move: SoundMove;
   countdown(count: number, intervalMs?: number): Promise<void>;
   getVolume(): number;
   setVolume(v: number): void;
@@ -174,8 +119,16 @@ interface SoundI {
   saySan(san?: San, cut?: boolean): void;
   sayOrPlay(name: string, text: string): void;
   preloadBoardSounds(): void;
-  theme: string;
-  baseUrl: string;
+  url(name: string): string;
+}
+
+interface SocketI {
+  averageLag: number;
+  pingInterval(): number;
+  getVersion(): number|false;
+  send: SocketSend;
+  sign(s: string): void;
+  destroy(): void;
 }
 
 interface LichessSpeech {
@@ -189,9 +142,9 @@ interface Cookie {
 }
 
 interface AssetUrlOpts {
-  sameDomain?: boolean;
-  noVersion?: boolean;
-  version?: string;
+  documentOrigin?: boolean;
+  pathOnly?: boolean;
+  version?: false | string;
 }
 
 type Timeout = ReturnType<typeof setTimeout>;
@@ -201,7 +154,7 @@ declare type SocketSend = (type: string, data?: any, opts?: any, noRetry?: boole
 type TransNoArg = (key: string) => string;
 
 interface Trans {
-  // file://./../../site/src/trans.ts
+  // file://./../../common/src/i18n.ts
   (key: string, ...args: Array<string | number>): string;
   noarg: TransNoArg;
   plural(key: string, count: number, ...args: Array<string | number>): string;
@@ -210,91 +163,9 @@ interface Trans {
   vdomPlural<T>(key: string, count: number, countArg: T, ...args: T[]): Array<string | T>;
 }
 
-type PubsubCallback = (...data: any[]) => void;
-
-interface Pubsub {
-  // file://./../../site/src/pubsub.ts
-  on(msg: string, f: PubsubCallback): void;
-  off(msg: string, f: PubsubCallback): void;
-  emit(msg: string, ...args: any[]): void;
-}
-
-interface LichessStorageHelper {
-  make(k: string, ttl?: number): LichessStorage;
-  boolean(k: string): LichessBooleanStorage;
-  get(k: string): string | null;
-  set(k: string, v: string): void;
-  fire(k: string, v?: string): void;
-  remove(k: string): void;
-}
-
-interface LichessStorage {
-  get(): string | null;
-  set(v: any): void;
-  remove(): void;
-  listen(f: (e: LichessStorageEvent) => void): void;
-  fire(v?: string): void;
-}
-
-interface LichessBooleanStorage {
-  get(): boolean;
-  getOrDefault(defaultValue: boolean): boolean;
-  set(v: boolean): void;
-  toggle(): void;
-}
-
-interface LichessStorageEvent {
-  sri: string;
-  nonce: number;
-  value?: string;
-}
-
 interface LichessAnnouncement {
   msg?: string;
   date?: string;
-}
-
-interface LichessEditor {
-  getFen(): CgFEN;
-  setOrientation(o: Color): void;
-}
-
-declare namespace Editor {
-  // file://./../../editor/src/ctrl.ts
-  export interface Config {
-    el: HTMLElement;
-    baseUrl: string;
-    fen?: string;
-    options?: Editor.Options;
-    is3d: boolean;
-    animation: {
-      duration: number;
-    };
-    embed: boolean;
-    positions?: OpeningPosition[];
-    endgamePositions?: EndgamePosition[];
-    i18n: I18nDict;
-  }
-
-  export interface Options {
-    orientation?: Color;
-    onChange?: (fen: string) => void;
-    inlineCastling?: boolean;
-    coordinates?: boolean;
-  }
-
-  export interface OpeningPosition {
-    eco?: string;
-    name: string;
-    fen: string;
-    epd?: string;
-  }
-
-  export interface EndgamePosition {
-    name: string;
-    fen: string;
-    epd?: string;
-  }
 }
 
 type Nvui = (redraw: () => void) => {
@@ -310,8 +181,6 @@ interface Window {
   readonly Stripe: any;
   readonly Textcomplete: any;
   readonly UserComplete: any;
-  readonly Sortable: any;
-  readonly Peer: any;
   readonly Tagify: unknown;
   readonly paypalOrder: unknown;
   readonly paypalSubscription: unknown;
@@ -359,22 +228,7 @@ declare type VariantKey =
 
 declare type Speed = 'ultraBullet' | 'bullet' | 'blitz' | 'rapid' | 'classical' | 'correspondence';
 
-declare type Perf =
-  | 'ultraBullet'
-  | 'bullet'
-  | 'blitz'
-  | 'rapid'
-  | 'classical'
-  | 'correspondence'
-  | 'chess960'
-  | 'antichess'
-  | 'fromPosition'
-  | 'kingOfTheHill'
-  | 'threeCheck'
-  | 'atomic'
-  | 'horde'
-  | 'racingKings'
-  | 'crazyhouse';
+declare type Perf = Exclude<VariantKey, 'standard'> | Speed;
 
 declare type Color = 'white' | 'black';
 
@@ -384,6 +238,9 @@ declare type Key = 'a0' | `${Files}${Ranks}`;
 declare type Uci = string;
 declare type San = string;
 declare type Ply = number;
+declare type Seconds = number;
+declare type Centis = number;
+declare type Millis = number;
 
 interface Variant {
   key: VariantKey;
@@ -405,13 +262,6 @@ interface Paginator<A> {
 interface EvalScore {
   cp?: number;
   mate?: number;
-}
-
-interface MiniGameUpdateData {
-  fen: CgFEN;
-  lm: Uci;
-  wc?: number;
-  bc?: number;
 }
 
 interface CashStatic {
@@ -462,5 +312,4 @@ interface Dictionary<T> {
 type SocketHandlers = Dictionary<(d: any) => void>;
 
 declare const site: Site;
-declare const $as: <T>(cashOrHtml: Cash | string) => T;
 declare module 'tablesort';

@@ -1,10 +1,12 @@
 import * as licon from 'common/licon';
 import { bind, onInsert } from 'common/snabbdom';
 import { spinnerVdom, chartSpinner } from 'common/spinner';
+import { requestIdleCallback } from 'common';
 import { h, VNode } from 'snabbdom';
 import AnalyseCtrl from '../ctrl';
 import { ChartGame, AcplChart } from 'chart';
 import { AnalyseData } from '../interfaces';
+import { pubsub } from 'common/pubsub';
 
 export default class ServerEval {
   requested = false;
@@ -14,7 +16,7 @@ export default class ServerEval {
     readonly root: AnalyseCtrl,
     readonly chapterId: () => string,
   ) {
-    site.pubsub.on('analysis.server.progress', this.updateChart);
+    pubsub.on('analysis.server.progress', this.updateChart);
   }
 
   reset = () => {
@@ -40,7 +42,7 @@ export function view(ctrl: ServerEval): VNode {
   const mainline = ctrl.requested ? ctrl.root.data.treeParts : ctrl.analysedMainline();
   const chart = h('canvas.study__server-eval.ready.' + analysis.id, {
     hook: onInsert(el => {
-      site.requestIdleCallback(async () => {
+      requestIdleCallback(async() => {
         (await site.asset.loadEsm<ChartGame>('chart.game'))
           .acpl(el as HTMLCanvasElement, ctrl.root.data, mainline, ctrl.root.trans)
           .then(chart => (ctrl.chart = chart));
@@ -65,8 +67,8 @@ function requestButton(ctrl: ServerEval) {
     root.mainline.length < 5
       ? h('p', noarg('theChapterIsTooShortToBeAnalysed'))
       : !root.study!.members.canContribute()
-      ? [noarg('onlyContributorsCanRequestAnalysis')]
-      : [
+        ? [noarg('onlyContributorsCanRequestAnalysis')]
+        : [
           h('p', [noarg('getAFullComputerAnalysis'), h('br'), noarg('makeSureTheChapterIsComplete')]),
           h(
             'a.button.text',

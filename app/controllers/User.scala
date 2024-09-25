@@ -5,25 +5,20 @@ import play.api.http.ContentTypes
 import play.api.libs.EventSource
 import play.api.libs.json.*
 import play.api.mvc.*
+import scalalib.paginator.Paginator
 import scalatags.Text.Frag
 
-import scala.language.existentials
-import scala.util.chaining.*
-
-import lila.game.{ GameFilter, GameFilterMenu }
 import lila.app.{ *, given }
-import scalalib.paginator.Paginator
 import lila.common.HTTPRequest
-import lila.mod.UserWithModlog
-import lila.security.UserLogins
-import lila.user.WithPerfsAndEmails
-
-import lila.rating.PerfType
-import lila.core.net.IpAddress
+import lila.common.Json.given
 import lila.core.user.LightPerf
 import lila.core.userId.UserSearch
+import lila.game.GameFilter
+import lila.mod.UserWithModlog
+import lila.rating.PerfType
 import lila.rating.UserPerfsExt.best8Perfs
-import lila.core.perf.PerfKeyStr
+import lila.security.UserLogins
+import lila.user.WithPerfsAndEmails
 
 final class User(
     override val env: Env,
@@ -39,7 +34,7 @@ final class User(
   def tv(username: UserStr) = Open:
     Found(meOrFetch(username)): user =>
       currentlyPlaying(user).orElse(lastPlayed(user)).flatMap {
-        _.fold(fuccess(Redirect(routes.User.show(username.value)))): pov =>
+        _.fold(fuccess(Redirect(routes.User.show(username)))): pov =>
           ctx.me.filterNot(_ => pov.game.bothPlayersHaveMoved).flatMap { Pov(pov.game, _) } match
             case Some(mine) => Redirect(routes.Round.player(mine.fullId))
             case _          => roundC.watch(pov, userTv = user.some)
@@ -60,7 +55,7 @@ final class User(
     }
 
   private[controllers] val userShowRateLimit =
-    env.security.ipTrust.rateLimit(10_000, 1.day, "user.show.ip", _.proxyMultiplier(2))
+    env.security.ipTrust.rateLimit(10_000, 1.day, "user.show.ip", _.proxyMultiplier(3))
 
   def show(username: UserStr) = OpenBody:
     EnabledUser(username): u =>
@@ -68,6 +63,12 @@ final class User(
         renderShow(u),
         apiGames(u, GameFilter.All.name, 1)
       )
+
+  def search(term: String) = Open: _ ?=>
+    UserStr.read(term) match
+      case Some(username)                  => Redirect(routes.User.show(username)).toFuccess
+      case _ if isGrantedOpt(_.UserSearch) => Redirect(s"${routes.Mod.search}?q=$term").toFuccess
+      case _                               => notFound
 
   private def renderShow(u: UserModel, status: Results.Status = Results.Ok)(using Context): Fu[Result] =
     if HTTPRequest.isSynchronousHttp(ctx.req)
@@ -146,48 +147,51 @@ final class User(
     if username.id.isGhost
     then
       negotiate(
-        Ok.page(views.site.ui.ghost),
+        Ok.page(views.user.show.page.deleted(false)),
         notFoundJson("Deleted user")
       )
     else
+      def notFound(canCreate: Boolean) = negotiate(
+        NotFound.page(views.user.show.page.deleted(canCreate)),
+        NotFound(jsonError("No such player, or account closed"))
+      )
       meOrFetch(username).flatMap:
-        case None if isGrantedOpt(_.UserModView) =>
-          ctx.me.soUse(modC.searchTerm(username.value))
-        case None                                                    => notFound
+        case None =>
+          env.api.anySearch
+            .redirect(username.value)
+            .flatMap:
+              case Some(url)                           => Redirect(url).toFuccess
+              case None if isGrantedOpt(_.UserModView) => ctx.me.soUse(modC.searchTerm(username.value))
+              case None                                => notFound(true)
         case Some(u) if u.enabled.yes || isGrantedOpt(_.UserModView) => f(u)
-        case Some(u) =>
-          negotiate(
-            env.user.repo.isErased(u).flatMap { erased =>
-              if erased.yes then notFound
-              else NotFound.page(views.user.show.page.disabled(u))
-            },
-            NotFound(jsonError("No such user, or account closed"))
-          )
+        case u                                                       => notFound(u.isEmpty)
   def showMini(username: UserStr) = Open:
     Found(env.user.api.withPerfs(username)): user =>
-      if user.enabled.yes || isGrantedOpt(_.UserModView)
-      then
-        (
-          ctx.userId.so(relationApi.fetchBlocks(user.id, _)),
-          ctx.userId.soFu(env.game.crosstableApi(user.id, _)),
-          ctx.isAuth.so(env.pref.api.followable(user.id)),
-          ctx.userId.so(relationApi.fetchRelation(_, user.id))
-        ).flatMapN: (blocked, crosstable, followable, relation) =>
-          val ping = env.socket.isOnline(user.id).so(env.socket.getLagRating(user.id))
-          negotiate(
-            html = (ctx.isnt(user)).so(currentlyPlaying(user.user)).flatMap { pov =>
-              Ok.snip(views.user.mini(user, pov, blocked, followable, relation, ping, crosstable))
-                .map(_.withHeaders(CACHE_CONTROL -> "max-age=5"))
-            },
-            json =
-              import lila.game.JsonView.given
-              Ok:
-                Json.obj(
-                  "crosstable" -> crosstable,
-                  "perfs"      -> lila.user.JsonView.perfsJson(user.perfs, user.perfs.best8Perfs)
-                )
-          )
-      else Ok(views.user.bits.miniClosed(user.user))
+      ctx.userId
+        .so(relationApi.fetchRelation(_, user.id))
+        .flatMap: relation =>
+          if user.enabled.yes || isGrantedOpt(_.UserModView)
+          then
+            (
+              ctx.userId.so(relationApi.fetchBlocks(user.id, _)),
+              ctx.userId.soFu(env.game.crosstableApi(user.id, _)),
+              ctx.isAuth.so(env.pref.api.followable(user.id))
+            ).flatMapN: (blocked, crosstable, followable) =>
+              val ping = env.socket.isOnline(user.id).so(env.socket.getLagRating(user.id))
+              negotiate(
+                html = (ctx.isnt(user)).so(currentlyPlaying(user.user)).flatMap { pov =>
+                  Ok.snip(views.user.mini(user, pov, blocked, followable, relation, ping, crosstable))
+                    .map(_.withHeaders(CACHE_CONTROL -> "max-age=5"))
+                },
+                json =
+                  import lila.game.JsonView.given
+                  Ok:
+                    Json.obj(
+                      "crosstable" -> crosstable,
+                      "perfs"      -> lila.user.JsonView.perfsJson(user.perfs, user.perfs.best8Perfs)
+                    )
+              )
+          else Ok(views.user.bits.miniClosed(user.user, relation))
 
   def online = Anon:
     val max = 50
@@ -200,7 +204,7 @@ final class User(
               .map: u =>
                 env.user.jsonView.full(u.user, u.perfs.some, withProfile = true)
 
-  def ratingHistory(username: UserStr) = OpenBody:
+  def ratingHistory(username: UserStr) = Open:
     EnabledUser(username): u =>
       env.history
         .ratingChartApi(u)
@@ -219,18 +223,12 @@ final class User(
       .lastPlayed(user)
       .flatMap(_.soFu(env.round.proxyRepo.upgradeIfPresent))
 
-  private val UserGamesRateLimitPerIP = lila.memo.RateLimit[IpAddress](
-    credits = 500,
-    duration = 10.minutes,
-    key = "user_games.web.ip"
-  )
-
   private def userGames(
       u: UserModel,
       filterName: String,
       page: Int
   )(using ctx: BodyContext[?]): Fu[Paginator[GameModel]] =
-    UserGamesRateLimitPerIP(
+    limit.userGames(
       ctx.ip,
       fuccess(Paginator.empty[GameModel]),
       cost = page,
@@ -276,29 +274,26 @@ final class User(
       JsonOk(leaderboards)
     }
 
-  def topNb(nb: Int, perfKey: PerfKeyStr) = Open:
-    Found(topNbUsers(nb, perfKey)): (users, perfType) =>
+  def topNb(nb: Int, perfKey: PerfKey) = Open:
+    topNbUsers(nb, perfKey).flatMap: (users, perfType) =>
       negotiate(
         (nb == 200).so(Ok.page(views.user.list.top(perfType, users))),
         topNbJson(users)
       )
 
-  def topNbApi(nb: Int, perfKey: PerfKeyStr) = Anon:
-    if nb == 1 && perfKey == PerfKeyStr("standard") then
+  def topNbApi(nb: Int, perfKey: PerfKey) = Anon:
+    if nb == 1 && perfKey == PerfKey.standard then
       env.user.cached.top10.get {}.map { leaderboards =>
         import env.user.jsonView.lightPerfIsOnlineWrites
         import lila.user.JsonView.leaderboardStandardTopOneWrites
         JsonOk(leaderboards)
       }
-    else Found(topNbUsers(nb, perfKey)) { users => topNbJson(users._1) }
+    else topNbUsers(nb, perfKey).flatMap { users => topNbJson(users._1) }
 
-  private def topNbUsers(nb: Int, perfKey: PerfKeyStr) =
-    PerfKey
-      .read(perfKey)
-      .soFu: perfKey =>
-        env.user.cached.top200Perf.get(PerfType(perfKey).id).dmap {
-          _.take(nb.atLeast(1).atMost(200)) -> PerfType(perfKey)
-        }
+  private def topNbUsers(nb: Int, perfKey: PerfKey): Fu[(List[LightPerf], PerfType)] =
+    env.user.cached.top200Perf.get(perfKey.id).dmap {
+      _.take(nb.atLeast(1).atMost(200)) -> PerfType(perfKey)
+    }
 
   private def topNbJson(users: List[LightPerf]) =
     given OWrites[LightPerf] = OWrites(env.user.jsonView.lightPerfIsOnline)
@@ -374,13 +369,12 @@ final class User(
 
         val student = env.clas.api.student.findManaged(user).map2(views.user.mod.student).dmap(~_)
 
-        val reportLog = isGranted(_.SeeReport).so(
+        val reportLog = isGranted(_.SeeReport).so:
           env.report.api
-            .byAndAbout(user, 20)
+            .byAndAbout(user, Max(20))
             .flatMap: rs =>
               lightUserApi.preloadMany(rs.userIds).inject(rs)
             .map(ui.reportLog(user))
-        )
 
         val prefs = isGranted(_.CheatHunter).so:
           env.pref.api
@@ -400,14 +394,17 @@ final class User(
         }
 
         val userLoginsFu = env.security.userLogins(user, nbOthers)
-        val others = for
+        val othersAndLogins = for
           userLogins <- userLoginsFu
           appeals    <- env.appeal.api.byUserIds(user.id :: userLogins.otherUserIds)
           data       <- loginsTableData(user, userLogins, nbOthers)
-        yield views.user.mod.otherUsers(me, user, data, appeals)
+        yield (views.user.mod.otherUsers(me, user, data, appeals), data)
 
-        val identification = userLoginsFu.map: logins =>
-          isGranted(_.ViewPrintNoIP).so(views.user.mod.identification(logins))
+        val identification = isGranted(_.ViewPrintNoIP).so:
+          for
+            logins <- userLoginsFu
+            others <- othersAndLogins
+          yield views.user.mod.identification(logins, others._2.othersPartiallyLoaded)
 
         val kaladin = isGranted(_.MarkEngine).so(env.irwin.kaladinApi.get(user).map {
           _.flatMap(_.response).so(views.irwin.kaladin.report)
@@ -438,7 +435,7 @@ final class User(
             .merge(modZoneSegment(reportLog, "reportLog", user))
             .merge(modZoneSegment(prefs, "prefs", user))
             .merge(modZoneSegment(rageSit, "rageSit", user))
-            .merge(modZoneSegment(others, "others", user))
+            .merge(modZoneSegment(othersAndLogins.map(_._1), "others", user))
             .merge(modZoneSegment(identification, "identification", user))
             .merge(modZoneSegment(kaladin, "kaladin", user))
             .merge(modZoneSegment(irwin, "irwin", user))
@@ -465,23 +462,21 @@ final class User(
     }
 
   def writeNote(username: UserStr) = AuthBody { ctx ?=> me ?=>
-    lila.user.UserForm.note
-      .bindFromRequest()
-      .fold(
-        err => BadRequest(err.errors.toString).toFuccess,
-        data =>
-          doWriteNote(username, data): user =>
-            if getBool("inquiry") then
-              Ok.snipAsync:
-                env.user.noteApi.byUserForMod(user.id).map {
-                  views.mod.inquiry.ui.noteZone(user, _)
-                }
-            else
-              Ok.snipAsync:
-                env.socialInfo.fetchNotes(user).map {
-                  views.user.noteUi.zone(user, _)
-                }
-      )
+    bindForm(lila.user.UserForm.note)(
+      err => BadRequest(err.errors.toString).toFuccess,
+      data =>
+        doWriteNote(username, data): user =>
+          if getBool("inquiry") then
+            Ok.snipAsync:
+              env.user.noteApi.byUserForMod(user.id).map {
+                views.mod.inquiry.ui.noteZone(user, _)
+              }
+          else
+            Ok.snipAsync:
+              env.socialInfo.fetchNotes(user).map {
+                views.user.noteUi.zone(user, _)
+              }
+    )
   }
 
   def apiReadNote(username: UserStr) = Scoped() { _ ?=> me ?=>
@@ -495,9 +490,10 @@ final class User(
   }
 
   def apiWriteNote(username: UserStr) = ScopedBody() { ctx ?=> me ?=>
-    lila.user.UserForm.apiNote
-      .bindFromRequest()
-      .fold(doubleJsonFormError, data => doWriteNote(username, data)(_ => jsonOkResult))
+    bindForm(lila.user.UserForm.apiNote)(
+      doubleJsonFormError,
+      data => doWriteNote(username, data)(_ => jsonOkResult)
+    )
   }
 
   private def doWriteNote(
@@ -539,7 +535,7 @@ final class User(
         relateds <-
           ops
             .zip(followables)
-            .traverse { case ((u, nb), followable) =>
+            .sequentially { case ((u, nb), followable) =>
               relationApi
                 .fetchRelation(user.id, u.id)
                 .map:
@@ -549,7 +545,7 @@ final class User(
       yield Ok(page)
   }
 
-  def perfStat(username: UserStr, perfKey: PerfKeyStr) = Open:
+  def perfStat(username: UserStr, perfKey: PerfKey) = Open:
     Found(env.perfStat.api.data(username, perfKey)): data =>
       negotiate(
         Ok.async:
@@ -612,8 +608,8 @@ final class User(
             else fuccess(Json.toJson(userIds))
           }.map(JsonOk)
 
-  def ratingDistribution(perfKey: PerfKeyStr, username: Option[UserStr] = None) = Open:
-    Found(PerfKey.read(perfKey).filter(lila.rating.PerfType.isLeaderboardable)): perfKey =>
+  def ratingDistribution(perfKey: PerfKey, username: Option[UserStr] = None) = Open:
+    Found(perfKey.some.filter(lila.rating.PerfType.isLeaderboardable)): perfKey =>
       env.perfStat.api
         .weeklyRatingDistribution(perfKey)
         .flatMap: data =>
@@ -631,9 +627,9 @@ final class User(
     Redirect(routes.User.show(me.username))
   }
 
-  def redirect(username: UserStr) = Open:
-    staticRedirect(username.value) |
-      tryRedirect(username).getOrElse(notFound)
+  def redirect(path: String) = Open:
+    staticRedirect(path) |
+      UserStr.read(path).so(tryRedirect).getOrElse(notFound)
 
   def tryRedirect(username: UserStr)(using Context): Fu[Option[Result]] =
     meOrFetch(username).map:

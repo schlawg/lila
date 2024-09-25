@@ -1,10 +1,11 @@
 package lila.user
 package ui
 
-import lila.ui.*
-import ScalatagsTemplate.{ *, given }
-import lila.core.perf.{ UserWithPerfs, KeyedPerf }
+import lila.core.perf.UserWithPerfs
 import lila.core.user.Flag
+import lila.ui.*
+
+import ScalatagsTemplate.{ *, given }
 
 final class UserShow(helpers: Helpers, bits: UserBits):
   import helpers.{ *, given }
@@ -39,7 +40,7 @@ final class UserShow(helpers: Helpers, bits: UserBits):
         div(cls := "upt__info__top")(
           userLink(u, withPowerTip = false),
           flag.map: c =>
-            val titleNameSize      = u.title.fold(0)(_.value.length + 1) + u.username.length
+            val titleNameSize      = u.title.fold(0)(_.value.length + 1) + u.username.value.length
             val hasRoomForNameText = titleNameSize + c.shortName.length < 21
             span(
               cls   := "upt__info__top__flag",
@@ -88,19 +89,12 @@ final class UserShow(helpers: Helpers, bits: UserBits):
           ),
           crosstable(myId)
         ),
-      Granter
-        .opt(_.UserModView)
-        .option(
-          div(cls := "upt__mod")(
-            span(
-              trans.site.nbGames.plural(u.count.game, u.count.game.localize),
-              " ",
-              momentFromNowOnce(u.createdAt)
-            ),
-            (u.lameOrTroll || u.enabled.no)
-              .option(span(cls := "upt__mod__marks")(userMarks))
-          )
-        ),
+      div(cls := "upt__details")(
+        span(trans.site.nbGames.plural(u.count.game, u.count.game.localize)),
+        span("joined ", momentFromNowServerText(u.createdAt)),
+        (Granter.opt(_.UserModView) && (u.lameOrTroll || u.enabled.no || u.marks.rankban))
+          .option(span(cls := "upt__details__marks")(userMarks))
+      ),
       playing
     )
 

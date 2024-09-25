@@ -3,15 +3,19 @@ import PgnViewer from 'lichess-pgn-viewer/pgnViewer';
 import { Opts as LpvOpts } from 'lichess-pgn-viewer/interfaces';
 import { text as xhrText } from 'common/xhr';
 
-export default async function (opts?: { el: HTMLElement; url: string; lpvOpts: LpvOpts }) {
+export default async function(opts?: {
+  el: HTMLElement;
+  url: string;
+  lpvOpts: LpvOpts;
+}): Promise<PgnViewer | undefined> {
   return opts ? loadPgnAndStart(opts.el, opts.url, opts.lpvOpts) : autostart();
 }
 
 function autostart() {
-  $('.lpv--autostart').each(function (this: HTMLElement) {
+  $('.lpv--autostart').each(function(this: HTMLElement) {
     const pgn = this.dataset['pgn']!.replace(/<br>/g, '\n');
     const gamebook = pgn.includes('[ChapterMode "gamebook"]');
-    site.asset.loadCssPath('lpv').then(() => {
+    site.asset.loadCssPath('bits.lpv').then(() => {
       const config: Partial<LpvOpts> = {
         pgn,
         orientation: this.dataset['orientation'] as Color | undefined,
@@ -19,12 +23,12 @@ function autostart() {
         initialPly: (this.dataset['ply'] as number | 'last') ?? (gamebook ? 0 : 'last'),
         ...(gamebook
           ? {
-              showPlayers: false,
-              showClocks: false,
-              showMoves: false,
-              showControls: false,
-              scrollToMove: false,
-            }
+            showPlayers: false,
+            showClocks: false,
+            showMoves: false,
+            showControls: false,
+            scrollToMove: false,
+          }
           : {}),
       };
       const lpv = Lpv(this, config);
@@ -35,7 +39,7 @@ function autostart() {
 }
 
 async function loadPgnAndStart(el: HTMLElement, url: string, opts: LpvOpts) {
-  await site.asset.loadCssPath('lpv');
+  await site.asset.loadCssPath('bits.lpv');
   const pgn = await xhrText(url, {
     headers: {
       Accept: 'application/x-chess-pgn',

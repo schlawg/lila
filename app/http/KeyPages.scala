@@ -3,7 +3,6 @@ package http
 
 import play.api.libs.json.Json
 import play.api.mvc.*
-import scalatags.Text.all.Frag
 
 import lila.app.{ *, given }
 import lila.memo.CacheApi.*
@@ -39,8 +38,11 @@ final class KeyPages(val env: Env)(using Executor)
           lila.mon.chronoSync(_.lobby.segment("renderSync")):
             views.lobby.home(h)
 
-  def notFound(using Context): Fu[Result] =
-    NotFound.page(views.base.notFound)
+  def notFound(msg: Option[String])(using Context): Fu[Result] =
+    NotFound.page(views.base.notFound(msg))
+
+  def notFoundEmbed(msg: Option[String])(using EmbedContext): Result =
+    NotFound.snip(views.base.notFoundEmbed(msg))
 
   def blacklisted(using ctx: Context): Result =
     if lila.security.Mobile.Api.requested(ctx.req) then

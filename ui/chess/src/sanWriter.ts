@@ -1,3 +1,5 @@
+import { Square } from 'chessops';
+
 export type Board = { pieces: { [key: number]: string }; turn: boolean };
 export type SanToUci = { [key: string]: Uci };
 
@@ -9,11 +11,11 @@ function decomposeUci(uci: string) {
   return [uci.slice(0, 2), uci.slice(2, 4), uci.slice(4, 5)];
 }
 
-export function square(name: string) {
+export function square(name: string): Square {
   return name.charCodeAt(0) - 97 + (name.charCodeAt(1) - 49) * 8;
 }
 
-export function squareDist(a: number, b: number) {
+export function squareDist(a: number, b: number): number {
   const x1 = a & 7,
     x2 = b & 7;
   const y1 = a >> 3,
@@ -25,7 +27,7 @@ function isBlack(p: string) {
   return p === p.toLowerCase();
 }
 
-export function readFen(fen: string) {
+export function readFen(fen: string): Board {
   const parts = fen.split(' '),
     board: Board = {
       pieces: {},
@@ -52,13 +54,13 @@ export function readFen(fen: string) {
 }
 
 function kingMovesTo(s: number) {
-  return [s - 1, s - 9, s - 8, s - 7, s + 1, s + 9, s + 8, s + 7].filter(function (o) {
+  return [s - 1, s - 9, s - 8, s - 7, s + 1, s + 9, s + 8, s + 7].filter(function(o) {
     return o >= 0 && o < 64 && squareDist(s, o) === 1;
   });
 }
 
 function knightMovesTo(s: number) {
-  return [s + 17, s + 15, s + 10, s + 6, s - 6, s - 10, s - 15, s - 17].filter(function (o) {
+  return [s + 17, s + 15, s + 10, s + 6, s - 6, s - 10, s - 15, s - 17].filter(function(o) {
     return o >= 0 && o < 64 && squareDist(s, o) <= 2;
   });
 }
@@ -69,7 +71,7 @@ const QUEEN_DELTAS = ROOK_DELTAS.concat(BISHOP_DELTAS);
 
 function slidingMovesTo(s: number, deltas: number[], board: Board): number[] {
   const result: number[] = [];
-  deltas.forEach(function (delta) {
+  deltas.forEach(function(delta) {
     for (
       let square = s + delta;
       square >= 0 && square < 64 && squareDist(square, square - delta) === 1;
@@ -82,7 +84,7 @@ function slidingMovesTo(s: number, deltas: number[], board: Board): number[] {
   return result;
 }
 
-export function sanOf(board: Board, uci: string) {
+export function sanOf(board: Board, uci: string): San {
   if (uci.includes('@')) return fixCrazySan(uci);
 
   const move = decomposeUci(uci);
@@ -137,7 +139,7 @@ export function sanOf(board: Board, uci: string) {
 export function sanWriter(fen: string, ucis: string[]): SanToUci {
   const board = readFen(fen);
   const sans: SanToUci = {};
-  ucis.forEach(function (uci) {
+  ucis.forEach(function(uci) {
     const san = sanOf(board, uci);
     sans[san] = uci;
     if (san.includes('x')) sans[san.replace('x', '')] = uci;

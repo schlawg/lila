@@ -4,18 +4,22 @@ import * as licon from 'common/licon';
 import { url as xhrUrl, textRaw as xhrTextRaw } from 'common/xhr';
 import { AnalyseData } from './interfaces';
 import { ChartGame, AcplChart } from 'chart';
-import { stockfishName } from 'common/spinner';
+import { stockfishName, spinnerHtml } from 'common/spinner';
+import { domDialog } from 'common/dialog';
 import { FEN } from 'chessground/types';
+import { escapeHtml } from 'common';
+import { storage } from 'common/storage';
+import { pubsub } from 'common/pubsub';
 
-export default function (element: HTMLElement, ctrl: AnalyseCtrl) {
+export default function(element: HTMLElement, ctrl: AnalyseCtrl) {
   $(element).replaceWith(ctrl.opts.$underboard);
 
   const data = ctrl.data,
     $panels = $('.analyse__underboard__panels > div'),
     $menu = $('.analyse__underboard__menu'),
-    inputFen = document.querySelector('.analyse__underboard__fen') as HTMLInputElement,
-    gameGifLink = document.querySelector('.game-gif') as HTMLAnchorElement,
-    positionGifLink = document.querySelector('.position-gif') as HTMLAnchorElement;
+    inputFen = document.querySelector('.analyse__underboard__fen input') as HTMLInputElement,
+    gameGifLink = document.querySelector('.game-gif a') as HTMLAnchorElement,
+    positionGifLink = document.querySelector('.position-gif a') as HTMLAnchorElement;
   let lastInputHash: string;
   let advChart: AcplChart;
   let timeChartLoaded = false;
@@ -27,25 +31,25 @@ export default function (element: HTMLElement, ctrl: AnalyseCtrl) {
       color: ctrl.bottomColor(),
       lastMove: ctrl.node.uci,
       variant: ctrl.data.game.variant.key,
-      theme: ds.boardTheme,
+      theme: ds.board,
       piece: ds.pieceSet,
     });
     gameGifLink.href = xhrUrl(ds.assetUrl + `/game/export/gif/${ctrl.bottomColor()}/${data.game.id}.gif`, {
-      theme: ds.boardTheme,
+      theme: ds.board,
       piece: ds.pieceSet,
     });
   };
 
   if (!site.blindMode) {
-    site.pubsub.on('theme.change', () => updateGifLinks(inputFen.value));
-    site.pubsub.on('analysis.comp.toggle', (v: boolean) => {
+    pubsub.on('board.change', () => updateGifLinks(inputFen.value));
+    pubsub.on('analysis.comp.toggle', (v: boolean) => {
       if (v) {
         setTimeout(() => $menu.find('.computer-analysis').first().trigger('mousedown'), 50);
       } else {
         $menu.find('span:not(.computer-analysis)').first().trigger('mousedown');
       }
     });
-    site.pubsub.on('analysis.change', (fen: FEN, _) => {
+    pubsub.on('analysis.change', (fen: FEN, _) => {
       const nextInputHash = `${fen}${ctrl.bottomColor()}`;
       if (fen && nextInputHash !== lastInputHash) {
         inputFen.value = fen;
@@ -53,7 +57,7 @@ export default function (element: HTMLElement, ctrl: AnalyseCtrl) {
         lastInputHash = nextInputHash;
       }
     });
-    site.pubsub.on('analysis.server.progress', (d: AnalyseData) => {
+    pubsub.on('analysis.server.progress', (d: AnalyseData) => {
       if (!advChart) startAdvantageChart();
       else advChart.updateData(d, ctrl.mainline);
       if (d.analysis && !d.analysis.partial) $('#acpl-chart-container-loader').remove();
@@ -61,7 +65,7 @@ export default function (element: HTMLElement, ctrl: AnalyseCtrl) {
   }
 
   const chartLoader = () =>
-    `<div id="acpl-chart-container-loader"><span>${stockfishName}<br>server analysis</span>${site.spinnerHtml}</div>`;
+    `<div id="acpl-chart-container-loader"><span>${stockfishName}<br>server analysis</span>${spinnerHtml}</div>`;
 
   function startAdvantageChart() {
     if (advChart || site.blindMode) return;
@@ -82,8 +86,8 @@ export default function (element: HTMLElement, ctrl: AnalyseCtrl) {
     });
   }
 
-  const storage = site.storage.make('analysis.panel');
-  const setPanel = function (panel: string) {
+  const store = storage.make('analysis.panel');
+  const setPanel = function(panel: string) {
     $menu.children('.active').removeClass('active');
     $menu.find(`[data-panel="${panel}"]`).addClass('active');
     $panels
@@ -98,15 +102,15 @@ export default function (element: HTMLElement, ctrl: AnalyseCtrl) {
     if ((panel == 'computer-analysis' || ctrl.opts.hunter) && $('#acpl-chart-container').length)
       setTimeout(startAdvantageChart, 200);
   };
-  $menu.on('mousedown', 'span', function (this: HTMLElement) {
+  $menu.on('mousedown', 'span', function(this: HTMLElement) {
     const panel = this.dataset.panel!;
-    storage.set(panel);
+    store.set(panel);
     setPanel(panel);
   });
-  const stored = storage.get();
+  const stored = store.get();
   const foundStored =
     stored &&
-    $menu.children(`[data-panel="${stored}"]`).filter(function (this: HTMLElement) {
+    $menu.children(`[data-panel="${stored}"]`).filter(function(this: HTMLElement) {
       const display = window.getComputedStyle(this).display;
       return !!display && display != 'none';
     }).length;
@@ -116,7 +120,7 @@ export default function (element: HTMLElement, ctrl: AnalyseCtrl) {
     ($menuCt.length ? $menuCt : $menu.children(':first-child')).trigger('mousedown');
   }
   if (!data.analysis) {
-    $panels.find('form.future-game-analysis').on('submit', function (this: HTMLFormElement) {
+    $panels.find('form.future-game-analysis').on('submit', function(this: HTMLFormElement) {
       if ($(this).hasClass('must-login')) {
         if (confirm(ctrl.trans('youNeedAnAccountToDoThat')))
           location.href = '/login?referrer=' + window.location.pathname;
@@ -134,7 +138,7 @@ export default function (element: HTMLElement, ctrl: AnalyseCtrl) {
     });
   }
 
-  $panels.on('click', '.pgn', function (this: HTMLElement) {
+  $panels.on('click', '.pgn', function(this: HTMLElement) {
     const selection = window.getSelection(),
       range = document.createRange();
     range.selectNodeContents(this);
@@ -142,19 +146,19 @@ export default function (element: HTMLElement, ctrl: AnalyseCtrl) {
     selection!.addRange(range);
   });
 
-  $panels.on('click', '.embed-howto', function (this: HTMLElement) {
+  $panels.on('click', '.embed-howto', function(this: HTMLElement) {
     // location.hash is percent encoded, so no need to escape and make &bg=...
     // uglier in the process.
     const url = `${baseUrl()}/embed/game/${data.game.id}?theme=auto&bg=auto${location.hash}`;
     const iframe = `<iframe src="${url}"\nwidth=600 height=397 frameborder=0></iframe>`;
-    site.dialog.dom({
+    domDialog({
       show: 'modal',
       htmlText:
         '<div><strong style="font-size:1.5em">' +
         $(this).html() +
         '</strong><br /><br />' +
         '<pre>' +
-        site.escapeHtml(iframe) +
+        escapeHtml(iframe) +
         '</pre><br />' +
         iframe +
         '<br /><br />' +

@@ -1,12 +1,12 @@
 package lila.user
 package ui
 
-import lila.ui.*
-import ScalatagsTemplate.{ *, given }
+import lila.core.perf.{ UserPerfs, UserWithPerfs }
 import lila.core.user.LightPerf
-import lila.core.perf.UserWithPerfs
-import lila.core.perf.UserPerfs
 import lila.rating.PerfType
+import lila.ui.*
+
+import ScalatagsTemplate.{ *, given }
 
 final class UserList(helpers: Helpers, bits: UserBits):
   import helpers.{ *, given }
@@ -18,8 +18,8 @@ final class UserList(helpers: Helpers, bits: UserBits):
       tournamentWinners: Frag
   )(using ctx: Context) =
     Page(trans.site.players.txt())
-      .cssTag("user.list")
-      .copy(wrapClass = "full-screen-force")
+      .css("bits.user.list")
+      .fullScreen
       .graph(
         title = "Chess players and leaderboards",
         url = s"$netBaseUrl${routes.User.list.url}",
@@ -91,7 +91,7 @@ final class UserList(helpers: Helpers, bits: UserBits):
   def top(perfType: PerfType, users: List[LightPerf])(using ctx: Context) =
     val title = s"${perfType.trans} top 200"
     Page(title)
-      .cssTag("slist")
+      .css("bits.slist")
       .graph(
         title = s"Leaderboard of ${perfType.trans}",
         url = s"$netBaseUrl${routes.User.topNb(200, perfType.key).url}",
@@ -119,9 +119,9 @@ final class UserList(helpers: Helpers, bits: UserBits):
   def bots(users: List[UserWithPerfs], bestPerfs: UserPerfs => List[PerfKey])(using Context) =
     val title = s"${users.size} Online bots"
     Page(title)
-      .cssTag("slist")
-      .cssTag("bot.list")
-      .copy(wrapClass = "full-screen-force"):
+      .css("bits.slist")
+      .css("bits.bot.list")
+      .fullScreen:
         main(cls := "page-menu bots")(
           bits.communityMenu("bots"),
           users.partition(_.isVerified) match

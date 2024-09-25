@@ -1,9 +1,11 @@
 package lila.simul
 package ui
 
-import lila.ui.*
-import ScalatagsTemplate.{ *, given }
 import scalalib.paginator.Paginator
+
+import lila.ui.*
+
+import ScalatagsTemplate.{ *, given }
 
 final class SimulHome(helpers: Helpers, ui: SimulUi):
   import helpers.{ *, given }
@@ -15,14 +17,8 @@ final class SimulHome(helpers: Helpers, ui: SimulUi):
       finisheds: List[Simul]
   )(using ctx: Context) =
     Page(trans.site.simultaneousExhibitions.txt())
-      .cssTag("simul.list")
-      .js(embedJsUnsafeLoadThen(s"""
-site.StrongSocket.defaultParams.flag = 'simul';
-site.pubsub.on('socket.in.reload', () =>
-  fetch('${routes.Simul.homeReload}').then(r => r.text()).then(html => {
-  $$('.simul-list__content').html(html);
-  site.contentLoaded();
-}))"""))
+      .css("simul.list")
+      .js(Esm("simul.home"))
       .graph(
         title = trans.site.simultaneousExhibitions.txt(),
         url = s"$netBaseUrl${routes.Simul.home}",
@@ -153,7 +149,7 @@ site.pubsub.on('socket.in.reload', () =>
 
   def hosted(user: User, pager: Paginator[Simul])(using Context) =
     Page(s"${user.username} hosted simuls")
-      .cssTag("user-simul")
+      .css("bits.user-simul")
       .js(infiniteScrollEsmInit):
         main(cls := "page-small box simul-list")(
           if pager.nbResults == 0 then

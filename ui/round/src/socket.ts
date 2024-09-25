@@ -1,8 +1,10 @@
 import * as game from 'game';
-import throttle from 'common/throttle';
+import { throttle } from 'common/timing';
 import * as xhr from './xhr';
 import RoundController from './ctrl';
 import { defined } from 'common';
+import { domDialog } from 'common/dialog';
+import { pubsub } from 'common/pubsub';
 
 export interface RoundSocket {
   send: SocketSend;
@@ -26,7 +28,7 @@ function backoff(delay: number, factor: number, callback: Callback): Callback {
   let timer: number | undefined;
   let lastExec = 0;
 
-  return function (this: any, ...args: any[]): void {
+  return function(this: any, ...args: any[]): void {
     const self: any = this;
     const elapsed = performance.now() - lastExec;
 
@@ -54,7 +56,8 @@ export function make(send: SocketSend, ctrl: RoundController): RoundSocket {
       handlers[o.t]!(o.d);
     } else
       xhr.reload(ctrl).then(data => {
-        if (site.socket.getVersion() > data.player.version) {
+        const version = site.socket.getVersion();
+        if (version !== false && version > data.player.version) {
           // race condition! try to reload again
           if (isRetry) site.reload();
           // give up and reload the page
@@ -82,8 +85,8 @@ export function make(send: SocketSend, ctrl: RoundController): RoundSocket {
     },
     cclock(o: { white: number; black: number }) {
       if (ctrl.corresClock) {
-        ctrl.data.correspondence.white = o.white;
-        ctrl.data.correspondence.black = o.black;
+        ctrl.data.correspondence!.white = o.white;
+        ctrl.data.correspondence!.black = o.black;
         ctrl.corresClock.update(o.white, o.black);
         ctrl.redraw();
       }
@@ -144,7 +147,7 @@ export function make(send: SocketSend, ctrl: RoundController): RoundSocket {
       }
     },
     simulEnd(simul: game.Simul) {
-      site.dialog.dom({
+      domDialog({
         htmlText:
           '<div><p>Simul complete!</p><br /><br />' +
           `<a class="button" href="/simul/${simul.id}">Back to ${simul.name} simul</a></div>`,
@@ -152,7 +155,7 @@ export function make(send: SocketSend, ctrl: RoundController): RoundSocket {
     },
   };
 
-  site.pubsub.on('ab.rep', n => send('rep', { n }));
+  pubsub.on('ab.rep', n => send('rep', { n }));
 
   return {
     send,

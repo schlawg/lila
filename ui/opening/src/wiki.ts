@@ -1,7 +1,7 @@
 import { OpeningPage } from './interfaces';
 
-export default async function wikiTheory(data: OpeningPage) {
-  $('.opening__wiki__markup__placeholder').each(function (this: HTMLDivElement) {
+export default function wikiTheory(data: OpeningPage): void {
+  $('.opening__wiki__markup__placeholder').each(function(this: HTMLDivElement) {
     const wrap = $(this);
     fetchAndRender(data, html => wrap.html(html));
   });
@@ -48,8 +48,6 @@ async function fetchAndRender(data: OpeningPage, render: (html: string) => void)
         console.warn('error: unexpected API response:<br><pre>' + JSON.stringify(page) + '</pre>');
         return;
       } else {
-        console.log(page.extract, title);
-        console.log(transform(page.extract, title));
         return render(transform(page.extract, title));
       }
     } else return;

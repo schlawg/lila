@@ -21,6 +21,9 @@ object HTTPRequest:
 
   def isRedirectable(req: RequestHeader) = isSynchronousHttp(req) && isSafe(req)
 
+  def isXhrFromEmbed(req: RequestHeader) =
+    isXhr(req) && referer(req).exists(_.contains(s"${req.host}/embed/"))
+
   private val appOrigins = List(
     "capacitor://localhost", // ios
     "ionic://localhost",     // ios
@@ -64,7 +67,7 @@ object HTTPRequest:
 
   private val crawlerMatcher = UaMatcher:
     // spiders/crawlers
-    """Googlebot|AdsBot|Google-Read-Aloud|bingbot|BingPreview|facebookexternalhit|SemrushBot|AhrefsBot|PetalBot|Applebot|YandexBot|YandexAdNet|Twitterbot|Baiduspider|Amazonbot|Bytespider""" +
+    """Googlebot|AdsBot|Google-Read-Aloud|bingbot|BingPreview|facebookexternalhit|meta-externalagent|SemrushBot|AhrefsBot|PetalBot|Applebot|YandexBot|YandexAdNet|Twitterbot|Baiduspider|Amazonbot|Bytespider|yacybot|ImagesiftBot|Ecosia|ChatGLM-Spider|YisouSpider""" +
       // http libs
       """|HeadlessChrome|okhttp|axios|wget|curl|python-requests|aiohttp|commons-httpclient|python-urllib|python-httpx|Nessus"""
 

@@ -1,5 +1,5 @@
 import { thunk } from 'snabbdom';
-import debounce from 'common/debounce';
+import { debounce } from 'common/timing';
 import * as licon from 'common/licon';
 import axis from './axis';
 import filters from './filters';
@@ -75,8 +75,8 @@ function header(ctrl: Ctrl) {
     isAtLeastXSmall(mainW())
       ? h('h2.text', { attrs: { 'data-icon': licon.Target } }, 'Chess Insights')
       : isAtLeastXXSmall(mainW())
-      ? h('h2.text', { attrs: { 'data-icon': licon.Target } }, 'Insights')
-      : mainW() >= 460 && h('h2.text', 'Insights'),
+        ? h('h2.text', { attrs: { 'data-icon': licon.Target } }, 'Insights')
+        : mainW() >= 460 && h('h2.text', 'Insights'),
     axis(ctrl, mainW() < 460 ? { attrs: { style: 'justify-content: space-evenly;' } } : null),
   ]);
 }
@@ -117,10 +117,10 @@ function portraitView(ctrl: Ctrl) {
       ctrl.vm.view === 'insights'
         ? [header(ctrl), thunk('div.insight__main.box', renderMain, [ctrl, cacheKey(ctrl)])]
         : h('div.left-side', [
-            info(ctrl),
-            ctrl.vm.view === 'filters' && clearBtn(ctrl),
-            ctrl.vm.view === 'presets' ? presets(ctrl) : filters(ctrl),
-          ]),
+          info(ctrl),
+          ctrl.vm.view === 'filters' && clearBtn(ctrl),
+          ctrl.vm.view === 'presets' ? presets(ctrl) : filters(ctrl),
+        ]),
     ),
   ]);
 }

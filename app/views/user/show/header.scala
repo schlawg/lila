@@ -1,13 +1,11 @@
 package views.user
 package show
 
-import lila.app.mashup.UserInfo
 import lila.app.UiEnv.{ *, given }
-
-import lila.common.String.html.richText
+import lila.app.mashup.UserInfo
 import lila.user.Plan.sinceDate
-import lila.user.Profile.*
 import lila.user.PlayTime.*
+import lila.user.Profile.*
 
 object header:
 
@@ -19,7 +17,7 @@ object header:
       div(cls := "box__top user-show__header")(
         if u.isPatron then
           h1(cls := s"user-link ${if isOnline(u.id) then "online" else "offline"}")(
-            a(href := routes.Plan.index)(patronIcon),
+            a(href := routes.Plan.index())(patronIcon),
             ui.userDom(u)
           )
         else h1(ui.userDom(u)),
@@ -33,7 +31,7 @@ object header:
           otherTrophies(info),
           u.plan.active.option(
             a(
-              href := routes.Plan.index,
+              href := routes.Plan.index(),
               cls  := "trophy award patron icon3d",
               ariaTitle(s"Patron since ${showDate(u.plan.sinceDate)}")
             )(patronIconChar)
@@ -90,67 +88,74 @@ object header:
           (ctx.isAuth && ctx.isnt(u))
             .option(a(cls := "nm-item note-zone-toggle")(splitNumber(s"${social.notes.size} Notes")))
         ),
-        div(cls := "user-actions btn-rack")(
-          (ctx
-            .is(u))
-            .option(
-              frag(
-                a(
-                  cls  := "btn-rack__btn",
-                  href := routes.Account.profile,
-                  titleOrText(trans.site.editProfile.txt()),
-                  dataIcon := Icon.Gear
-                ),
-                a(
-                  cls  := "btn-rack__btn",
-                  href := routes.Relation.blocks(),
-                  titleOrText(trans.site.listBlockedPlayers.txt()),
-                  dataIcon := Icon.NotAllowed
-                )
-              )
-            ),
+        div(cls := "user-actions")(
           isGranted(_.UserModView).option(
             a(
-              cls  := "btn-rack__btn mod-zone-toggle",
-              href := routes.User.mod(u.username),
-              titleOrText("Mod zone (Hotkey: m)"),
-              dataIcon := Icon.Agent
+              cls      := "mod-zone-toggle",
+              href     := routes.User.mod(u.username),
+              dataIcon := Icon.Agent,
+              title    := "Mod zone (Hotkey: m)"
             )
           ),
-          a(
-            cls  := "btn-rack__btn",
-            href := routes.User.tv(u.username),
-            titleOrText(trans.site.watchGames.txt()),
-            dataIcon := Icon.AnalogTv
-          ),
-          ctx
-            .isnt(u)
-            .option(
-              views.relation.actions(
-                u.light,
-                relation = social.relation,
-                followable = social.followable,
-                blocked = social.blocked
+          div(cls := "dropdown")(
+            a(dataIcon := Icon.Hamburger),
+            div(cls := "dropdown-window")(
+              ctx
+                .is(u)
+                .option(
+                  frag(
+                    a(
+                      cls      := "text",
+                      href     := routes.Account.profile,
+                      dataIcon := Icon.Gear
+                    )(trans.site.editProfile.txt()),
+                    a(
+                      cls      := "text",
+                      href     := routes.Relation.blocks(),
+                      dataIcon := Icon.NotAllowed
+                    )(trans.site.listBlockedPlayers.txt())
+                  )
+                ),
+              a(
+                cls      := "text",
+                href     := routes.User.tv(u.username),
+                dataIcon := Icon.AnalogTv
+              )(trans.site.watchGames.txt()),
+              ctx
+                .isnt(u)
+                .option(
+                  views.relation.actions(
+                    u.light,
+                    relation = social.relation,
+                    followable = social.followable,
+                    blocked = social.blocked
+                  )
+                ),
+              a(
+                cls      := "text",
+                href     := s"${routes.UserAnalysis.index}#explorer/${u.username}",
+                dataIcon := Icon.Book
+              )(trans.site.openingExplorer.txt()),
+              a(
+                cls      := "text",
+                href     := routes.User.download(u.username),
+                dataIcon := Icon.Download
+              )(trans.site.exportGames.txt()),
+              (ctx.isAuth && ctx.kid.no && ctx.isnt(u)).option(
+                a(
+                  cls      := "text",
+                  href     := s"${routes.Report.form}?username=${u.username}",
+                  dataIcon := Icon.CautionTriangle
+                )(trans.site.reportXToModerators.txt(u.username))
+              ),
+              (ctx.is(u) || isGranted(_.CloseAccount)).option(
+                a(href := routes.Relation.following(u.username), dataIcon := Icon.User)(trans.site.friends())
+              ),
+              (ctx.is(u) || isGranted(_.BoostHunter)).option(
+                a(href := s"${routes.User.opponents}?u=${u.username}", dataIcon := Icon.User)(
+                  trans.site.favoriteOpponents()
+                )
               )
-            ),
-          a(
-            cls  := "btn-rack__btn",
-            href := s"${routes.UserAnalysis.index}#explorer/${u.username}",
-            titleOrText(trans.site.openingExplorer.txt()),
-            dataIcon := Icon.Book
-          ),
-          a(
-            cls  := "btn-rack__btn",
-            href := routes.User.download(u.username),
-            titleOrText(trans.site.exportGames.txt()),
-            dataIcon := Icon.Download
-          ),
-          (ctx.isAuth && ctx.kid.no && ctx.isnt(u)).option(
-            a(
-              titleOrText(trans.site.reportXToModerators.txt(u.username)),
-              cls      := "btn-rack__btn",
-              href     := s"${routes.Report.form}?username=${u.username}",
-              dataIcon := Icon.CautionTriangle
             )
           )
         )
@@ -211,18 +216,6 @@ object header:
                         trans.site.profileCompletion(s"${profile.completionPercent}%")
                       )
                     ),
-                  (ctx.is(u) || isGranted(_.CloseAccount)).option(
-                    frag(
-                      br,
-                      a(href := routes.Relation.following(u.username))(trans.site.friends())
-                    )
-                  ),
-                  (ctx.is(u) || isGranted(_.BoostHunter)).option(
-                    frag(
-                      br,
-                      a(href := s"${routes.User.opponents}?u=${u.username}")(trans.site.favoriteOpponents())
-                    )
-                  ),
                   u.playTime.map: playTime =>
                     frag(
                       p(
@@ -233,19 +226,21 @@ object header:
                       playTime.nonEmptyTvDuration.map: tvDuration =>
                         p(trans.site.tpTimeSpentOnTV(lila.core.i18n.translateDuration(tvDuration)))
                     ),
-                  (!hideTroll).option(
+                  (!hideTroll && !u.kid).option(
                     div(cls := "social_links col2")(
                       profile.actualLinks.nonEmpty.option(strong(trans.site.socialMediaLinks())),
                       profile.actualLinks.map: link =>
                         a(href := link.url, targetBlank, noFollow, relMe)(link.site.name)
                     )
                   ),
-                  div(cls := "teams col2")(
-                    info.teamIds.nonEmpty.option(strong(trans.team.teams())),
-                    info.teamIds
-                      .sorted(stringOrdering)
-                      .map: t =>
-                        teamLink(t, withIcon = false)
+                  (ctx.is(u) || !u.kid).option(
+                    div(cls := "teams col2")(
+                      info.teamIds.nonEmpty.option(strong(trans.team.teams())),
+                      info.teamIds
+                        .sorted(stringOrdering)
+                        .map: t =>
+                          teamLink(t, withIcon = false)
+                    )
                   )
                 )
               ),

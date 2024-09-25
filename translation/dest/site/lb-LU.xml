@@ -24,8 +24,8 @@
   <string name="createAGame">Erstell eng Partie</string>
   <string name="whiteIsVictorious">Wäiss gewënnt</string>
   <string name="blackIsVictorious">Schwaarz gewënnt</string>
-  <string name="youPlayTheWhitePieces">Du spills déi wäiss Figuren</string>
-  <string name="youPlayTheBlackPieces">Du spills déi schwaarz Figuren</string>
+  <string name="youPlayTheWhitePieces">Du spills mat de wäisse Figuren</string>
+  <string name="youPlayTheBlackPieces">Du spills mat de schwaarze Figuren</string>
   <string name="itsYourTurn">Et ass un dir!</string>
   <string name="cheatDetected">Bedruch erkannt</string>
   <string name="kingInTheCenter">Kinnek am Zentrum</string>
@@ -70,6 +70,8 @@
   <string name="promoteVariation">Variant opwäerten</string>
   <string name="makeMainLine">Haaptvariant maachen</string>
   <string name="deleteFromHere">Vun hei läschen</string>
+  <string name="collapseVariations">Varianten zesummeklappen</string>
+  <string name="expandVariations">Varianten opklappen</string>
   <string name="forceVariation">Variant forcéieren</string>
   <string name="copyVariationPgn">PGN-Variant kopéieren</string>
   <string name="move">Zuch</string>
@@ -112,7 +114,7 @@
   <string name="delete">Läschen</string>
   <string name="deleteThisImportedGame">Importéiert Partie läschen?</string>
   <string name="replayMode">Replay-Modus</string>
-  <string name="realtimeReplay">Realzäit</string>
+  <string name="realtimeReplay">Echtzäit</string>
   <string name="byCPL">No CPL</string>
   <string name="openStudy">Studie opmaachen</string>
   <string name="enable">Aktivéieren</string>
@@ -178,6 +180,7 @@
   <string name="latestForumPosts">Neisten Forumbäiträg</string>
   <string name="players">Spiller</string>
   <string name="friends">Kolleegen</string>
+  <string name="otherPlayers">aner Spiller</string>
   <string name="discussions">Konversatiounen</string>
   <string name="today">Haut</string>
   <string name="yesterday">Gëschter</string>
@@ -185,7 +188,7 @@
   <string name="variant">Variant</string>
   <string name="variants">Varianten</string>
   <string name="timeControl">Zäitkontroll</string>
-  <string name="realTime">Realzäit</string>
+  <string name="realTime">Echtzäit</string>
   <string name="correspondence">Korrespondenz</string>
   <string name="daysPerTurn">Deeg pro Zuch</string>
   <string name="oneDay">Een Dag</string>
@@ -301,7 +304,7 @@
   <string name="composeMessage">Message schreiwen</string>
   <string name="subject">Betreff</string>
   <string name="send">Schécken</string>
-  <string name="incrementInSeconds">Inkrement an Sekonnen</string>
+  <string name="incrementInSeconds">Inkrement a Sekonnen</string>
   <string name="freeOnlineChess">Gratis Online Schach</string>
   <plurals name="nbRated">
     <item quantity="one">%s gewäert</item>
@@ -326,8 +329,8 @@
   <string name="exportGames">Partien exportéieren</string>
   <string name="ratingRange">Wäertungsberäich</string>
   <plurals name="giveNbSeconds">
-    <item quantity="one">Dem Géigner %s Sekonn ginn</item>
-    <item quantity="other">Dem Géigner %s Sekonnen ginn</item>
+    <item quantity="one">Dem Géigner %s Sekonn bäiginn</item>
+    <item quantity="other">Dem Géigner %s Sekonne bäiginn</item>
   </plurals>
   <string name="thisAccountViolatedTos">Dësen Konto huet géint d\'Lichess-Notzungsbedingungen verstouss</string>
   <string name="openingExplorerAndTablebase">Eröffnungsdatenbank &amp; Tablebase</string>
@@ -423,7 +426,7 @@
     <item quantity="one">%s Kolleeg online</item>
     <item quantity="other">%s Kolleegen online</item>
   </plurals>
-  <string name="favoriteOpponents">Lieblingsgéigner</string>
+  <string name="favoriteOpponents">Liblingsgéigner</string>
   <string name="follow">Followen</string>
   <string name="following">Folgend</string>
   <string name="unfollow">Unfollowen</string>
@@ -464,9 +467,6 @@
   <string name="safeTournamentName">Wiehl en ganz sécheren Numm fir däin Turnéier.</string>
   <string name="inappropriateNameWarning">Alles nemmen liicht Onangemessenes kéint zum Zoumaachen vun dengem Konto féieren.</string>
   <string name="emptyTournamentName">Eidel loossen, wann den Turnéier no engem bekannten Schachspiller soll benannt ginn.</string>
-  <string name="recommendNotTouching">Mir recommandéieren déi net unzepaken.</string>
-  <string name="fewerPlayers">Mat Teilnahmebedingungen wäert däin Turnéier maner Spiller hunn.</string>
-  <string name="showAdvancedSettings">Erweidert Optiounen uweisen</string>
   <string name="makePrivateTournament">Turnéier privat maachen an Accès mat Passwuert beschränken</string>
   <string name="join">Bäitrieden</string>
   <string name="withdraw">Zeréckzéihen</string>
@@ -490,7 +490,7 @@
   <string name="drawRate">Remisquot</string>
   <string name="draws">Remis</string>
   <string name="nextXTournament">Nächsten %s Turnéier:</string>
-  <string name="averageOpponent">Duerschnëttlechen Géigner</string>
+  <string name="averageOpponent">Duerchschnëttleche Géigner</string>
   <string name="boardEditor">Briet-Editor</string>
   <string name="setTheBoard">Briet opbauen</string>
   <string name="popularOpenings">Beléift Erëffnungen</string>
@@ -506,8 +506,7 @@
   <string name="ifNoneLeaveEmpty">Eidel loossen, falls keng</string>
   <string name="profile">Profil</string>
   <string name="editProfile">Profil änneren</string>
-  <string name="firstName">Virnumm</string>
-  <string name="lastName">Numm</string>
+  <string name="realName">Richtegen Numm</string>
   <string name="biography">Biographie</string>
   <string name="countryRegion" comment="flag&#10;Appears when you edit your profile. Lets a player add a country/flag (not all flags are for countries) to their profile">Land oder Regioun</string>
   <string name="thankYou">Merci!</string>
@@ -535,6 +534,7 @@
   <string name="descPrivateHelp">Text deen just Ekippenmemberen wäerten gesinn. Falls agestallt, ersetzt en fir Memberen d\'ëffentlech Beschreiwung.</string>
   <string name="no">Nee</string>
   <string name="yes">Jo</string>
+  <string name="website">Websäit</string>
   <string name="help">Hëllef:</string>
   <string name="createANewTopic">Neien Thema kreéieren</string>
   <string name="topics">Themen</string>
@@ -551,11 +551,8 @@
   <string name="reason">Grond</string>
   <string name="whatIsIheMatter">Wat ass den Problem?</string>
   <string name="cheat">Bedruch</string>
-  <string name="insult">Beleidegung</string>
   <string name="troll">Troll</string>
-  <string name="ratingManipulation">Wäertungsmanipulatioun</string>
   <string name="other">Aner</string>
-  <string name="reportDescriptionHelp">Post den Link vun Partie(n) and erklär wat den Problem mat dësem Benotzer sengem Verhalen ass. So net just \"Hien fuddelt\", mee so eis wéi du zu dëser Konklusioun komm bass. Däin Rapport gëtt méi schnell veraarbecht wann en op Englesch ass.</string>
   <string name="error.provideOneCheatedGameLink">Wannechgelift gëff eis op mannst een Link zu enger Partie mat Bedruch.</string>
   <string name="by">vum %s</string>
   <string name="importedByX">Importéiert vun %s</string>
@@ -575,7 +572,7 @@
   <string name="newPasswordsDontMatch">Déi nei Passwierder sinn net identesch</string>
   <string name="newPasswordStrength">Passwuert Stäerkt</string>
   <string name="clockInitialTime">Auer Initial Zäit</string>
-  <string name="clockIncrement">Auer Inkrement</string>
+  <string name="clockIncrement">Auer-Inkrement</string>
   <string name="privacy">Privatsphär</string>
   <string name="privacyPolicy">Datenschutzbestëmmung</string>
   <string name="letOtherPlayersFollowYou">Anerer kënnen dir followen</string>
@@ -588,6 +585,7 @@
   <string name="slow">Lues</string>
   <string name="insideTheBoard">Um Briet</string>
   <string name="outsideTheBoard">Außerhalb vum Briet</string>
+  <string name="allSquaresOfTheBoard">All d\'Felder um Briet</string>
   <string name="onSlowGames">An luesen Partien</string>
   <string name="always">Ëmmer</string>
   <string name="never">Ni</string>
@@ -688,7 +686,7 @@
   <string name="keyMoveBackwardOrForward">zeréck/no fir beweegen</string>
   <string name="keyGoToStartOrEnd">bei Start/Schluss goen</string>
   <string name="keyShowOrHideComments">Kommentarer weisen/verstoppen</string>
-  <string name="keyEnterOrExitVariation">Variant wiehlen/verloossen</string>
+  <string name="keyEnterOrExitVariation">Variant wielen/verloossen</string>
   <string name="keyRequestComputerAnalysis">Computeranalys ufroen, léier aus denge Feeler</string>
   <string name="keyNextLearnFromYourMistakes">Nächst (Aus dengen Feeler léieren)</string>
   <string name="keyNextBlunder">Nächst Gaffe</string>
@@ -776,9 +774,12 @@
   <string name="transparent">Transparent</string>
   <string name="deviceTheme">Mam Gerät synchroniséieren</string>
   <string name="backgroundImageUrl">URL vum Hannergrondbild:</string>
-  <string name="boardGeometry">Briet Geometrie</string>
-  <string name="boardTheme">Brietdesign</string>
-  <string name="boardSize">Briet Gréisst</string>
+  <string name="board">Briet</string>
+  <string name="size">Gréisst</string>
+  <string name="opacity">Transparenz</string>
+  <string name="brightness">Hellegkeet</string>
+  <string name="hue">Faarftoun</string>
+  <string name="boardReset">Faarwen op de Standard zerécksetzen</string>
   <string name="pieceSet">Figurestil</string>
   <string name="embedInYourWebsite">An Websäit anbetten</string>
   <string name="usernameAlreadyUsed">Dësen Benotzernumm gëtt schonn benotzt, wiel wannechgelift een aneren.</string>
@@ -796,8 +797,8 @@
   <string name="notificationsX">Notifikatiounen: %1$s</string>
   <string name="perfRatingX">Wäertung: %s</string>
   <plurals name="nbSecondsToPlayTheFirstMove">
-    <item quantity="one">%s Sekonn fir den éischten Zuch ze spillen</item>
-    <item quantity="other">%s Sekonnen fir den éischten Zuch ze spillen</item>
+    <item quantity="one">%s Sekonn fir den éischten Zuch ze maachen</item>
+    <item quantity="other">%s Sekonne fir den éischten Zuch ze maachen</item>
   </plurals>
   <string name="practiceWithComputer">Mam Computer üben</string>
   <string name="anotherWasX">En aneren war %s</string>
@@ -842,7 +843,7 @@
   <string name="middlegame">Mëttelspill</string>
   <string name="endgame">Endspill</string>
   <string name="conditionalPremoves">Bedingt Virauszich</string>
-  <string name="addCurrentVariation">Aktuell Variante bäifügen</string>
+  <string name="addCurrentVariation">Aktuell Variant bäifügen</string>
   <string name="playVariationToCreateConditionalPremoves">Variant spillen fir bedingt Virauszich ze kreéieren</string>
   <string name="noConditionalPremoves">Keng bedingt Virauszich</string>
   <string name="playX">Spill %s</string>
@@ -877,7 +878,7 @@
   <string name="blitz" comment="Probably best left untranslated. Leave it as 'Blitz' unless your language has a better word for it.">Blitz</string>
   <string name="rapid">Rapid</string>
   <string name="classical">Klassesch</string>
-  <string name="ultraBulletDesc">Immens schnell Partien: manner wéi 30 Sekonnen</string>
+  <string name="ultraBulletDesc">Immens séier Partien: Manner wéi 30 Sekonnen</string>
   <string name="bulletDesc">Ganz schnell Partien: manner wéi 3 Minutten</string>
   <string name="blitzDesc">Schnell Partien: 3 bis 8 Minutten</string>
   <string name="rapidDesc">Rapid Partien: 8 bis 25 Minutten</string>

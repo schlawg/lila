@@ -2,7 +2,8 @@ import { h } from 'snabbdom';
 import { onInsert } from 'common/snabbdom';
 import LobbyController from '../ctrl';
 import { spinnerVdom } from 'common/spinner';
-import { initAll } from 'common/miniBoard';
+import { initMiniBoards } from 'common/miniBoard';
+import { frag } from 'common';
 import * as xhr from 'common/xhr';
 
 export function renderRecent(ctrl: LobbyController) {
@@ -12,10 +13,10 @@ export function renderRecent(ctrl: LobbyController) {
     {
       hook: onInsert(async el => {
         const rsp = await xhr.text(`/@/${ctrl.me!.username}/all?page=1`);
-        const games = $as<HTMLElement>(`<div>${rsp}</div>`).querySelector('.search__result');
+        const games = frag<HTMLElement>(`<div>${rsp}</div>`).querySelector('.search__result');
         if (!games) return;
         el.innerHTML = games.innerHTML;
-        initAll();
+        initMiniBoards();
       }),
     },
     spinnerVdom(),

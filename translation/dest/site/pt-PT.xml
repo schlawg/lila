@@ -70,6 +70,8 @@
   <string name="promoteVariation">Promover variante</string>
   <string name="makeMainLine">Tornar variante principal</string>
   <string name="deleteFromHere">Eliminar a partir de aqui</string>
+  <string name="collapseVariations">Recolher variações</string>
+  <string name="expandVariations">Expandir variações</string>
   <string name="forceVariation">Forçar variante</string>
   <string name="copyVariationPgn">Copiar variação PGN</string>
   <string name="move">Jogada</string>
@@ -466,9 +468,6 @@ análise de computador, sala de chat do jogo e link de partilha.</string>
   <string name="safeTournamentName">Escolhe um nome totalmente seguro para o torneio.</string>
   <string name="inappropriateNameWarning">Até uma linguagem ligeiramente inadequada pode levar ao encerramento da tua conta.</string>
   <string name="emptyTournamentName">Deixe em branco e será atribuído um nome aleatório de um jogador notável ao torneio.</string>
-  <string name="recommendNotTouching">Recomendamos que não mechas nestas oções.</string>
-  <string name="fewerPlayers">Se definies condições de participação, o teu torneio terá menos jogadores.</string>
-  <string name="showAdvancedSettings">Mostrar as definições avançadas</string>
   <string name="makePrivateTournament">Torna o torneio privado e restrinje o acesso com uma palavra-passe</string>
   <string name="join">Entrar</string>
   <string name="withdraw">Sair</string>
@@ -508,8 +507,7 @@ análise de computador, sala de chat do jogo e link de partilha.</string>
   <string name="ifNoneLeaveEmpty">Se não existir, deixa em branco</string>
   <string name="profile">Perfil</string>
   <string name="editProfile">Editar o perfil</string>
-  <string name="firstName">Nome próprio</string>
-  <string name="lastName">Apelido</string>
+  <string name="realName">Nome Real</string>
   <string name="setFlair">Defina o teu estilo</string>
   <string name="flair">Estilo</string>
   <string name="youCanHideFlair">Há uma opção para ocultar todos os estilos dos utilizadores em todo o site.</string>
@@ -556,11 +554,8 @@ análise de computador, sala de chat do jogo e link de partilha.</string>
   <string name="reason">Motivo</string>
   <string name="whatIsIheMatter">Qual é o motivo?</string>
   <string name="cheat">Batota</string>
-  <string name="insult">Insulto</string>
   <string name="troll">Troll</string>
-  <string name="ratingManipulation">Manipulação do Elo</string>
   <string name="other">Outro</string>
-  <string name="reportDescriptionHelp">Inclui o link do(s) jogo(s) e explica o que há de errado com o comportamento deste utilizador. Não digas apenas \"ele faz batota\"; informa-nos como chegaste a essa conclusão. A tua denúncia será processada mais rapidamente se for escrita em inglês.</string>
   <string name="error.provideOneCheatedGameLink">Por favor, fornece-nos pelo menos um link para um jogo onde tenha havido batota.</string>
   <string name="by">por %s</string>
   <string name="importedByX">Importado por %s</string>
@@ -593,6 +588,7 @@ análise de computador, sala de chat do jogo e link de partilha.</string>
   <string name="slow">Lento</string>
   <string name="insideTheBoard">Dentro do tabuleiro</string>
   <string name="outsideTheBoard">Fora do tabuleiro</string>
+  <string name="allSquaresOfTheBoard">Todas as casas do tabuleiro</string>
   <string name="onSlowGames">Em jogos lentos</string>
   <string name="always">Sempre</string>
   <string name="never">Nunca</string>
@@ -792,9 +788,12 @@ análise de computador, sala de chat do jogo e link de partilha.</string>
   <string name="transparent">Transparente</string>
   <string name="deviceTheme">Tema do dispositivo</string>
   <string name="backgroundImageUrl">URL da imagem de fundo:</string>
-  <string name="boardGeometry">Geometria do tabuleiro</string>
-  <string name="boardTheme">Estilo do tabuleiro</string>
-  <string name="boardSize">Tamanho do tabuleiro</string>
+  <string name="board">Tabuleiro</string>
+  <string name="size">Tamanho</string>
+  <string name="opacity">Opacidade</string>
+  <string name="brightness">Brilho</string>
+  <string name="hue">Tonalidade</string>
+  <string name="boardReset">Redefinir cores para o padrão</string>
   <string name="pieceSet">Peças</string>
   <string name="embedInYourWebsite">Incorporar no teu site</string>
   <string name="usernameAlreadyUsed">Este nome de utilizador já existe, por favor escolhe outro.</string>

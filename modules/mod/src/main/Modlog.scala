@@ -15,7 +15,8 @@ case class Modlog(
   def notable      = action != Modlog.terminateTournament
   def notableZulip = notable && !isLichess
 
-  def gameId = details.ifTrue(action == Modlog.cheatDetected).so(_.split(' ').lift(1))
+  def gameId: Option[GameId] = GameId.from:
+    details.ifTrue(action == Modlog.cheatDetected).so(_.split(' ').lift(1))
 
   def indexAs(i: String) = copy(index = i.some)
 
@@ -50,7 +51,10 @@ case class Modlog(
     case Modlog.chatTimeout         => "chat timeout"
     case Modlog.troll               => "shadowban"
     case Modlog.untroll             => "un-shadowban"
-    case Modlog.fullCommsExport     => "exported all comms"
+    case Modlog.isolate             => "isolate"
+    case Modlog.unisolate           => "un-isolate"
+    case Modlog.deleteComms         => "delete chats and PMs"
+    case Modlog.fullCommsExport     => "export all comms"
     case Modlog.permissions         => "set permissions"
     case Modlog.kickFromRankings    => "kick from rankings"
     case Modlog.reportban           => "reportban"
@@ -110,6 +114,9 @@ object Modlog:
   val unbooster           = "unbooster"
   val troll               = "troll"
   val untroll             = "untroll"
+  val isolate             = "isolate"
+  val unisolate           = "unisolate"
+  val deleteComms         = "deleteComms"
   val fullCommsExport     = "fullCommsExport"
   val permissions         = "permissions"
   val disableTwoFactor    = "disableTwoFactor"

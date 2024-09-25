@@ -4,7 +4,7 @@ import { winningChances } from 'ceval';
 import * as cg from 'chessground/types';
 import { opposite } from 'chessground/util';
 import { DrawModifiers, DrawShape } from 'chessground/draw';
-import { annotationShapes } from './glyphs';
+import { annotationShapes } from 'chess/glyphs';
 import AnalyseCtrl from './ctrl';
 
 const pieceDrop = (key: cg.Key, role: cg.Role, color: Color): DrawShape => ({
@@ -83,16 +83,16 @@ export function compute(ctrl: AnalyseCtrl): DrawShape[] {
   if (ctrl.showAutoShapes() && ctrl.showComputer()) {
     if (nEval.best && !ctrl.showVariationArrows())
       shapes = shapes.concat(makeShapesFromUci(rcolor, nEval.best, 'paleGreen'));
-    if (!hovering && instance.multiPv()) {
+    if (!hovering && instance.search.multiPv) {
       const nextBest = instance.enabled() && nCeval ? nCeval.pvs[0].moves[0] : ctrl.nextNodeBest();
-      if (nextBest) shapes = shapes.concat(makeShapesFromUci(color, nextBest, 'paleBlue', undefined));
+      if (nextBest) shapes = shapes.concat(makeShapesFromUci(color, nextBest, 'paleBlue'));
       if (
         instance.enabled() &&
         nCeval &&
         nCeval.pvs[1] &&
         !(ctrl.threatMode() && nThreat && nThreat.pvs.length > 2)
       ) {
-        nCeval.pvs.forEach(function (pv) {
+        nCeval.pvs.forEach(function(pv) {
           if (pv.moves[0] === nextBest) return;
           const shift = winningChances.povDiff(color, nCeval.pvs[0], pv);
           if (shift >= 0 && shift < 0.2) {
@@ -111,7 +111,7 @@ export function compute(ctrl: AnalyseCtrl): DrawShape[] {
 
     shapes = shapes.concat(makeShapesFromUci(rcolor, pv0.moves[0], pv1s.length > 0 ? 'paleRed' : 'red'));
 
-    pv1s.forEach(function (pv) {
+    pv1s.forEach(function(pv) {
       const shift = winningChances.povDiff(rcolor, pv, pv0);
       if (shift >= 0 && shift < 0.2) {
         shapes = shapes.concat(
@@ -122,7 +122,7 @@ export function compute(ctrl: AnalyseCtrl): DrawShape[] {
       }
     });
   }
-  shapes = shapes.concat(annotationShapes(ctrl));
+  if (ctrl.showMoveAnnotation()) shapes = shapes.concat(annotationShapes(ctrl.node));
   if (ctrl.showVariationArrows()) hiliteVariations(ctrl, shapes);
   return shapes;
 }
@@ -143,8 +143,8 @@ function hiliteVariations(ctrl: AnalyseCtrl, autoShapes: DrawShape[]) {
         ? 'paleGreen'
         : 'paleRed'
       : existing
-      ? existing.brush
-      : 'white';
+        ? existing.brush
+        : 'white';
     if (existing) {
       if (i === ctrl.fork.selected()) {
         existing.brush = brush;

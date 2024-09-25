@@ -5,11 +5,10 @@ import reactivemongo.akkastream.{ AkkaStreamCursor, cursorProducer }
 import reactivemongo.api.*
 import reactivemongo.api.bson.BSONDocument
 
+import lila.core.study as hub
+import lila.core.study.Visibility
 import lila.db.AsyncColl
 import lila.db.dsl.{ *, given }
-
-import lila.core.{ study as hub }
-import lila.core.study.Visibility
 
 final class StudyRepo(private[study] val coll: AsyncColl)(using
     Executor,
@@ -125,17 +124,19 @@ final class StudyRepo(private[study] val coll: AsyncColl)(using
     .void
 
   def updateSomeFields(s: Study): Funit =
+    import toBSONValueOption.given
     coll:
       _.update
         .one(
           $id(s.id),
-          $set(
-            "position"    -> s.position,
-            "name"        -> s.name,
-            "settings"    -> s.settings,
-            "visibility"  -> s.visibility,
-            "description" -> ~s.description,
-            "updatedAt"   -> nowInstant
+          $setsAndUnsets(
+            "position"    -> s.position.some,
+            "name"        -> s.name.some,
+            "flair"       -> s.flair,
+            "settings"    -> s.settings.some,
+            "visibility"  -> s.visibility.some,
+            "description" -> s.description,
+            "updatedAt"   -> nowInstant.some
           )
         )
     .void
@@ -172,7 +173,10 @@ final class StudyRepo(private[study] val coll: AsyncColl)(using
     .void
 
   def updateNow(s: Study): Funit =
-    coll.map(_.updateFieldUnchecked($id(s.id), "updatedAt", nowInstant))
+    updateNow(s.id)
+
+  def updateNow(id: StudyId): Funit =
+    coll.map(_.updateFieldUnchecked($id(id), "updatedAt", nowInstant))
 
   def addMember(study: Study, member: StudyMember): Funit =
     coll:
@@ -200,6 +204,12 @@ final class StudyRepo(private[study] val coll: AsyncColl)(using
           $set(s"members.$userId.role" -> role)
         )
     .void
+
+  def membersDoc(id: StudyId): Fu[Option[Bdoc]] =
+    coll(_.primitiveOne[Bdoc]($id(id), "members"))
+
+  def setMembersDoc(ids: Seq[StudyId], members: Bdoc): Funit =
+    coll(_.update.one($inIds(ids), $set("members" -> members), multi = true)).void
 
   def uids(studyId: StudyId): Fu[Set[UserId]] =
     coll(_.primitiveOne[Set[UserId]]($id(studyId), F.uids)).dmap(~_)
@@ -268,6 +278,7 @@ final class StudyRepo(private[study] val coll: AsyncColl)(using
                 $set(F.likes -> likes, F.rank -> Study.Rank.compute(likes, createdAt))
               )
               .inject(likes)
+              .andDo(updateNow(studyId))
       }
 
   def liked(study: Study, user: User): Fu[Boolean] =

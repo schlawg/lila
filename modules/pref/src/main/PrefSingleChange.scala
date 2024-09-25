@@ -51,6 +51,10 @@ object PrefSingleChange:
       _.copy(confirmResign = v),
     changing(_.moretime): v =>
       _.copy(moretime = v),
+    changing(_.clockSound): v =>
+      _.copy(clockSound = v == 1),
+    changing(_.pieceNotation): v =>
+      _.copy(pieceNotation = v),
     changing(_.ratings): v =>
       _.copy(ratings = v),
     changing(_.follow): v =>
@@ -60,7 +64,7 @@ object PrefSingleChange:
     changing(_.board.opacity): v =>
       _.focus(_.board.opacity).replace(v),
     changing(_.board.hue): v =>
-      _.focus(_.board.hue).replace(v),
+      _.focus(_.board.hue).replace(v)
   ).map: change =>
     change.field -> change
   .toMap

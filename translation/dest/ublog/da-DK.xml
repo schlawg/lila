@@ -44,7 +44,6 @@
   <string name="imageAlt">Billede alternativ tekst</string>
   <string name="imageCredit">Billedkreditering</string>
   <string name="deleteBlog">Slet dette blogindlæg for altid</string>
-  <string name="deleteImage">Slet billedet</string>
   <string name="safeToUseImages">Det er sikkert at bruge billeder fra følgende hjemmesider: </string>
   <string name="selectPostTopics">Vælg de emner dit indlæg handler om</string>
   <string name="useImagesYouMadeYourself">Du kan også bruge billeder, som du selv har lavet, fotos, du tog, skærmbilleder af Lichess... noget, der ikke er ophavsretligt beskyttet af en anden.</string>

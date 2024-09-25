@@ -1,8 +1,19 @@
-import m, { MNode } from './mithrilFix';
-import map from './map/mapMain';
-import mapSide, { SideCtrl } from './map/mapSide';
-import run from './run/runMain';
+import {
+  init,
+  attributesModule,
+  eventListenersModule,
+  classModule,
+  propsModule,
+  styleModule,
+} from 'snabbdom';
+import { LearnCtrl } from './ctrl';
+import { view } from './view';
+import * as Prefs from 'common/prefs';
+import { pubsub } from 'common/pubsub';
+
 import storage, { Storage } from './storage';
+
+const patch = init([classModule, attributesModule, propsModule, eventListenersModule, styleModule]);
 
 export interface LearnProgress {
   _id?: string;
@@ -16,50 +27,49 @@ export interface StageProgress {
 export interface LearnOpts {
   i18n: I18nDict;
   storage: Storage;
-  side: {
-    ctrl: SideCtrl;
-    view(): MNode;
-  };
   stageId: number | null;
+  levelId: number | null;
   route?: string;
+  pref: LearnPrefs;
+}
+
+export interface LearnPrefs {
+  coords: Prefs.Coords;
+  destination: boolean;
 }
 
 interface LearnServerOpts {
   data?: LearnProgress;
   i18n: I18nDict;
+  pref: LearnPrefs;
 }
 
-export function initModule({ data, i18n }: LearnServerOpts) {
-  const element = document.getElementById('learn-app')!;
+export function initModule({ data, i18n, pref }: LearnServerOpts) {
   const _storage = storage(data);
-
   const opts: LearnOpts = {
     i18n,
     storage: _storage,
-    // Uninitialized because we need to call mapSide to initialize opts.side,
-    // and we need opts to call mapSide.
-    side: 'uninitialized' as any,
     stageId: null,
+    levelId: null,
+    pref: pref,
   };
+  const ctrl = new LearnCtrl(opts, redraw);
 
-  m.route.mode = 'hash';
+  const element = document.getElementById('learn-app')!;
+  element.innerHTML = '';
+  const inner = document.createElement('div');
+  element.appendChild(inner);
+  let vnode = patch(inner, view(ctrl));
 
-  const trans = site.trans(opts.i18n);
-  const side = mapSide(opts, trans);
-  const sideCtrl = side.controller();
+  function redraw() {
+    vnode = patch(vnode, view(ctrl));
+  }
 
-  opts.side = {
-    ctrl: sideCtrl,
-    view: function () {
-      return side.view(sideCtrl);
-    },
-  };
+  redraw();
 
-  m.route(element, '/', {
-    '/': map(opts, trans),
-    '/:stage/:level': run(opts, trans),
-    '/:stage': run(opts, trans),
-  } as _mithril.MithrilRoutes<any>);
-
+  const was3d = document.head.querySelector(`link[data-css-key='common.board-3d']`) !== null;
+  pubsub.on('board.change', (is3d: boolean) => {
+    if (is3d !== was3d) setTimeout(site.reload, 200);
+  });
   return {};
 }

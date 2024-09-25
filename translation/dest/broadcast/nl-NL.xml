@@ -22,14 +22,12 @@
   <string name="tournamentDescription">Korte toernooibeschrijving</string>
   <string name="fullDescription">Volledige beschrijving evenement</string>
   <string name="fullDescriptionHelp">Optionele lange beschrijving van de uitzending. %1$s is beschikbaar. Totale lengte moet minder zijn dan %2$s tekens.</string>
-  <string name="sourceUrlOrGameIds">Bron-URL of partij-ID\'s</string>
+  <string name="sourceSingleUrl">URL van pgn-bron</string>
   <string name="sourceUrlHelp">Link die Lichess gebruikt om PGN updates te krijgen. Deze moet openbaar toegankelijk zijn via internet.</string>
-  <string name="gameIdsHelp">U kunt ook maximaal 64 Lichess partij-ID\'s invoeren, gescheiden door spaties.</string>
+  <string name="sourceGameIds">Tot 64 Lichess partij-ID\'\'s, gescheiden door spaties.</string>
   <string name="startDate">Aanvangsdatum in je eigen tijdzone</string>
   <string name="startDateHelp">Optioneel, als je weet wanneer het evenement start</string>
   <string name="credits">Bronvermelding</string>
-  <string name="broadcastUrl">Uitzendingslink</string>
-  <string name="currentRoundUrl">Huidige ronde-link</string>
   <string name="currentGameUrl">Huidige partij-link</string>
   <string name="downloadAllRounds">Alle rondes downloaden</string>
   <string name="resetRound">Deze ronde opnieuw instellen</string>
@@ -39,9 +37,17 @@
   <string name="editRoundStudy">Studieronde bewerken</string>
   <string name="deleteTournament">Verwijder dit toernooi</string>
   <string name="definitivelyDeleteTournament">Verwijder definitief het hele toernooi, inclusief alle rondes en partijen.</string>
-  <string name="automaticLeaderboard">Automatisch scorebord</string>
-  <string name="automaticLeaderboardHelp">Bereken en toon een eenvoudig scorebord gebaseerd op de uitslagen</string>
+  <string name="showScores">Toon scores van spelers op basis van partij-uitslagen</string>
   <string name="replacePlayerTags">Optioneel: vervang spelersnamen, beoordelingen en titels</string>
   <string name="periodInSeconds">Periode in seconden</string>
   <string name="periodInSecondsHelp">Optioneel, hoe lang te wachten tussen aanvragen. Minimaal 2 seconden, maximaal 60 seconden. Standaard automatisch gebaseerd op het aantal kijkers.</string>
+  <string name="fideFederations">FIDE-federaties</string>
+  <string name="top10Rating">Top 10-rating</string>
+  <string name="fidePlayers">FIDE-spelers</string>
+  <string name="fidePlayerNotFound">FIDE-speler niet gevonden</string>
+  <string name="fideProfile">FIDE-profiel</string>
+  <string name="federation">Federatie</string>
+  <string name="ageThisYear">Leeftijd dit jaar</string>
+  <string name="unrated">Zonder rating</string>
+  <string name="recentTournaments">Recente toernooien</string>
 </resources>

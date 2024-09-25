@@ -11,7 +11,7 @@ import lila.room.RoomSocket.{ Protocol as RP, * }
 import lila.core.socket.{ protocol as P, * }
 import lila.tree.Branch
 import lila.tree.Node.{ Comment, Gamebook, Shape, Shapes }
-import lila.tree.Node.{ defaultNodeJsonWriter, minimalNodeJsonWriter }
+import lila.tree.Node.minimalNodeJsonWriter
 
 import actorApi.Who
 
@@ -21,7 +21,7 @@ final private class StudySocket(
     socketKit: SocketKit,
     socketRequest: SocketRequester,
     chatApi: lila.core.chat.ChatApi
-)(using Executor, Scheduler, lila.core.user.FlairGet):
+)(using Executor, Scheduler, lila.core.user.FlairGet, lila.core.config.RateLimit):
 
   import StudySocket.{ *, given }
 
@@ -45,7 +45,7 @@ final private class StudySocket(
           Json.obj(
             "analysis" -> analysis,
             "ch"       -> chapterId,
-            "tree"     -> defaultNodeJsonWriter.writes(tree),
+            "tree"     -> lila.tree.Node.defaultNodeJsonWriter.writes(tree),
             "division" -> division
           )
         )
@@ -228,14 +228,10 @@ final private class StudySocket(
           for
             w        <- who
             username <- o.get[UserStr]("d")
-          yield InviteLimitPerUser.zero(w.u, cost = 1):
-            api.invite(
-              w.u,
-              studyId,
-              username,
-              isPresent = userId => isPresent(studyId, userId),
-              onError = err => send(P.Out.tellSri(w.sri, makeMessage("error", err)))
-            )
+          yield api
+            .invite(w.u, studyId, username, isPresent(studyId, _))
+            .recover:
+              case err: Exception => send(P.Out.tellSri(w.sri, makeMessage("error", err.getMessage)))
 
         case "relaySync" =>
           applyWho: w =>
@@ -290,6 +286,11 @@ final private class StudySocket(
       who: Who
   ) =
     val dests = AnaDests(variant, node.fen, pos.path.toString, pos.chapterId.some)
+    val relayPathDedup = relay
+      .map(_.path)
+      .map: path =>
+        if path == pos.path.+(node.id) then "!"
+        else path.toString
     version(
       "addNode",
       Json
@@ -300,7 +301,7 @@ final private class StudySocket(
           "s" -> sticky
         )
         .add("w", Option.when(relay.isEmpty)(who))
-        .add("relayPath", relay.map(_.path))
+        .add("relayPath", relayPathDedup)
     )
   def deleteNode(pos: Position.Ref, who: Who) = version("deleteNode", Json.obj("p" -> pos, "w" -> who))
   def promote(pos: Position.Ref, toMainline: Boolean, who: Who) =
@@ -424,12 +425,6 @@ final private class StudySocket(
     notifySri(sri, "reload", Json.obj("chapterId" -> chapterId))
   def validationError(error: String, sri: Sri) = notifySri(sri, "validationError", Json.obj("error" -> error))
 
-  private val InviteLimitPerUser = lila.memo.RateLimit[UserId](
-    credits = 50,
-    duration = 24 hour,
-    key = "study_invite.user"
-  )
-
   api.registerSocket(this)
 
 object StudySocket:
@@ -444,9 +439,8 @@ object StudySocket:
 
       def reading[A](o: JsValue)(f: A => Unit)(using reader: Reads[A]): Unit =
         o.obj("d")
-          .flatMap { d =>
+          .flatMap: d =>
             reader.reads(d).asOpt
-          }
           .foreach(f)
 
       case class AtPosition(path: UciPath, chapterId: StudyChapterId):

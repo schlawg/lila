@@ -51,12 +51,16 @@
 }
 
 /* presumably the keyboard is up */
-@media (max-width: at-most($x-short)) {
+@media (max-height: at-most($x-short)) {
   #top {
     display: none;
   }
 
   .form-group {
     margin-bottom: 1rem;
+  }
+
+  .password-complexity {
+    margin-top: 1rem;
   }
 }

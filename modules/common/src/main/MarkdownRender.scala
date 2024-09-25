@@ -2,6 +2,7 @@ package lila.common
 
 import chess.format.pgn.PgnStr
 import com.vladsch.flexmark.ast.{ AutoLink, Image, Link, LinkNode }
+import com.vladsch.flexmark.ext.anchorlink.AnchorLinkExtension
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension
 import com.vladsch.flexmark.ext.gfm.strikethrough.StrikethroughExtension
 import com.vladsch.flexmark.ext.tables.{ TableBlock, TablesExtension }
@@ -27,17 +28,13 @@ import com.vladsch.flexmark.util.ast.{ Node, TextCollectingVisitor }
 import com.vladsch.flexmark.util.data.{ DataHolder, MutableDataHolder, MutableDataSet }
 import com.vladsch.flexmark.util.html.MutableAttributes
 import com.vladsch.flexmark.util.misc.Extension
-import io.mola.galimatias.URL
 
 import java.util.Arrays
 import scala.collection.Set
 import scala.jdk.CollectionConverters.*
-import scala.util.Try
 import scala.util.matching.Regex
 
-import lila.common.RawHtml
-import lila.core.config.AssetDomain
-import lila.core.config.NetDomain
+import lila.core.config.{ AssetDomain, NetDomain }
 import lila.core.misc.lpv.LpvEmbed
 
 final class MarkdownRender(
@@ -54,6 +51,7 @@ final class MarkdownRender(
 ):
 
   private val extensions = java.util.ArrayList[Extension]()
+  if header then extensions.add(AnchorLinkExtension.create())
   if table then
     extensions.add(TablesExtension.create())
     extensions.add(MarkdownRender.tableWrapperExtension)
@@ -76,7 +74,8 @@ final class MarkdownRender(
 
   // configurable
   if table then options.set(TablesExtension.CLASS_NAME, "slist")
-  if !header then options.set(Parser.HEADING_PARSER, Boolean.box(false))
+  if header then options.set(AnchorLinkExtension.ANCHORLINKS_WRAP_TEXT, Boolean.box(false))
+  else options.set(Parser.HEADING_PARSER, Boolean.box(false))
   if !blockQuote then options.set(Parser.BLOCK_QUOTE_PARSER, Boolean.box(false))
   if !list then options.set(Parser.LIST_BLOCK_PARSER, Boolean.box(false))
 
@@ -138,11 +137,12 @@ object MarkdownRender:
         "i.postimg.cc",
         "xkcd.com",
         "image.lichess1.org",
+        "pic.lichess.org",
         "127.0.0.1"
       )
 
     private def whitelistedSrc(src: String, assetDomain: Option[AssetDomain]): Option[String] = for
-      url <- Try(URL.parse(src)).toOption
+      url <- lila.common.url.parse(src).toOption
       if url.scheme == "http" || url.scheme == "https"
       host <- Option(url.host).map(_.toHostString)
       if (assetDomain.toList ::: whitelist).exists(h => host == h.value || host.endsWith(s".$h"))
@@ -199,13 +199,12 @@ object MarkdownRender:
       )
 
     final class PgnRegexes(val game: Regex, val chapter: Regex)
-    def makePgnRegexes(domain: NetDomain): PgnRegexes =
-      val quotedDomain = java.util.regex.Pattern.quote(domain.value)
+    private val pgnRegexes: PgnRegexes =
+      val quotedDomain = java.util.regex.Pattern.quote(expander.domain.value)
       PgnRegexes(
         s"""^(?:https?://)?$quotedDomain/(?:embed/)?(?:game/)?(\\w{8})(?:(?:/(white|black))|\\w{4}|)(?:#(\\d+))?$$""".r,
         s"""^(?:https?://)?$quotedDomain/study/(?:embed/)?(?:\\w{8}/)?(\\w{8})(?:#(last|\\d+))?$$""".r
       )
-    private val pgnRegexes = makePgnRegexes(expander.domain)
 
     private def renderLink(node: Link, context: NodeRendererContext, html: HtmlWriter): Unit =
       renderLinkWithBase(

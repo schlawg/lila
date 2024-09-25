@@ -2,8 +2,8 @@ package lila.feed
 
 import com.softwaremill.macwire.*
 
-import lila.core.lilaism.Lilaism.*
 import lila.core.config.CollName
+import lila.core.lilaism.Lilaism.*
 
 @Module
 final class Env(

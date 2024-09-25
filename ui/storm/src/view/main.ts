@@ -9,8 +9,10 @@ import { getNow } from 'puz/util';
 import { playModifiers, renderCombo } from 'puz/view/util';
 import * as licon from 'common/licon';
 import { onInsert, looseH as h } from 'common/snabbdom';
+import { Chessground as makeChessground } from 'chessground';
+import { pubsub } from 'common/pubsub';
 
-export default function (ctrl: StormCtrl): VNode {
+export default function(ctrl: StormCtrl): VNode {
   if (ctrl.vm.dupTab) return renderReload(ctrl, 'thisRunWasOpenedInAnotherTab');
   if (ctrl.vm.lateStart) return renderReload(ctrl, 'thisRunHasExpired');
   if (!ctrl.run.endAt)
@@ -21,13 +23,20 @@ export default function (ctrl: StormCtrl): VNode {
 const chessground = (ctrl: StormCtrl): VNode =>
   h('div.cg-wrap', {
     hook: {
-      insert: vnode =>
+      insert: vnode => {
         ctrl.ground(
-          site.makeChessground(
+          makeChessground(
             vnode.elm as HTMLElement,
             makeCgConfig(makeCgOpts(ctrl.run, !ctrl.run.endAt, ctrl.flipped), ctrl.pref, ctrl.userMove),
           ),
-        ),
+        );
+        pubsub.on('board.change', (is3d: boolean) =>
+          ctrl.withGround(g => {
+            g.state.addPieceZIndex = is3d;
+            g.redrawAll();
+          }),
+        );
+      },
     },
   });
 

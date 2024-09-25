@@ -1,20 +1,16 @@
 package lila.study
 
-import lila.tree.Node.partitionTreeJsonWriter
-import lila.core.LightUser
-import lila.tree.Root
-import chess.variant.{ Variant, Standard }
-import lila.tree.NewRoot
-
-import monocle.syntax.all.*
-import lila.study.Helpers.*
-
-import lila.db.BSON
-import BSONHandlers.given
-import lila.db.BSON.Writer
-import lila.db.BSON.Reader
-import lila.db.dsl.Bdoc
+import chess.variant.Variant
 import play.api.libs.json.Json
+
+import lila.core.LightUser
+import lila.db.BSON
+import lila.db.BSON.{ Reader, Writer }
+import lila.db.dsl.Bdoc
+import lila.study.Helpers.*
+import lila.tree.{ NewRoot, Node, Root }
+
+import BSONHandlers.given
 
 class JsonTest extends munit.FunSuite:
 
@@ -67,7 +63,7 @@ class JsonTest extends munit.FunSuite:
     def cleanCommentIds: Root =
       root.toNewRoot.cleanup.toRoot
 
-  def writeTree(tree: Root, variant: Variant) = partitionTreeJsonWriter
+  def writeTree(tree: Root, variant: Variant) = Node.partitionTreeJsonWriter
     .writes(lila.study.TreeBuilder(tree, variant))
     .toString
 

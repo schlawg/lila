@@ -1,50 +1,47 @@
-import * as fs from 'node:fs';
-import * as cps from 'node:child_process';
-import * as ps from 'node:process';
-import { parseModules } from './parse';
+import fs from 'node:fs';
+import cps from 'node:child_process';
+import ps from 'node:process';
+import { parsePackages } from './parse';
 import { tsc, stopTsc } from './tsc';
 import { sass, stopSass } from './sass';
 import { esbuild, stopEsbuild } from './esbuild';
 import { copies, stopCopies } from './copies';
 import { startMonitor, stopMonitor } from './monitor';
-import { init as initManifest } from './manifest';
+import { writeManifest } from './manifest';
 import { clean } from './clean';
-import { LichessModule, env, errorMark, colors as c } from './main';
+import { Package, env, errorMark, colors as c } from './main';
 
-export async function build(mods: string[]) {
+export async function build(pkgs: string[]): Promise<void> {
   await stop();
   await clean();
 
   if (env.install) cps.execSync('pnpm install', { cwd: env.rootDir, stdio: 'inherit' });
-  if (!mods.length) env.log(`Parsing modules in '${c.cyan(env.uiDir)}'`);
+  if (!pkgs.length) env.log(`Parsing packages in '${c.cyan(env.uiDir)}'`);
 
   ps.chdir(env.uiDir);
-  [env.modules, env.deps] = await parseModules();
+  [env.packages, env.deps] = await parsePackages();
 
-  mods
-    .filter(x => !env.modules.has(x))
-    .forEach(x => env.exit(`${errorMark} - unknown module '${c.magenta(x)}'`));
+  pkgs
+    .filter(x => !env.packages.has(x))
+    .forEach(x => env.exit(`${errorMark} - unknown package '${c.magenta(x)}'`));
 
-  env.building = mods.length === 0 ? [...env.modules.values()] : depsMany(mods);
+  env.building = pkgs.length === 0 ? [...env.packages.values()] : depsMany(pkgs);
 
-  if (mods.length) env.log(`Building ${c.grey(env.building.map(x => x.name).join(', '))}`);
+  if (pkgs.length) env.log(`Building ${c.grey(env.building.map(x => x.name).join(', '))}`);
 
   await Promise.allSettled([
-    fs.promises.mkdir(env.jsDir),
-    fs.promises.mkdir(env.cssDir),
+    fs.promises.mkdir(env.jsOutDir),
+    fs.promises.mkdir(env.cssOutDir),
+    fs.promises.mkdir(env.hashOutDir),
     fs.promises.mkdir(env.themeGenDir),
-    fs.promises.mkdir(env.cssTempDir),
+    fs.promises.mkdir(env.buildTempDir),
   ]);
 
-  await initManifest();
-  sass();
-  await tsc();
-  await copies();
-  await esbuild();
-  startMonitor(mods);
+  startMonitor(pkgs);
+  await Promise.all([sass(), copies(), esbuild(tsc())]);
 }
 
-export async function stop() {
+export async function stop(): Promise<void> {
   stopMonitor();
   stopSass();
   stopTsc();
@@ -52,29 +49,30 @@ export async function stop() {
   await stopEsbuild();
 }
 
-export function postBuild() {
-  for (const mod of env.building) {
-    mod.post.forEach((args: string[]) => {
-      env.log(`[${c.grey(mod.name)}] exec - ${c.cyanBold(args.join(' '))}`);
-      const stdout = cps.execSync(`${args.join(' ')}`, { cwd: mod.root });
-      if (stdout) env.log(stdout, { ctx: mod.name });
+export function postBuild(): void {
+  writeManifest();
+  for (const pkg of env.building) {
+    pkg.post.forEach((args: string[]) => {
+      env.log(`[${c.grey(pkg.name)}] exec - ${c.cyanBold(args.join(' '))}`);
+      const stdout = cps.execSync(`${args.join(' ')}`, { cwd: pkg.root });
+      if (stdout) env.log(stdout, { ctx: pkg.name });
     });
   }
 }
 
-export function preModule(mod: LichessModule | undefined) {
-  mod?.pre.forEach((args: string[]) => {
-    env.log(`[${c.grey(mod.name)}] exec - ${c.cyanBold(args.join(' '))}`);
-    const stdout = cps.execSync(`${args.join(' ')}`, { cwd: mod.root });
-    if (stdout) env.log(stdout, { ctx: mod.name });
+export function prePackage(pkg: Package | undefined): void {
+  pkg?.pre.forEach((args: string[]) => {
+    env.log(`[${c.grey(pkg.name)}] exec - ${c.cyanBold(args.join(' '))}`);
+    const stdout = cps.execSync(`${args.join(' ')}`, { cwd: pkg.root });
+    if (stdout) env.log(stdout, { ctx: pkg.name });
   });
 }
 
-function depsOne(modName: string): LichessModule[] {
+function depsOne(pkgName: string): Package[] {
   const collect = (dep: string): string[] => [...(env.deps.get(dep) || []).flatMap(d => collect(d)), dep];
-  return unique(collect(modName).map(name => env.modules.get(name)));
+  return unique(collect(pkgName).map(name => env.packages.get(name)));
 }
 
-const depsMany = (modNames: string[]): LichessModule[] => unique(modNames.flatMap(depsOne));
+const depsMany = (pkgNames: string[]): Package[] => unique(pkgNames.flatMap(depsOne));
 
-const unique = <T>(mods: (T | undefined)[]): T[] => [...new Set(mods.filter(x => x))] as T[];
+const unique = <T>(pkgs: (T | undefined)[]): T[] => [...new Set(pkgs.filter(x => x))] as T[];

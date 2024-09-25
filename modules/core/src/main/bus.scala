@@ -1,11 +1,11 @@
 package lila.core
 package bus
 
-trait Tellable extends Any:
-  def !(msg: Matchable): Unit
+type Channel = String
 
-type Channel    = String
-type Subscriber = Tellable
-type Payload    = Matchable
+// constructor is private so instances can only be created by extending the `GivenChannel` trait
+final class WithChannel[T](private val key: Channel):
+  def channel: Channel = key
 
-final class WithChannel[T](val channel: Channel)
+transparent trait GivenChannel[T](val channel: Channel):
+  given WithChannel[T] = WithChannel[T](channel)

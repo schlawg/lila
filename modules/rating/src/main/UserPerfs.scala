@@ -1,18 +1,11 @@
 package lila.rating
 
 import chess.Speed
-
 import scalalib.HeapSort.*
-import lila.rating.{ Glicko, Perf }
 
-import lila.rating.PerfType
+import lila.core.perf.{ KeyedPerf, Perf, PuzPerf, UserPerfs }
 import lila.core.user.LightPerf
-import lila.core.perf.Perf
-import lila.core.rating.Glicko
 import lila.rating.PerfExt.*
-import lila.rating.GlickoExt.*
-import lila.core.perf.UserPerfs
-import lila.core.perf.{ KeyedPerf, PuzPerf }
 
 object UserPerfsExt:
 
@@ -35,8 +28,6 @@ object UserPerfsExt:
       PerfKey.crazyhouse     -> p.crazyhouse,
       PerfKey.puzzle         -> p.puzzle
     )
-
-    def keyed(pk: PerfKey) = KeyedPerf(pk, p(pk))
 
     def best8Perfs: List[PerfKey]    = UserPerfs.firstRow ::: bestOf(UserPerfs.secondRow, 4)
     def best6Perfs: List[PerfKey]    = UserPerfs.firstRow ::: bestOf(UserPerfs.secondRow, 2)

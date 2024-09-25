@@ -2,6 +2,7 @@ package lila.tutor
 package ui
 
 import lila.ui.*
+
 import ScalatagsTemplate.{ *, given }
 
 final class TutorBits(helpers: Helpers)(
@@ -13,8 +14,8 @@ final class TutorBits(helpers: Helpers)(
       mods: AttrPair*
   )(using Context) =
     Page(title)
-      .cssTag("tutor")
-      .js(EsmInit("tutor"))
+      .css("tutor")
+      .js(Esm("tutor"))
       .csp(_.withInlineIconFont)
       .wrap: body =>
         main(cls := List("page-menu tutor" -> true, "page-small" -> pageSmall))(

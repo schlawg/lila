@@ -2,6 +2,7 @@ package lila.web
 package ui
 
 import lila.ui.*
+
 import ScalatagsTemplate.{ *, given }
 
 final class TopNav(helpers: Helpers):
@@ -39,6 +40,7 @@ final class TopNav(helpers: Helpers):
           linkTitle(puzzleUrl, trans.site.puzzles()),
           div(role := "group")(
             a(href := puzzleUrl)(trans.site.puzzles()),
+            a(href := langHref(routes.Puzzle.themes))(trans.puzzle.puzzleThemes()),
             a(href := routes.Puzzle.dashboard(30, "home", none))(trans.puzzle.puzzleDashboard()),
             a(href := langHref(routes.Puzzle.streak))("Puzzle Streak"),
             a(href := langHref(routes.Storm.home))("Puzzle Storm"),
@@ -83,7 +85,7 @@ final class TopNav(helpers: Helpers):
           ctx.kid.no.option(a(href := routes.ForumCateg.index)(trans.site.forum())),
           ctx.kid.no.option(a(href := langHref(routes.Ublog.communityAll()))(trans.site.blog())),
           (ctx.kid.no && ctx.me.exists(_.isPatron))
-            .option(a(cls := "community-patron", href := routes.Plan.index)(trans.patron.donate()))
+            .option(a(cls := "community-patron", href := routes.Plan.index())(trans.patron.donate()))
         )
       ),
       st.section(

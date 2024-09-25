@@ -2,14 +2,12 @@ package lila.user
 
 import reactivemongo.api.bson.*
 
-import lila.core.LightUser
-import lila.db.dsl.{ *, given }
-import lila.memo.CacheApi.*
-import lila.rating.{ Perf, PerfType, UserPerfs }
+import lila.core.perf.{ PerfId, UserWithPerfs }
 import lila.core.user.LightPerf
-import lila.core.perf.PerfId
 import lila.core.userId.UserSearch
-import lila.core.perf.UserWithPerfs
+import lila.db.dsl.*
+import lila.memo.CacheApi.*
+import lila.rating.{ PerfType, UserPerfs }
 
 final class Cached(
     userRepo: UserRepo,
@@ -47,7 +45,7 @@ final class Cached(
     _.refreshAfterWrite(10 minutes).buildAsyncFuture:
       loader: _ =>
         PerfType.leaderboardable
-          .traverse: perf =>
+          .sequentially: perf =>
             rankingApi.topPerf(PerfType(perf).id, 1)
           .dmap(_.flatten)
 

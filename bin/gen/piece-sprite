@@ -34,7 +34,6 @@ themes = [
   ['tatiana', 'svg'],
   ['staunty', 'svg'],
   ['governor', 'svg'],
-  ['libra', 'svg'],
   ['dubrovny', 'svg'],
   ['icpieces', 'svg'],
   ['horsey', 'svg'],
@@ -42,7 +41,9 @@ themes = [
   ['disguised', 'svg'],
   ['celtic', 'svg'],
   ['kiwen-suwi', 'svg'],
-  ['mpchess','svg']
+  ['mpchess','svg'],
+  ['cooke','svg'],
+  ['monarchy','svg'],
 ]
 types = {
   'svg' => 'svg+xml;base64,',

@@ -1,10 +1,11 @@
 package lila.feed
 package ui
 
-import scalalib.paginator.Paginator
 import play.api.data.Form
+import scalalib.paginator.Paginator
 
 import lila.ui.{ *, given }
+
 import ScalatagsTemplate.{ *, given }
 
 final class FeedUi(helpers: Helpers, atomUi: AtomUi)(
@@ -21,12 +22,12 @@ final class FeedUi(helpers: Helpers, atomUi: AtomUi)(
 
   private def page(title: String, hasAsks: Boolean, edit: Boolean = false)(using Context): Page =
     sitePage(title)
-      .cssTag("dailyFeed")
-      .cssTag(hasAsks.option("ask"))
+      .css("bits.dailyFeed")
+      .css(hasAsks.option("bits.ask"))
       .js(infiniteScrollEsmInit)
-      .js(hasAsks.option(jsModuleInit("bits.ask")))
-      .js(edit.option(EsmInit("bits.flatpickr")))
-      .js(edit.option(EsmInit("bits.dailyFeed")))
+      .js(edit.option(Esm("bits.flatpickr")))
+      .js(edit.option(esmInitBit("dailyFeed")))
+      .js(hasAsks.option(Esm("bits.ask")))
 
   def index(ups: Paginator[Feed.Update], hasAsks: Boolean)(using Context) =
     page("Updates", hasAsks):
@@ -80,7 +81,7 @@ final class FeedUi(helpers: Helpers, atomUi: AtomUi)(
             "New update!"
           )
         ),
-        postForm(cls := "content_box_content form3", action := routes.Feed.create):
+        postForm(cls := "form3", action := routes.Feed.create):
           inForm(form)
       )
 
@@ -96,7 +97,7 @@ final class FeedUi(helpers: Helpers, atomUi: AtomUi)(
             )
           ),
           standardFlash,
-          postForm(cls := "content_box_content form3", action := routes.Feed.update(update.id)):
+          postForm(cls := "form3", action := routes.Feed.update(update.id)):
             inForm(form)
           ,
           postForm(action := routes.Feed.delete(update.id))(cls := "daily-feed__delete"):

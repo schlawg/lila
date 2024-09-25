@@ -11,27 +11,27 @@ export class SimpleEngine implements CevalEngine {
     this.url = `${info.assets.root}/${info.assets.js}`;
   }
 
-  getInfo() {
+  getInfo(): BrowserEngineInfo {
     return this.info;
   }
 
-  getState() {
+  getState(): CevalState {
     return !this.worker
       ? CevalState.Initial
       : this.failed
-      ? CevalState.Failed
-      : !this.protocol.engineName
-      ? CevalState.Loading
-      : this.protocol.isComputing()
-      ? CevalState.Computing
-      : CevalState.Idle;
+        ? CevalState.Failed
+        : !this.protocol.engineName
+          ? CevalState.Loading
+          : this.protocol.isComputing()
+            ? CevalState.Computing
+            : CevalState.Idle;
   }
 
-  start(work: Work) {
+  start(work: Work): void {
     this.protocol.compute(work);
 
     if (!this.worker) {
-      this.worker = new Worker(site.asset.url(this.url, { sameDomain: true }));
+      this.worker = new Worker(site.asset.url(this.url, { pathOnly: true }));
       this.worker.addEventListener('message', e => this.protocol.received(e.data), true);
       this.worker.addEventListener(
         'error',
@@ -45,15 +45,15 @@ export class SimpleEngine implements CevalEngine {
     }
   }
 
-  stop() {
+  stop(): void {
     this.protocol.compute(undefined);
   }
 
-  engineName() {
+  engineName(): string | undefined {
     return this.protocol.engineName;
   }
 
-  destroy() {
+  destroy(): void {
     this.worker?.terminate();
     this.worker = undefined;
   }

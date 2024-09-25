@@ -4,9 +4,9 @@ import chess.variant.Variant
 import chess.{ Clock, Status }
 import reactivemongo.api.bson.*
 
+import lila.core.game.GameRepo
 import lila.db.BSON
 import lila.db.dsl.{ *, given }
-import lila.core.game.GameRepo
 
 final private[simul] class SimulRepo(val coll: Coll, gameRepo: GameRepo)(using Executor):
 
@@ -27,7 +27,7 @@ final private[simul] class SimulRepo(val coll: Coll, gameRepo: GameRepo)(using E
         gameId = r.get[GameId]("gameId"),
         status = r.get[Status]("status"),
         wins = r.boolO("wins"),
-        hostColor = r.strO("hostColor").flatMap(chess.Color.fromName) | chess.White
+        hostColor = r.strO("hostColor").flatMap(Color.fromName) | chess.White
       )
     def writes(w: BSON.Writer, o: SimulPairing) =
       $doc(
@@ -65,9 +65,9 @@ final private[simul] class SimulRepo(val coll: Coll, gameRepo: GameRepo)(using E
   def findPending(hostId: UserId): Fu[List[Simul]] =
     coll.list[Simul](createdSelect ++ $doc("hostId" -> hostId))
 
-  def byTeamLeaders[U: UserIdOf](teamId: TeamId, hostIds: Seq[U]): Fu[List[Simul]] =
+  def byTeamLeaders[U: UserIdOf](teamId: TeamId, hosts: Seq[U]): Fu[List[Simul]] =
     coll
-      .find(createdSelect ++ $doc("hostId".$in(hostIds), "team" -> teamId))
+      .find(createdSelect ++ $doc("hostId".$in(hosts.map(_.id)), "team" -> teamId))
       .hint(coll.hint($doc("hostId" -> 1)))
       .cursor[Simul]()
       .listAll()

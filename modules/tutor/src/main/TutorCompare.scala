@@ -1,13 +1,14 @@
 package lila.tutor
 
 import scalalib.HeapSort.topN
+
 import lila.insight.{ InsightDimension, InsightPosition }
 
 case class TutorCompare[D, V](
     dimensionType: InsightDimension[D],
     metric: TutorMetric[V],
     points: List[(D, TutorBothValueOptions[V])],
-    color: Option[chess.Color] = None
+    color: Option[Color] = None
 )(using number: TutorNumber[V]):
   import TutorCompare.*
 
@@ -29,7 +30,7 @@ case class TutorCompare[D, V](
 
   def allComparisons: List[AnyComparison] = dimensionComparisons ::: peerComparisons
 
-  def as(color: chess.Color) = copy(color = color.some)
+  def as(color: Color) = copy(color = color.some)
 
 object TutorCompare:
 
@@ -39,7 +40,7 @@ object TutorCompare:
       metric: TutorMetric[V],
       value: ValueCount[V],
       reference: Reference[V],
-      color: Option[chess.Color] = None
+      color: Option[Color] = None
   )(using number: TutorNumber[V]):
 
     val grade = number.grade(value.value, reference.value.value)

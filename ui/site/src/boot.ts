@@ -1,22 +1,20 @@
 import * as licon from 'common/licon';
-import * as miniBoard from 'common/miniBoard';
+import { initMiniBoards, initMiniGames, updateMiniGame, finishMiniGame } from 'common/miniBoard';
 import { prefersLight } from 'common/theme';
-import * as miniGame from './miniGame';
-import * as timeago from './timeago';
 import * as xhr from 'common/xhr';
 import announce from './announce';
 import OnlineFriends from './friends';
 import powertip from './powertip';
-import pubsub from './pubsub';
 import serviceWorker from './serviceWorker';
-import StrongSocket from './socket';
+import StrongSocket from 'common/socket';
 import topBar from './topBar';
-import watchers from './watchers';
-import { requestIdleCallback } from './functions';
-import { siteTrans } from './trans';
+import { watchers } from 'common/watchers';
 import { isIOS } from 'common/device';
-import { scrollToInnerSelector } from 'common';
+import { scrollToInnerSelector, requestIdleCallback } from 'common';
 import { dispatchChessgroundResize } from 'common/resize';
+import { userComplete } from 'common/userComplete';
+import { updateTimeAgo, renderTimeAgo } from './renderTimeAgo';
+import { pubsub } from 'common/pubsub';
 
 export function boot() {
   $('#user_tag').removeAttr('href');
@@ -24,12 +22,12 @@ export function boot() {
   const showDebug = location.hash.startsWith('#debug');
 
   requestAnimationFrame(() => {
-    miniBoard.initAll();
-    miniGame.initAll();
-    pubsub.on('content-loaded', miniBoard.initAll);
-    pubsub.on('content-loaded', miniGame.initAll);
-    timeago.updateRegularly(1000);
-    pubsub.on('content-loaded', timeago.findAndRender);
+    initMiniBoards();
+    initMiniGames();
+    pubsub.on('content-loaded', initMiniBoards);
+    pubsub.on('content-loaded', initMiniGames);
+    updateTimeAgo(1000);
+    pubsub.on('content-loaded', renderTimeAgo);
   });
   requestIdleCallback(() => {
     const friendsEl = document.getElementById('friend_box');
@@ -38,45 +36,32 @@ export function boot() {
     const chatMembers = document.querySelector('.chat__members') as HTMLElement | null;
     if (chatMembers) watchers(chatMembers);
 
-    $('.subnav__inner').each(function (this: HTMLElement) {
+    $('.subnav__inner').each(function(this: HTMLElement) {
       scrollToInnerSelector(this, '.active', true);
     });
-    $('#main-wrap')
-      .on('click', '.autoselect', function (this: HTMLInputElement) {
-        this.select();
-      })
-      .on('click', 'button.copy', function (this: HTMLElement) {
-        const showCheckmark = () => $(this).attr('data-icon', licon.Checkmark);
-        $('#' + this.dataset.rel).each(function (this: HTMLInputElement) {
-          try {
-            navigator.clipboard.writeText(this.value).then(showCheckmark);
-          } catch (e) {
-            console.error(e);
-          }
-        });
-        return false;
-      });
-
-    $('body').on('click', 'a.relation-button', function (this: HTMLAnchorElement) {
-      const $a = $(this).addClass('processing').css('opacity', 0.3);
-      xhr.text(this.href, { method: 'post' }).then(html => {
-        if (html.includes('relation-actions')) $a.parent().replaceWith(html);
-        else $a.replaceWith(html);
+    $('#main-wrap').on('click', '.copy-me__button', function(this: HTMLElement) {
+      const showCheckmark = () => {
+        $(this).attr('data-icon', licon.Checkmark).removeClass('button-metal');
+        setTimeout(() => $(this).attr('data-icon', licon.Clipboard).addClass('button-metal'), 1000);
+      };
+      $(this.parentElement!.firstElementChild!).each(function(this: any) {
+        try {
+          navigator.clipboard.writeText(this.value || this.href).then(showCheckmark);
+        } catch (e) {
+          console.error(e);
+        }
       });
       return false;
     });
 
-    $('.mselect .button').on('click', function (this: HTMLElement) {
-      const $p = $(this).parent();
-      $p.toggleClass('shown');
-      requestIdleCallback(() => {
-        const handler = (e: Event) => {
-          if ($p[0]!.contains(e.target as HTMLElement)) return;
-          $p.removeClass('shown');
-          $('html').off('click', handler);
-        };
-        $('html').on('click', handler);
-      }, 200);
+    $('body').on('click', '.relation-button', function(this: HTMLAnchorElement) {
+      const $a = $(this).addClass('processing').css('opacity', 0.3);
+      xhr.text(this.href, { method: 'post' }).then(html => {
+        if ($a.hasClass('aclose')) $a.hide();
+        else if (html.includes('relation-actions')) $a.parent().replaceWith(html);
+        else $a.replaceWith(html);
+      });
+      return false;
     });
 
     powertip.watchMouse();
@@ -89,10 +74,10 @@ export function boot() {
 
     window.addEventListener('resize', dispatchChessgroundResize);
 
-    $('.user-autocomplete').each(function (this: HTMLInputElement) {
+    $('.user-autocomplete').each(function(this: HTMLInputElement) {
       const focus = !!this.autofocus;
       const start = () =>
-        site.asset.userComplete({
+        userComplete({
           input: this,
           friend: !!this.dataset.friend,
           tag: this.dataset.tag as any,
@@ -103,11 +88,11 @@ export function boot() {
       else $(this).one('focus', start);
     });
 
-    $('input.confirm, button.confirm').on('click', function (this: HTMLElement) {
+    $('input.confirm, button.confirm').on('click', function(this: HTMLElement) {
       return confirm(this.title || 'Confirm this action?');
     });
 
-    $('#main-wrap').on('click', 'a.bookmark', function (this: HTMLAnchorElement) {
+    $('#main-wrap').on('click', 'a.bookmark', function(this: HTMLAnchorElement) {
       const t = $(this).toggleClass('bookmarked');
       xhr.text(this.href, { method: 'post' });
       const count = (parseInt(t.text(), 10) || 0) + (t.hasClass('bookmarked') ? 1 : -1);
@@ -129,8 +114,17 @@ export function boot() {
       el.setAttribute('content', el.getAttribute('content') + ',maximum-scale=1.0');
     }
 
+    $('.toggle-box--toggle').each(function(this: HTMLFieldSetElement) {
+      const toggle = () => this.classList.toggle('toggle-box--toggle-off');
+      $(this)
+        .children('legend')
+        .on('click', toggle)
+        .on('keypress', e => e.key == 'Enter' && toggle());
+    });
+
     if (setBlind && !site.blindMode) setTimeout(() => $('#blind-mode button').trigger('click'), 1500);
 
+    if (site.debug) site.asset.loadEsm('bits.devMode');
     if (showDebug) site.asset.loadEsm('bits.diagnosticDialog');
 
     const pageAnnounce = document.body.getAttribute('data-announce');
@@ -138,18 +132,20 @@ export function boot() {
 
     serviceWorker();
 
+    console.info('Lichess is open source! See https://lichess.org/source');
+
     // socket default receive handlers
     pubsub.on('socket.in.redirect', (d: RedirectTo) => {
       site.unload.expected = true;
       site.redirect(d);
     });
     pubsub.on('socket.in.fen', e =>
-      document.querySelectorAll('.mini-game-' + e.id).forEach((el: HTMLElement) => miniGame.update(el, e)),
+      document.querySelectorAll('.mini-game-' + e.id).forEach((el: HTMLElement) => updateMiniGame(el, e)),
     );
     pubsub.on('socket.in.finish', e =>
       document
         .querySelectorAll('.mini-game-' + e.id)
-        .forEach((el: HTMLElement) => miniGame.finish(el, e.win)),
+        .forEach((el: HTMLElement) => finishMiniGame(el, e.win)),
     );
     pubsub.on('socket.in.announce', announce);
     pubsub.on('socket.in.tournamentReminder', (data: { id: string; name: string }) => {
@@ -163,8 +159,8 @@ export function boot() {
               .append(
                 $(`<a class="withdraw text" data-icon="${licon.Pause}">`)
                   .attr('href', url + '/withdraw')
-                  .text(siteTrans('pause'))
-                  .on('click', function (this: HTMLAnchorElement) {
+                  .text(site.trans('pause'))
+                  .on('click', function(this: HTMLAnchorElement) {
                     xhr.text(this.href, { method: 'post' });
                     $('#announce').remove();
                     return false;
@@ -173,7 +169,7 @@ export function boot() {
               .append(
                 $(`<a class="text" data-icon="${licon.PlayTriangle}">`)
                   .attr('href', url)
-                  .text(siteTrans('resume')),
+                  .text(site.trans('resume')),
               ),
           ),
       );

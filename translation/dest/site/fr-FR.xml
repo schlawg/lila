@@ -70,6 +70,8 @@
   <string name="promoteVariation">Promouvoir la variante</string>
   <string name="makeMainLine">En faire la variante principale</string>
   <string name="deleteFromHere">Supprimer à partir d\'ici</string>
+  <string name="collapseVariations">Fermer les variantes</string>
+  <string name="expandVariations">Afficher les variantes</string>
   <string name="forceVariation">Forcer la variante</string>
   <string name="copyVariationPgn">Copier le PGN de la variante</string>
   <string name="move">Coup</string>
@@ -178,6 +180,7 @@
   <string name="latestForumPosts">Derniers posts du forum</string>
   <string name="players">Joueurs</string>
   <string name="friends">Amis</string>
+  <string name="otherPlayers">autres joueurs</string>
   <string name="discussions">Discussions</string>
   <string name="today">Aujourd\'hui</string>
   <string name="yesterday">Hier</string>
@@ -465,9 +468,6 @@
   <string name="safeTournamentName">Choisissez un sage nom pour le tournoi.</string>
   <string name="inappropriateNameWarning">Toute conduite inappropriée aboutira à la fermeture de votre compte.</string>
   <string name="emptyTournamentName">Laissez vide pour que le tournoi soit nommé d\'après le nom d\'un grand maître.</string>
-  <string name="recommendNotTouching">Nous recommandons de ne pas modifier cela.</string>
-  <string name="fewerPlayers">Si vous définissez des conditions d\'admission, votre tournoi aura moins de joueurs.</string>
-  <string name="showAdvancedSettings">Afficher les paramètres avancés</string>
   <string name="makePrivateTournament">Rendre le tournoi privé et en restreindre l\'accès avec un mot de passe</string>
   <string name="join">Rejoindre</string>
   <string name="withdraw">Renoncer</string>
@@ -507,8 +507,7 @@
   <string name="ifNoneLeaveEmpty">Sinon, laissez vide</string>
   <string name="profile">Profil</string>
   <string name="editProfile">Modifier le profil</string>
-  <string name="firstName">Prénom</string>
-  <string name="lastName">Nom</string>
+  <string name="realName">Nom réel</string>
   <string name="setFlair">Choisir votre émoji</string>
   <string name="flair">Émoji</string>
   <string name="youCanHideFlair">Un paramètre permet de cacher les émojis des utilisateurs sur tout le site.</string>
@@ -539,6 +538,8 @@
   <string name="descPrivateHelp">Texte que seuls les membres de l\'équipe verront. Si utilisé, remplace la description publique pour les membres de l\'équipe.</string>
   <string name="no">Non</string>
   <string name="yes">Oui</string>
+  <string name="website">Site Web</string>
+  <string name="mobile">Appli mobile</string>
   <string name="help">Aide :</string>
   <string name="createANewTopic">Créer un nouveau sujet</string>
   <string name="topics">Sujets</string>
@@ -555,11 +556,11 @@
   <string name="reason">Motif</string>
   <string name="whatIsIheMatter">Quel est le problème ?</string>
   <string name="cheat">Triche</string>
-  <string name="insult">Insulte</string>
   <string name="troll">Troll</string>
-  <string name="ratingManipulation">Manipulation du classement</string>
   <string name="other">Autre</string>
-  <string name="reportDescriptionHelp">Copiez le(s) lien(s) vers les parties et expliquez en quoi le comportement de cet utilisateur est inapproprié. Ne dites pas juste \"il triche\", mais expliquez comment vous êtes arrivé à cette conclusion. Votre rapport sera traité plus vite s\'il est écrit en anglais.</string>
+  <string name="reportCheatBoostHelp">Collez le lien vers la ou les parties et expliquez pourquoi le comportement de l\'utilisateur est inapproprié. Ne dites pas juste « il triche »; expliquez comment vous êtes arrivé à cette conclusion.</string>
+  <string name="reportUsernameHelp">Expliquez pourquoi ce nom d\'utilisateur est offensant. Ne dites pas simplement qu\'il est choquant ou inapproprié; expliquez comment vous êtes arrivé à cette conclusion, surtout si l\'insulte n\'est pas claire, n\'est pas en anglais, est en argot ou a une connotation historique ou culturelle.</string>
+  <string name="reportProcessedFasterInEnglish">Votre rapport sera traité plus rapidement s\'il est rédigé en anglais.</string>
   <string name="error.provideOneCheatedGameLink">Merci de fournir au moins un lien vers une partie où il y a eu triche.</string>
   <string name="by">par %s</string>
   <string name="importedByX">Importée par %s</string>
@@ -592,6 +593,7 @@
   <string name="slow">Lente</string>
   <string name="insideTheBoard">Sur l\'échiquier</string>
   <string name="outsideTheBoard">En dehors de l\'échiquier</string>
+  <string name="allSquaresOfTheBoard">Toutes les cases</string>
   <string name="onSlowGames">Durant les parties lentes</string>
   <string name="always">Toujours</string>
   <string name="never">Jamais</string>
@@ -791,9 +793,12 @@
   <string name="transparent">Transparent</string>
   <string name="deviceTheme">Thème de l\'appareil</string>
   <string name="backgroundImageUrl">URL de l\'image de fond :</string>
-  <string name="boardGeometry">Forme de l\'échiquier</string>
-  <string name="boardTheme">Thème de l\'échiquier</string>
-  <string name="boardSize">Taille de l\'échiquier</string>
+  <string name="board">Échiquier</string>
+  <string name="size">Taille</string>
+  <string name="opacity">Opacité</string>
+  <string name="brightness">Luminosité</string>
+  <string name="hue">Teinte</string>
+  <string name="boardReset">Rétablir les couleurs par défaut</string>
   <string name="pieceSet">Jeu de pièces</string>
   <string name="embedInYourWebsite">Intégrer dans votre site web</string>
   <string name="usernameAlreadyUsed">Ce nom d\'utilisateur existe déjà, merci d\'en choisir un autre.</string>

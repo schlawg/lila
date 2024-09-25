@@ -44,7 +44,6 @@
   <string name="imageAlt">Texto alternativo de la imagen</string>
   <string name="imageCredit">Créditos de la imagen</string>
   <string name="deleteBlog">Eliminar esta entrada del blog definitivamente</string>
-  <string name="deleteImage">Eliminar la imagen</string>
   <string name="safeToUseImages">Es seguro usar imágenes de los siguientes sitios web: </string>
   <string name="selectPostTopics">Selecciona los temas sobre los que trata tu publicación</string>
   <string name="useImagesYouMadeYourself">También puedes usar imágenes que has hecho tú mismo, imágenes que has tomado, capturas de pantalla de Lichess... cualquier cosa que no tenga derechos de autor de otra persona.</string>

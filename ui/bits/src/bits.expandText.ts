@@ -35,7 +35,7 @@ function toYouTubeEmbedUrl(url: string) {
 }
 
 function toTwitterEmbedUrl(url: string) {
-  const m = url?.match(/(?:https?:\/\/)?(?:www\.)?(?:twitter\.com)\/([^/]+\/status\/\d+)/i);
+  const m = url?.match(/(?:https?:\/\/)?(?:www\.)?(?:twitter\.com|x\.com)\/([^\/]+\/status\/\d+)/i);
   return m && `https://twitter.com/${m[1]}`;
 }
 
@@ -85,7 +85,7 @@ site.load.then(() => {
 
       // polyfill document.createElement so that iframes created by twitter get the `credentialless` attribute
       const originalCreateElement = document.createElement;
-      document.createElement = function () {
+      document.createElement = function() {
         const element = originalCreateElement.apply(this, arguments as any);
         if (element instanceof HTMLIFrameElement) {
           (element as any).credentialless = true;

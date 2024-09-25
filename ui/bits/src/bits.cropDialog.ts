@@ -1,15 +1,17 @@
 import { defined } from 'common';
+import { domDialog } from 'common/dialog';
+import { spinnerHtml } from 'common/spinner';
 import Cropper from 'cropperjs';
 
 export interface CropOpts {
-  aspectRatio: number; // required
+  aspectRatio?: number;
   source?: Blob | string; // image or url
-  max: { megabytes: number; pixels?: number }; // constrain size
+  max?: { megabytes?: number; pixels?: number }; // constrain size
   post?: { url: string; field?: string }; // multipart post form url and field name
   onCropped?: (result: Blob | boolean, error?: string) => void; // result callback
 }
 
-export async function initModule(o?: CropOpts) {
+export async function initModule(o?: CropOpts): Promise<void> {
   if (!defined(o)) return;
   const opts: CropOpts = { ...o };
 
@@ -17,8 +19,8 @@ export async function initModule(o?: CropOpts) {
     opts.source instanceof Blob
       ? URL.createObjectURL(opts.source)
       : typeof opts.source == 'string'
-      ? URL.createObjectURL((opts.source = await (await fetch(opts.source)).blob()))
-      : URL.createObjectURL((opts.source = await chooseImage()));
+        ? URL.createObjectURL((opts.source = await (await fetch(opts.source)).blob()))
+        : URL.createObjectURL((opts.source = await chooseImage()));
   if (!url) {
     opts.onCropped?.(false, 'Cancelled');
     return;
@@ -43,9 +45,10 @@ export async function initModule(o?: CropOpts) {
   const container = document.createElement('div');
   container.appendChild(image);
 
+  // https://github.com/fengyuanchen/cropperjs/blob/main/README.md#options
   const cropper = new Cropper(image, {
     aspectRatio: opts.aspectRatio,
-    viewMode: 3,
+    viewMode: defined(opts.aspectRatio) ? 3 : 0,
     guides: false,
     responsive: false,
     restore: false,
@@ -60,17 +63,17 @@ export async function initModule(o?: CropOpts) {
     minContainerHeight: viewBounds.height,
   });
 
-  const dlg = await site.dialog.dom({
+  const dlg = await domDialog({
     class: 'crop-viewer',
-    css: [{ themed: 'cropDialog' }, { url: 'npm/cropper.min.css' }],
+    css: [{ hashed: 'bits.cropDialog' }, { url: 'npm/cropper.min.css' }],
     htmlText: `<h2>Crop image to desired shape</h2>
-<div class="crop-view"></div>
-<span class="dialog-actions"><button class="button button-empty cancel">cancel</button>
-<button class="button submit">submit</button></span>`,
-    append: [{ selector: '.crop-view', node: container }],
-    action: [
-      { selector: '.dialog-actions > .cancel', action: d => d.close() },
-      { selector: '.dialog-actions > .submit', action: crop },
+      <div class="crop-view"></div>
+      <span class="dialog-actions"><button class="button button-empty cancel">cancel</button>
+      <button class="button submit">submit</button></span>`,
+    append: [{ where: '.crop-view', node: container }],
+    actions: [
+      { selector: '.dialog-actions > .cancel', listener: (_, d) => d.close() },
+      { selector: '.dialog-actions > .submit', listener: crop },
     ],
     onClose: () => {
       URL.revokeObjectURL(url);
@@ -84,20 +87,21 @@ export async function initModule(o?: CropOpts) {
     const view = dlg.view.querySelector('.crop-view') as HTMLElement;
     view.style.display = 'flex';
     view.style.alignItems = 'center';
-    view.innerHTML = site.spinnerHtml;
+    view.innerHTML = spinnerHtml;
     const canvas = cropper.getCroppedCanvas({
       imageSmoothingQuality: 'high',
       maxWidth: opts.max?.pixels,
       maxHeight: opts.max?.pixels,
     });
-    const tryQuality = (quality = 0.9) => {
+    const imgOutputFormat = isPng(opts.source) ? 'png' : 'jpeg';
+    const tryQuality = (quality = 1) => {
       canvas.toBlob(
         blob => {
-          if (blob && blob.size < opts.max.megabytes * 1024 * 1024) submit(blob);
+          if (blob && blob.size < (opts.max?.megabytes ?? 100) * 1024 * 1024) submit(blob);
           else if (blob && quality > 0.05) tryQuality(quality * 0.9);
           else submit(false, 'Rendering failed');
         },
-        'image/jpeg',
+        `image/${imgOutputFormat}`,
         quality,
       );
     };
@@ -111,7 +115,11 @@ export async function initModule(o?: CropOpts) {
       formData.append(opts.post.field ?? 'picture', cropped);
       const rsp = await fetch(opts.post.url, { method: 'POST', body: formData });
       if (rsp.status / 100 == 3) redirect = rsp.headers.get('Location')!;
-      else if (!rsp.ok) cropped = false;
+      else if (!rsp.ok) {
+        cropped = false;
+        const body = await rsp.text();
+        console.error('Crop submit failed:', rsp.status, body);
+      }
     }
     opts.onCropped?.(cropped, err);
     opts.onCropped = undefined;
@@ -147,3 +155,9 @@ export async function initModule(o?: CropOpts) {
     return constrained;
   }
 }
+
+const isPng = (source?: Blob | string) => {
+  if (source instanceof Blob) return source.type == 'image/png';
+  if (typeof source == 'string') return source.endsWith('.png');
+  return false;
+};

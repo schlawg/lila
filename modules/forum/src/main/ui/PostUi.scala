@@ -4,6 +4,7 @@ package ui
 import scalalib.paginator.Paginator
 
 import lila.ui.*
+
 import ScalatagsTemplate.{ *, given }
 
 final class PostUi(helpers: Helpers, bits: ForumBits)(
@@ -58,6 +59,14 @@ final class PostUi(helpers: Helpers, bits: ForumBits)(
                   ).some
                 else
                   frag(
+                    (canModCateg && post.number == 1).option:
+                      a(
+                        cls      := "mod mod-relocate button button-empty",
+                        href     := routes.ForumPost.relocate(post.id),
+                        dataIcon := Icon.Forward,
+                        title    := "Relocate"
+                      )
+                    ,
                     if canModCateg || topic.isUblogAuthor(me) then
                       a(
                         cls      := "mod delete button button-empty",
@@ -75,7 +84,7 @@ final class PostUi(helpers: Helpers, bits: ForumBits)(
                             cls := "mod report button button-empty",
                             href := addQueryParams(
                               routes.Report.form.url,
-                              Map("username" -> userId, "postUrl" -> postUrl, "reason" -> "comm")
+                              Map("username" -> userId.value, "postUrl" -> postUrl, "from" -> "forum")
                             ),
                             dataIcon := Icon.CautionTriangle
                           )
@@ -153,7 +162,7 @@ final class PostUi(helpers: Helpers, bits: ForumBits)(
             else r.key
           }
         )(
-          img(src := assetUrl(s"images/emoji/$r.png"), alt := r.key),
+          img(src := staticAssetUrl(s"images/emoji/$r.png"), alt := r.key),
           (size > 0).option(size)
         )
     )
@@ -161,7 +170,7 @@ final class PostUi(helpers: Helpers, bits: ForumBits)(
   def search(text: String, pager: Paginator[PostView.WithReadPerm])(using Context) =
     val title = s"""${trans.search.search.txt()} "${text.trim}""""
     Page(title)
-      .cssTag("forum")
+      .css("bits.forum")
       .js(infiniteScrollEsmInit):
         main(cls := "box search")(
           boxTop(

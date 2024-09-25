@@ -4,21 +4,19 @@ import akka.stream.scaladsl.*
 import chess.format.Fen
 import chess.variant.{ FromPosition, Variant }
 import chess.{ ByColor, Clock, Mode }
-import scalalib.ThreadLocalRandom
 import play.api.data.*
 import play.api.data.Forms.*
 import play.api.libs.json.Json
-
-import lila.core.data.Template
-import lila.core.net.Bearer
-import lila.game.IdGenerator
-import lila.core.game.GameRule
-import lila.oauth.{ EndpointScopes, OAuthScope, OAuthServer }
-import lila.rating.PerfType
-
+import scalalib.ThreadLocalRandom
 import scalalib.model.Days
 
-final class ChallengeBulkSetup(setupForm: lila.core.setup.SetupForm):
+import lila.core.data.Template
+import lila.core.game.GameRule
+import lila.core.net.Bearer
+import lila.game.IdGenerator
+import lila.oauth.{ EndpointScopes, OAuthScope, OAuthServer }
+
+final class ChallengeBulkSetup(setupForm: lila.core.setup.SetupForm)(using lila.core.config.RateLimit):
 
   import ChallengeBulkSetup.*
 
@@ -85,7 +83,7 @@ final class ChallengeBulkSetup(setupForm: lila.core.setup.SetupForm):
 final class ChallengeBulkSetupApi(
     oauthServer: OAuthServer,
     idGenerator: IdGenerator
-)(using Executor, akka.stream.Materializer):
+)(using Executor, akka.stream.Materializer, lila.core.config.RateLimit):
 
   import ChallengeBulkSetup.*
 

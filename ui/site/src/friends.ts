@@ -1,7 +1,6 @@
-import { siteTrans } from './trans';
-import pubsub from './pubsub';
 import { notNull } from 'common/common';
 import * as licon from 'common/licon';
+import { pubsub } from 'common/pubsub';
 
 type TitleName = string;
 
@@ -29,9 +28,10 @@ export default class OnlineFriends {
     });
     this.users = new Map();
     pubsub.on('socket.in.following_onlines', this.receive);
-    (['enters', 'leaves', 'playing', 'stopped_playing'] as const).forEach(k =>
-      pubsub.on('socket.in.following_' + k, this[k]),
-    );
+    pubsub.on('socket.in.following_enters', this.enters);
+    pubsub.on('socket.in.following_leaves', this.leaves);
+    pubsub.on('socket.in.following_playing', this.playing);
+    pubsub.on('socket.in.following_stopped_playing', this.stopped_playing);
   }
   receive = (friends: TitleName[], msg: { playing: string[]; patrons: string[] }) => {
     this.users.clear();
@@ -50,7 +50,7 @@ export default class OnlineFriends {
     if (this.loaded)
       requestAnimationFrame(() => {
         const ids = Array.from(this.users.keys()).sort();
-        this.titleEl.innerHTML = siteTrans.pluralSame(
+        this.titleEl.innerHTML = site.trans.pluralSame(
           'nbFriendsOnline',
           ids.length,
           this.loaded ? `<strong>${ids.length}</strong>` : '-',

@@ -1,10 +1,12 @@
 package lila.user
 package ui
 
-import lila.ui.*
-import ScalatagsTemplate.{ *, given }
-import lila.core.config.NetDomain
 import scalalib.paginator.Paginator
+
+import lila.core.config.NetDomain
+import lila.ui.*
+
+import ScalatagsTemplate.{ *, given }
 
 final class NoteUi(helpers: Helpers)(using NetDomain):
   import helpers.{ *, given }
@@ -62,8 +64,8 @@ final class NoteUi(helpers: Helpers)(using NetDomain):
 
   def search(query: String, pager: Paginator[Note], menu: Frag)(using Context) =
     Page("Mod notes")
-      .cssTag("mod.misc")
-      .cssTag("slist")
+      .css("mod.misc")
+      .css("bits.slist")
       .js(infiniteScrollEsmInit):
         main(cls := "page-menu")(
           menu,

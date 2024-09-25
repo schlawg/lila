@@ -4,7 +4,7 @@ import chess.format.pgn.{ Glyph, Tags }
 import chess.format.{ Fen, Uci, UciPath }
 import chess.opening.{ Opening, OpeningDb }
 import chess.variant.Variant
-import chess.{ ByColor, Centis, Color, Outcome, Ply }
+import chess.{ ByColor, Centis, Color, Ply }
 import reactivemongo.api.bson.Macros.Annotations.Key
 
 import lila.tree.Node.{ Comment, Gamebook, Shapes }
@@ -17,7 +17,7 @@ case class Chapter(
     setup: Chapter.Setup,
     root: Root,
     tags: Tags,
-    order: Int,
+    order: Chapter.Order,
     ownerId: UserId,
     conceal: Option[Ply] = None,
     practice: Option[Boolean] = None,
@@ -31,6 +31,8 @@ case class Chapter(
 
   import Chapter.BothClocks
 
+  override def toString = s"Chapter $id $name"
+
   def updateDenorm: Chapter =
     val looksLikeGame = tags.names.exists(_.isDefined) || tags.outcome.isDefined
     val newDenorm = looksLikeGame.option:
@@ -41,7 +43,13 @@ case class Chapter(
         val parentNode = parentPath.flatMap(root.nodeAt)
         val clockSwap  = ByColor(node.clock, parentNode.flatMap(_.clock).orElse(node.clock))
         if node.color.black then clockSwap else clockSwap.swap
-      Chapter.LastPosDenorm(node.fen, node.moveOption.map(_.uci), clocks = clocks)
+      val uci = node.moveOption.map(_.uci)
+      val check = node.moveOption
+        .flatMap(_.san.value.lastOption)
+        .collect:
+          case '+' => Chapter.Check.Check
+          case '#' => Chapter.Check.Mate
+      Chapter.LastPosDenorm(node.fen, uci, check, clocks)
     copy(denorm = newDenorm)
 
   def updateRoot(f: Root => Option[Root]) =
@@ -86,7 +94,7 @@ case class Chapter(
       .openingSensibleVariants(setup.variant)
       .so(OpeningDb.searchInFens(root.mainline.map(_.fen.opening)))
 
-  def isEmptyInitial = order == 1 && root.children.isEmpty
+  def isEmptyInitial = order == 1 && root.children.isEmpty && tags.value.isEmpty
 
   def cloneFor(study: Study) =
     copy(
@@ -95,17 +103,6 @@ case class Chapter(
       ownerId = study.ownerId,
       createdAt = nowInstant
     )
-
-  def preview = ChapterPreview(
-    id = id,
-    name = name,
-    players = ChapterPreview.players(denorm.so(_.clocks))(tags),
-    orientation = setup.orientation,
-    fen = denorm.fold(Fen.initial)(_.fen),
-    lastMove = denorm.flatMap(_.uci),
-    lastMoveAt = relay.map(_.lastMoveAt),
-    result = tags.outcome.isDefined.option(tags.outcome)
-  )
 
   def isPractice = ~practice
   def isGamebook = ~gamebook
@@ -117,7 +114,11 @@ case class Chapter(
 
   def isOverweight = root.children.countRecursive >= Chapter.maxNodes
 
+  def tagsExport = PgnTags.cleanUpForPublication(tags)
+
 object Chapter:
+
+  type Order = Int
 
   // I've seen chapters with 35,000 nodes on prod.
   // It works but could be used for DoS.
@@ -137,30 +138,36 @@ object Chapter:
     def isFromFen = ~fromFen
 
   case class Relay(
-      index: Option[Int], // game index in the source URL, none to always match tags
       path: UciPath,
       lastMoveAt: Instant,
       fideIds: Option[PairOf[Option[chess.FideId]]]
   ):
     def secondsSinceLastMove: Int = (nowSeconds - lastMoveAt.toSeconds).toInt
-    def isPush                    = index.isEmpty
 
   case class ServerEval(path: UciPath, done: Boolean)
 
   type BothClocks = ByColor[Option[Centis]]
 
+  enum Check:
+    case Check, Mate
+
   /* Last position of the main line.
    * Used for chapter previews. */
-  case class LastPosDenorm(fen: Fen.Full, uci: Option[Uci], clocks: BothClocks)
+  case class LastPosDenorm(fen: Fen.Full, uci: Option[Uci], check: Option[Check], clocks: BothClocks)
 
   case class IdName(@Key("_id") id: StudyChapterId, name: StudyChapterName)
 
-  def defaultName(order: Int) = StudyChapterName(s"Chapter $order")
+  def defaultName(order: Order) = StudyChapterName(s"Chapter $order")
 
   private val defaultNameRegex           = """Chapter \d+""".r
   def isDefaultName(n: StudyChapterName) = n.value.isEmpty || defaultNameRegex.matches(n.value)
 
   def fixName(n: StudyChapterName) = StudyChapterName(lila.common.String.softCleanUp(n.value).take(80))
+
+  def nameFromPlayerTags(tags: Tags): Option[StudyChapterName] = StudyChapterName.from:
+    tags.names
+      .mapN((w, b) => s"$w - $b")
+      .orElse(tags.boardNumber.map(b => s"Board $b"))
 
   def makeId = StudyChapterId(scalalib.ThreadLocalRandom.nextString(8))
 

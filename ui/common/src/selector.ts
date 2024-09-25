@@ -1,4 +1,4 @@
-// mutually exclusive group selector with state change hooks for resource management
+// group selector with state change hooks
 
 export interface Selectable {
   select?: (ctx?: any) => void;
@@ -7,7 +7,7 @@ export interface Selectable {
   name?: string;
 }
 
-export class Selector<K extends string = string, V extends Selectable & Record<string, any> = any, C = any> {
+export class Selector<K extends string = string, V extends Selectable = any, C = any> {
   group: Map<K, V>;
   context: C | Selector<K, V>;
   key: K | false = false;
@@ -31,7 +31,7 @@ export class Selector<K extends string = string, V extends Selectable & Record<s
     return this.key ? this.group.get(this.key) : undefined;
   }
 
-  set(key: K | false) {
+  set(key: K | false): void {
     if (this.key) {
       if (this.key === key) return;
       this.value?.deselect?.(this.context);
@@ -44,7 +44,7 @@ export class Selector<K extends string = string, V extends Selectable & Record<s
     return this.group.get(key);
   }
 
-  add(key: K, val: V) {
+  add(key: K, val: V): void {
     const reselect = this.key === key;
     this.release(key);
     this.group.set(key, val);
@@ -56,11 +56,11 @@ export class Selector<K extends string = string, V extends Selectable & Record<s
     return false;
   }
 
-  has(key: string) {
-    return this.group.has(key as K);
+  has(key: K): boolean {
+    return this.group.has(key);
   }
 
-  release(key?: K) {
+  release(key?: K): void {
     if (key === undefined) {
       for (const k of this.group.keys()) this.release(k);
       return;
@@ -72,31 +72,30 @@ export class Selector<K extends string = string, V extends Selectable & Record<s
     this.group.get(key)?.close?.(this.context);
   }
 
-  remove(key?: K) {
+  remove(key?: K): void {
     this.release(key);
     key ? this.group.delete(key) : this.group.clear();
   }
 }
-
-const user = document.body.dataset.user || 'anon';
 
 export class StoredSelector<K extends string = string, V extends Selectable = any, C = any> extends Selector<
   K,
   V,
   C
 > {
+  private storageKey: string;
   constructor(
-    readonly storageKey: string,
+    storageKey: string,
     opts?: { group?: Map<K, V>; context?: C; defaultKey?: K; name?: string },
   ) {
     super(opts);
-    this.key = (site.storage.get(`${this.storageKey}:${user}`) ||
-      (opts?.defaultKey ?? false)) as typeof this.key;
+    this.storageKey = storageKey + document.body.dataset.user ? `:${document.body.dataset.user}` : '';
+    this.key = (localStorage.getItem(this.storageKey) || (opts?.defaultKey ?? false)) as typeof this.key;
   }
 
-  set(key: K | false) {
+  set(key: K | false): void {
     super.set(key);
-    if (key === false) site.storage.remove(`${this.storageKey}:${user}`);
-    else site.storage.set(`${this.storageKey}:${user}`, String(this.key));
+    if (key === false) localStorage.removeItem(this.storageKey);
+    else localStorage.setItem(this.storageKey, String(this.key));
   }
 }

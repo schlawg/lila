@@ -1,14 +1,13 @@
 package views.lobby
 
 import lila.app.UiEnv.{ *, given }
-
 import lila.rating.PerfType
 
 object bits:
 
   val lobbyApp = div(cls := "lobby__app")(
     div(cls := "tabs-horiz")(span(nbsp)),
-    div(cls := "lobby__app__content")
+    div(cls := "lobby__app__content lpools")
   )
 
   def underboards(

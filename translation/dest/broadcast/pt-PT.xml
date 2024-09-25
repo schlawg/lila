@@ -23,14 +23,12 @@
   <string name="tournamentDescription">Breve descrição do torneio</string>
   <string name="fullDescription">Descrição completa do evento</string>
   <string name="fullDescriptionHelp">Descrição longa do evento opcional da transmissão. %1$s está disponível. Tem de ter menos que %2$s carácteres.</string>
-  <string name="sourceUrlOrGameIds">URL de origem ou IDs do jogo</string>
+  <string name="sourceSingleUrl">URL da fonte PGN</string>
   <string name="sourceUrlHelp">Link que o Lichess vai verificar para obter atualizações da PGN. Deve ser acessível ao público a partir da internet.</string>
-  <string name="gameIdsHelp">Como alternativa, você pode inserir até 64 IDs do jogo Lichess, separados por espaços.</string>
+  <string name="sourceGameIds">Até 64 IDs de jogo Lichess, separados por espaços.</string>
   <string name="startDate">Data de início no teu fuso horário</string>
   <string name="startDateHelp">Opcional, se souberes quando começa o evento</string>
   <string name="credits">Credita a fonte</string>
-  <string name="broadcastUrl">Transmitir o link</string>
-  <string name="currentRoundUrl">Link da ronda atual</string>
   <string name="currentGameUrl">Link da partida atual</string>
   <string name="downloadAllRounds">Transferir todas as rondas</string>
   <string name="resetRound">Reiniciar esta ronda</string>
@@ -40,9 +38,16 @@
   <string name="editRoundStudy">Editar estudo da ronda</string>
   <string name="deleteTournament">Eliminar este torneio</string>
   <string name="definitivelyDeleteTournament">Excluir definitivamente todo o torneio, todas as rondas e todos os jogos.</string>
-  <string name="automaticLeaderboard">Tabela de classificação automática</string>
-  <string name="automaticLeaderboardHelp">Calcula e exibe uma tabela de classificação simples baseada nos resultados dos jogos</string>
   <string name="replacePlayerTags">Opcional: substituir nomes de jogadores, avaliações e títulos</string>
   <string name="periodInSeconds">Período em segundos</string>
   <string name="periodInSecondsHelp">Opcional, quanto tempo de espera entre as requisições. Mínimo 2s, máximo de 60s. O padrão é automático com base no número de espetadores.</string>
+  <string name="fideFederations">Federações FIDE</string>
+  <string name="top10Rating">10 melhores classificações</string>
+  <string name="fidePlayers">Jogadores FIDE</string>
+  <string name="fidePlayerNotFound">Jogador FIDE não encontrado</string>
+  <string name="fideProfile">Perfil FIDE</string>
+  <string name="federation">Federação</string>
+  <string name="ageThisYear">Idade neste ano</string>
+  <string name="unrated">Sem classificação</string>
+  <string name="recentTournaments">Torneio recentes</string>
 </resources>

@@ -13,12 +13,15 @@
   "license": "AGPL-3.0-or-later",
   "dependencies": {
     "chart": "workspace:^",
-    "chart.js": "^4.4.0",
+    "chart.js": "4.4.4",
     "chartjs-plugin-datalabels": "^2.2.0",
     "common": "workspace:*",
     "snabbdom": "3.5.1"
   },
   "lichess": {
-    "bundles": "src/insight.ts"
+    "bundles": [
+      "src/insight.ts",
+      "src/insight.refresh.ts"
+    ]
   }
 }

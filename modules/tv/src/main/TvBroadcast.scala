@@ -5,13 +5,12 @@ import akka.stream.scaladsl.*
 import chess.format.Fen
 import play.api.libs.json.*
 
-import lila.common.Json.given
 import lila.common.Bus
+import lila.common.Json.given
 import lila.core.LightUser
-
-import lila.game.actorApi.MoveGameEvent
 import lila.core.game.TvSelect
 import lila.core.socket.makeMessage
+import lila.game.actorApi.MoveGameEvent
 
 final private class TvBroadcast(
     lightUserSync: LightUser.GetterSync,
@@ -111,7 +110,7 @@ object TvBroadcast:
     def dataWithFen = data ++ Json.obj("fen" -> fen)
     def socketMsg   = makeMessage("featured", dataWithFen)
 
-  case class Connect(fromLichess: Boolean)
+  case class Connect(bc: Boolean)
   case class Client(queue: Queue, fromLichess: Boolean)
 
   case class Add(c: Client)

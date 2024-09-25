@@ -4,8 +4,8 @@ import play.api.libs.json.*
 import reactivemongo.api.bson.*
 
 import lila.common.Json.given
-import lila.db.dsl.{ *, given }
 import lila.core.timeline.*
+import lila.db.dsl.{ *, given }
 
 case class Entry(
     _id: BSONObjectID,
@@ -47,7 +47,6 @@ object Entry:
       case d: StudyLike     => "study-like"      -> toBson(d)
       case d: PlanStart     => "plan-start"      -> toBson(d)
       case d: PlanRenew     => "plan-renew"      -> toBson(d)
-      case d: BlogPost      => "blog-post"       -> toBson(d)
       case d: UblogPostLike => "ublog-post-like" -> toBson(d)
       case d: StreamStart   => "stream-start"    -> toBson(d)
   } match
@@ -68,7 +67,6 @@ object Entry:
     given studyLikeHandler: BSONDocumentHandler[StudyLike]         = Macros.handler
     given planStartHandler: BSONDocumentHandler[PlanStart]         = Macros.handler
     given planRenewHandler: BSONDocumentHandler[PlanRenew]         = Macros.handler
-    given blogPostHandler: BSONDocumentHandler[BlogPost]           = Macros.handler
     given ublogPostLikeHandler: BSONDocumentHandler[UblogPostLike] = Macros.handler
     given streamStartHandler: BSONDocumentHandler[StreamStart]     = Macros.handler
 
@@ -86,7 +84,6 @@ object Entry:
       "study-like"      -> studyLikeHandler,
       "plan-start"      -> planStartHandler,
       "plan-renew"      -> planRenewHandler,
-      "blog-post"       -> blogPostHandler,
       "ublog-post-like" -> ublogPostLikeHandler,
       "stream-start"    -> streamStartHandler
     )
@@ -105,7 +102,6 @@ object Entry:
     val studyLikeWrite     = Json.writes[StudyLike]
     val planStartWrite     = Json.writes[PlanStart]
     val planRenewWrite     = Json.writes[PlanRenew]
-    val blogPostWrite      = Json.writes[BlogPost]
     val ublogPostLikeWrite = Json.writes[UblogPostLike]
     val streamStartWrite   = Json.writes[StreamStart]
     given Writes[Atom] = Writes {
@@ -123,7 +119,6 @@ object Entry:
       case d: StudyLike     => studyLikeWrite.writes(d)
       case d: PlanStart     => planStartWrite.writes(d)
       case d: PlanRenew     => planRenewWrite.writes(d)
-      case d: BlogPost      => blogPostWrite.writes(d)
       case d: UblogPostLike => ublogPostLikeWrite.writes(d)
       case d: StreamStart   => streamStartWrite.writes(d)
     }

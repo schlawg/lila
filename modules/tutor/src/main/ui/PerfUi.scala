@@ -1,12 +1,9 @@
 package lila.tutor
 package ui
-
-import chess.format.pgn.PgnStr
-
+import lila.insight.{ InsightPosition, Phase }
 import lila.ui.*
+
 import ScalatagsTemplate.{ *, given }
-import lila.core.perf.UserWithPerfs
-import lila.insight.{ Phase, InsightPosition }
 
 final class PerfUi(helpers: Helpers, bits: TutorBits):
   import helpers.{ *, given }
@@ -46,7 +43,7 @@ final class PerfUi(helpers: Helpers, bits: TutorBits):
             frag(report.perf.trans, " openings"),
             routes.Tutor.openings(user.username, report.perf.key).some
           )(
-            chess.Color.all.map: color =>
+            Color.all.map: color =>
               report.openings(color).families.headOption.map { fam =>
                 grade.peerGrade(concept.adhoc(s"${fam.family.name} as $color"), fam.mix, h4)
               }

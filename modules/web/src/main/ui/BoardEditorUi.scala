@@ -1,12 +1,13 @@
 package lila.web
 package ui
 
-import play.api.libs.json.*
 import chess.format.Fen
+import play.api.libs.json.*
 
-import lila.ui.*
-import ScalatagsTemplate.{ *, given }
 import lila.common.Json.given
+import lila.ui.*
+
+import ScalatagsTemplate.*
 
 final class BoardEditorUi(helpers: Helpers):
   import helpers.{ *, given }
@@ -23,7 +24,7 @@ final class BoardEditorUi(helpers: Helpers):
           jsData(fen) ++ Json.obj("positions" -> positionsJson, "endgamePositions" -> endgamePositionsJson)
         )
       )
-      .cssTag("editor")
+      .css("editor")
       .zoom
       .graph(
         title = "Chess board editor",

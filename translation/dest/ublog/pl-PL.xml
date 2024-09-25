@@ -50,7 +50,6 @@
   <string name="imageAlt">Tekst alternatywny obrazu</string>
   <string name="imageCredit">Prawa autorskie</string>
   <string name="deleteBlog">Usuń bezpowrotnie ten wpis na blogu</string>
-  <string name="deleteImage">Usuń obrazek</string>
   <string name="safeToUseImages">Można bezpieczne korzystać z obrazków dostępnych na następujących stronach internetowych: </string>
   <string name="selectPostTopics">Wybierz tematy, których dotyczy Twój post</string>
   <string name="useImagesYouMadeYourself">Możesz również używać obrazów, które sam stworzyłeś, zdjęć, które zrobiłeś, zrzutów ekranu Lichess... czegokolwiek co nie jest chronione prawem autorskim kogoś innego.</string>

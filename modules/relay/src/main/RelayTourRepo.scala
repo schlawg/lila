@@ -8,11 +8,20 @@ final private class RelayTourRepo(val coll: Coll)(using Executor):
   import RelayTourRepo.*
   import RelayTour.IdName
 
+  def exists(id: RelayRoundId): Fu[Boolean] = coll.exists($id(id))
+
+  def byId(tourId: RelayTourId): Fu[Option[RelayTour]] = coll.byId[RelayTour](tourId)
+
   def setSyncedNow(tour: RelayTour): Funit =
     coll.updateField($id(tour.id), "syncedAt", nowInstant).void
 
-  def setActive(tourId: RelayTourId, active: Boolean): Funit =
-    coll.updateField($id(tourId), "active", active).void
+  def denormalize(
+      tourId: RelayTourId,
+      active: Boolean,
+      live: Boolean,
+      dates: Option[RelayTour.Dates]
+  ): Funit =
+    coll.update.one($id(tourId), $set("active" -> active, "live" -> live, "dates" -> dates)).void
 
   def lookup(local: String) = $lookup.simple(coll, "tour", local, "_id")
 
@@ -47,6 +56,9 @@ final private class RelayTourRepo(val coll: Coll)(using Executor):
 
   def isOwnerOfAll(u: UserId, ids: List[RelayTourId]): Fu[Boolean] =
     coll.exists($doc($inIds(ids), "ownerId".$ne(u))).not
+
+  def info(tourId: RelayTourId): Fu[Option[RelayTour.Info]] =
+    coll.primitiveOne[RelayTour.Info]($id(tourId), "info")
 
 private object RelayTourRepo:
   object selectors:

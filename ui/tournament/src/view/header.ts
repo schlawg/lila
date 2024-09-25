@@ -4,9 +4,10 @@ import { dataIcon } from 'common/snabbdom';
 import TournamentController from '../ctrl';
 import perfIcons from 'common/perfIcons';
 import { TournamentData } from '../interfaces';
+import { setClockWidget } from 'common/clock';
 
 const startClock = (time: number): Hooks => ({
-  insert: vnode => site.clockWidget(vnode.elm as HTMLElement, { time }),
+  insert: vnode => setClockWidget(vnode.elm as HTMLElement, { time }),
 });
 
 const oneDayInSeconds = 60 * 60 * 24;
@@ -63,18 +64,18 @@ function title(ctrl: TournamentController) {
     'h1',
     (d.greatPlayer
       ? [
-          h(
-            'a',
-            { attrs: { href: d.greatPlayer.url, target: '_blank', rel: 'noopener' } },
-            d.greatPlayer.name,
-          ),
-          ' Arena',
-        ]
+        h(
+          'a',
+          { attrs: { href: d.greatPlayer.url, target: '_blank', rel: 'noopener' } },
+          d.greatPlayer.name,
+        ),
+        ' Arena',
+      ]
       : [d.fullName]
     ).concat(d.private ? [' ', h('span', { attrs: dataIcon(licon.Padlock) })] : []),
   );
 }
 
-export default function (ctrl: TournamentController): VNode {
+export default function(ctrl: TournamentController): VNode {
   return h('div.tour__main__header', [image(ctrl.data), title(ctrl), clock(ctrl)]);
 }

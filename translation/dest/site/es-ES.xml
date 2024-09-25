@@ -70,6 +70,8 @@
   <string name="promoteVariation">Promocionar variante</string>
   <string name="makeMainLine">Convertir en línea principal</string>
   <string name="deleteFromHere">Borrar a partir de aquí</string>
+  <string name="collapseVariations">Cerrar variantes</string>
+  <string name="expandVariations">Abrir variantes</string>
   <string name="forceVariation">Convertir en variante</string>
   <string name="copyVariationPgn">Copiar PGN de la variante</string>
   <string name="move">Movimiento</string>
@@ -178,6 +180,7 @@
   <string name="latestForumPosts">Últimos mensajes del foro</string>
   <string name="players">Jugadores</string>
   <string name="friends">Amigos</string>
+  <string name="otherPlayers">otros jugadores</string>
   <string name="discussions">Conversaciones</string>
   <string name="today">Hoy</string>
   <string name="yesterday">Ayer</string>
@@ -465,9 +468,6 @@
   <string name="safeTournamentName">Escoge un nombre muy seguro para el torneo.</string>
   <string name="inappropriateNameWarning">Cualquier comportamiento mínimamente inapropiado podría conllevar al cierre de tu cuenta.</string>
   <string name="emptyTournamentName">Déjalo en blanco para poner al torneo el nombre de un Gran Maestro al azar.</string>
-  <string name="recommendNotTouching">Se recomienda dejar como está.</string>
-  <string name="fewerPlayers">Si impones condiciones de entrada, el torneo tendrá menos jugadores.</string>
-  <string name="showAdvancedSettings">Mostrar configuración avanzada</string>
   <string name="makePrivateTournament">Hacer el torneo privado y restringir el acceso con una contraseña</string>
   <string name="join">Unirse</string>
   <string name="withdraw">Abandonar</string>
@@ -507,8 +507,7 @@
   <string name="ifNoneLeaveEmpty">Si no aplica, déjalo en blanco</string>
   <string name="profile">Perfil</string>
   <string name="editProfile">Editar perfil</string>
-  <string name="firstName">Nombre</string>
-  <string name="lastName">Apellido</string>
+  <string name="realName">Nombre real</string>
   <string name="setFlair">Configura tu entorno</string>
   <string name="flair">Entorno</string>
   <string name="youCanHideFlair">Existe una opción para ocultar la configuración de entorno en todo el sitio.</string>
@@ -539,6 +538,8 @@
   <string name="descPrivateHelp">Este texto sólo pueden verlo los miembros del equipo. El texto que escribas aquí reemplazará tu descripción pública cuando sea vista por los miembros del equipo.</string>
   <string name="no">No</string>
   <string name="yes">Sí</string>
+  <string name="website">Sitio web</string>
+  <string name="mobile">Móvil</string>
   <string name="help">Ayuda:</string>
   <string name="createANewTopic">Crear un tema nuevo</string>
   <string name="topics">Temas</string>
@@ -555,11 +556,11 @@
   <string name="reason">Motivo</string>
   <string name="whatIsIheMatter">¿Qué ocurre?</string>
   <string name="cheat">Trampa</string>
-  <string name="insult">Insulto</string>
   <string name="troll">Acoso</string>
-  <string name="ratingManipulation">Manipulación de puntuación</string>
   <string name="other">Otro</string>
-  <string name="reportDescriptionHelp">Pega el enlace a la(s) partida(s) y explícanos qué hay de malo en el comportamiento de este usuario. No digas simplemente \"hace trampa\"; explícanos cómo has llegado a esta conclusión. Tu informe será procesado más rápido si está escrito en inglés.</string>
+  <string name="reportCheatBoostHelp" comment="This is a generic message and not specific to cheating reports. It attempts to educate the player on how to write a useful report for the Lichess team. It also requests evidence.&#10;&#10;Appears on the &quot;Report a user&quot; page https://lichess.org/report.">Pega el enlace a la(s) partida(s) y explícanos qué hay de malo en el comportamiento de este usuario. No digas simplemente \"hace trampa\", sino cómo has llegado a esta conclusión.</string>
+  <string name="reportUsernameHelp" comment="This is a generic message, which attempts to educate the player on how to write a useful report for the Lichess team.&#10;&#10;Appears on the &quot;Report a user&quot; page https://lichess.org/report, when selecting the 'User name' option.">Explica qué es lo que te resulta ofensivo de este nombre de usuario. No digas solo \"es ofensivo\" o \"inapropiado\", sino cómo llegaste a esta conclusión, sobre todo si el insulto no es tan obvio, no está en inglés, es jerga o una referencia histórica o cultural.</string>
+  <string name="reportProcessedFasterInEnglish" comment="Appears on the &quot;Report a user&quot; page https://lichess.org/report, to encourage users to write in English, so any Lichess moderator can process it.">Tu informe será procesado más rápido si está escrito en inglés.</string>
   <string name="error.provideOneCheatedGameLink">Por favor, proporciona al menos un enlace a una partida en la que se hicieron trampas.</string>
   <string name="by">por %s</string>
   <string name="importedByX">Importado por %s</string>
@@ -592,6 +593,7 @@
   <string name="slow">Lento</string>
   <string name="insideTheBoard">Dentro del tablero</string>
   <string name="outsideTheBoard">Fuera del tablero</string>
+  <string name="allSquaresOfTheBoard">Todas las casillas del tablero</string>
   <string name="onSlowGames">En partidas lentas</string>
   <string name="always">Siempre</string>
   <string name="never">Nunca</string>
@@ -791,9 +793,12 @@
   <string name="transparent">Transparente</string>
   <string name="deviceTheme">Tema del dispositivo</string>
   <string name="backgroundImageUrl">URL de imagen de fondo:</string>
-  <string name="boardGeometry">Geometría del tablero</string>
-  <string name="boardTheme">Tema del tablero</string>
-  <string name="boardSize">Tamaño del tablero</string>
+  <string name="board">Tablero</string>
+  <string name="size">Tamaño</string>
+  <string name="opacity">Opacidad</string>
+  <string name="brightness">Brillo</string>
+  <string name="hue">Tono</string>
+  <string name="boardReset">Restablecer colores predeterminados</string>
   <string name="pieceSet">Estilo de piezas</string>
   <string name="embedInYourWebsite">Añadir a mi sitio</string>
   <string name="usernameAlreadyUsed">Este nombre de usuario ya existe. Pruebe con otro, por favor.</string>

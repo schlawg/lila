@@ -1,13 +1,9 @@
 package lila.web
 
 import akka.stream.scaladsl.Source
-import alleycats.Zero
 import play.api.http.*
 import play.api.libs.json.*
 import play.api.mvc.*
-
-import lila.common.HTTPRequest
-import lila.core.net.ApiVersion
 
 trait ResponseBuilder(using Executor)
     extends ControllerHelpers
@@ -18,7 +14,6 @@ trait ResponseBuilder(using Executor)
   export scalatags.Text.Frag
 
   given Conversion[Result, Fu[Result]] = fuccess(_)
-  // given Conversion[Frag, Fu[Frag]]     = fuccess(_)
 
   val rateLimitedMsg  = "Too many requests. Try again later."
   val rateLimitedJson = TooManyRequests(jsonError(rateLimitedMsg))
@@ -63,10 +58,11 @@ trait ResponseBuilder(using Executor)
     "swag" -> "https://shop.spreadshirt.com/lichess-org",
     "yt"   -> "https://www.youtube.com/c/LichessDotOrg",
     "dmca" -> "https://docs.google.com/forms/d/e/1FAIpQLSdRVaJ6Wk2KHcrLcY0BxM7lTwYSQHDsY2DsGwbYoLUBo3ngfQ/viewform",
-    "fishnet" -> "https://github.com/lichess-org/fishnet",
-    "qa"      -> "/faq",
-    "help"    -> "/contact",
-    "support" -> "/contact",
-    "donate"  -> "/patron"
+    "fishnet"      -> "https://github.com/lichess-org/fishnet",
+    "qa"           -> "/faq",
+    "help"         -> "/contact",
+    "support"      -> "/contact",
+    "donate"       -> "/patron",
+    "how-to-cheat" -> "/page/how-to-cheat"
   )
   def staticRedirect(key: String): Option[Fu[Result]] = movedMap.get(key).map { MovedPermanently(_) }

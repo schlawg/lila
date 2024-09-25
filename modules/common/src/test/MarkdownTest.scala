@@ -2,13 +2,13 @@ package lila.common
 
 import chess.format.pgn.PgnStr
 
-import lila.core.config.AssetDomain
+import lila.core.config.{ AssetDomain, NetDomain }
 import lila.core.misc.lpv.LpvEmbed
-import lila.core.config.NetDomain
 
 class MarkdownTest extends munit.FunSuite:
 
-  val render: Markdown => Html = new MarkdownRender(assetDomain = AssetDomain("lichess1.org").some)("test")
+  val render: Markdown => Html =
+    new MarkdownRender(assetDomain = AssetDomain("lichess1.org").some, header = true)("test")
 
   test("autolinks add rel") {
     val md = Markdown("https://example.com")
@@ -87,5 +87,12 @@ class MarkdownTest extends munit.FunSuite:
       Html:
         s"""<p>foo <div data-pgn="$chapterPgn" class="lpv--autostart is2d">$chapterUrl</div> bar</p>
 """
+    )
+  }
+  test("anchorlink added for headings") {
+    assertEquals(
+      render(Markdown("# heading")),
+      Html("""<h1><a href="#heading" id="heading"></a>heading</h1>
+""")
     )
   }

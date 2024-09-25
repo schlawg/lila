@@ -4,14 +4,14 @@ import chess.Speed
 import reactivemongo.api.Cursor
 import reactivemongo.api.bson.*
 
+import lila.core.perf.UserWithPerfs
+import lila.core.report.SuspectId
+import lila.core.userId.ModId
 import lila.db.AsyncColl
 import lila.db.dsl.{ *, given }
 import lila.game.{ BinaryFormat, GameRepo }
 import lila.memo.CacheApi
 import lila.report.{ Mod, Report, Reporter, Suspect }
-import lila.core.report.SuspectId
-import lila.core.userId.ModId
-import lila.core.perf.UserWithPerfs
 
 final class KaladinApi(
     coll: AsyncColl,
@@ -89,7 +89,7 @@ final class KaladinApi(
         .flatMap: docs =>
           docs.nonEmpty.so:
             coll.update.one($inIds(docs.map(_.id)), $set("response.read" -> true), multi = true) >>
-              docs.traverse_(readResponse)
+              docs.sequentiallyVoid(readResponse)
         .void
 
   private def readResponse(user: KaladinUser): Funit = user.response.so: res =>
@@ -143,9 +143,8 @@ final class KaladinApi(
     private[KaladinApi] def apply(user: KaladinUser): Funit =
       subs.get(user.suspectId).so { modIds =>
         subs = subs - user.suspectId
-        modIds.toSeq.traverse_ { modId =>
+        modIds.toList.sequentiallyVoid: modId =>
           notifyApi.notifyOne(modId, lila.core.notify.KaladinDone(user.suspectId.value))
-        }
       }
 
   private[irwin] def monitorQueued: Funit =
@@ -205,10 +204,10 @@ final class KaladinApi(
     request(user, requester)
 
   private[irwin] def tournamentLeaders(suspects: List[Suspect]): Funit =
-    suspects.traverse_(autoRequest(KaladinUser.Requester.TournamentLeader))
+    suspects.sequentiallyVoid(autoRequest(KaladinUser.Requester.TournamentLeader))
 
   private[irwin] def topOnline(suspects: List[Suspect]): Funit =
-    suspects.traverse_(autoRequest(KaladinUser.Requester.TopOnline))
+    suspects.sequentiallyVoid(autoRequest(KaladinUser.Requester.TopOnline))
 
   private def getSuspect(suspectId: UserId) =
     userApi.byId(suspectId).orFail(s"suspect $suspectId not found").dmap(Suspect.apply)

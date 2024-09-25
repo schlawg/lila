@@ -2,15 +2,11 @@ package lila.forum
 
 import reactivemongo.akkastream.{ AkkaStreamCursor, cursorProducer }
 
-import lila.db.dsl.{ *, given }
-
-import lila.forum.Filter.*
 import lila.core.forum.ForumPostMini
-import reactivemongo.api.CursorOps
+import lila.db.dsl.{ *, given }
+import lila.forum.Filter.*
 
-final class ForumPostRepo(val coll: Coll, filter: Filter = Safe)(using
-    Executor
-):
+final class ForumPostRepo(val coll: Coll, filter: Filter = Safe)(using Executor):
 
   def forUser(user: Option[User]) =
     withFilter(user.filter(_.marks.troll).fold[Filter](Safe) { u =>
@@ -104,8 +100,6 @@ final class ForumPostRepo(val coll: Coll, filter: Filter = Safe)(using
       )
     )
 
-  def sortQuery = $sort.createdAsc
-
   def idsByTopicId(topicId: ForumTopicId): Fu[List[ForumPostId]] =
     coll.distinctEasy[ForumPostId, List]("_id", $doc("topicId" -> topicId), _.sec)
 
@@ -116,7 +110,9 @@ final class ForumPostRepo(val coll: Coll, filter: Filter = Safe)(using
       _.sec
     )
 
-  private[forum] def nonGhostCursor: AkkaStreamCursor[ForumPostMini] =
+  private[forum] def nonGhostCursor(since: Option[Instant]): AkkaStreamCursor[ForumPostMini] =
+    val noGhost = $doc("userId".$ne(UserId.ghost))
+    val filter  = since.fold(noGhost)(instant => $and(noGhost, $doc("createdAt".$gt(instant))))
     coll
-      .find($doc("userId".$ne(UserId.ghost)), miniProjection.some)
-      .cursor[ForumPostMini](ReadPref.sec)
+      .find(filter, miniProjection.some)
+      .cursor[ForumPostMini](ReadPref.priTemp)

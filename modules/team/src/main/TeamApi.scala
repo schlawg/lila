@@ -5,15 +5,14 @@ import play.api.mvc.RequestHeader
 
 import java.time.Period
 import scala.util.Try
-import scala.util.chaining.*
 
 import lila.common.Bus
-import lila.db.dsl.{ *, given }
-import lila.core.{ timeline as tl }
-import lila.memo.CacheApi.*
 import lila.core.perm.Granter
 import lila.core.team.*
+import lila.core.timeline as tl
 import lila.core.userId.UserSearch
+import lila.db.dsl.{ *, given }
+import lila.memo.CacheApi.*
 
 final class TeamApi(
     teamRepo: TeamRepo,
@@ -63,7 +62,7 @@ final class TeamApi(
     yield
       cached.invalidateTeamIds(me.id)
       publish(TeamCreate(team.data))
-      lila.common.Bus.named.timeline(tl.Propagate(tl.TeamCreate(me.id, team.id)).toFollowersOf(me.id))
+      lila.common.Bus.pub(tl.Propagate(tl.TeamCreate(me.id, team.id)).toFollowersOf(me.id))
       team
 
   def update(old: Team, edit: TeamEdit)(using me: Me): Funit =
@@ -87,7 +86,7 @@ final class TeamApi(
     yield
       cached.forumAccess.invalidate(team.id)
       cached.lightCache.invalidate(team.id)
-      publish(TeamUpdate(team.data))
+      publish(TeamUpdate(team.data, byMod = !isLeader))
 
   def mine(using me: Me): Fu[List[Team.WithMyLeadership]] =
     cached.teamIdsList(me).flatMap(teamRepo.byIdsSortPopular).flatMap(memberRepo.addMyLeadership)
@@ -195,11 +194,11 @@ final class TeamApi(
   }.addEffect: _ =>
     cached.nbRequests.invalidate(team.createdBy)
 
-  def deleteRequestsByUserId(userId: UserId) =
+  def deleteRequestsByUserId(userId: UserId): Funit =
     requestRepo
       .getByUserId(userId)
       .flatMap:
-        _.traverse: request =>
+        _.sequentiallyVoid: request =>
           requestRepo.remove(request.id) >>
             memberRepo
               .leaders(request.team, Some(_.Request))
@@ -211,15 +210,15 @@ final class TeamApi(
       (memberRepo.add(team.id, me) >>
         teamRepo.incMembers(team.id, +1)).andDo {
         cached.invalidateTeamIds(me)
-        lila.common.Bus.named.timeline(tl.Propagate(tl.TeamJoin(me, team.id)).toFollowersOf(me))
+        lila.common.Bus.pub(tl.Propagate(tl.TeamJoin(me, team.id)).toFollowersOf(me))
         publish(JoinTeam(id = team.id, userId = me))
       }
     }
   }.recover(lila.db.ignoreDuplicateKey)
 
-  private[team] def addMembers(team: Team, userIds: Seq[UserId]): Funit =
+  private[team] def addMembers(team: Team, userIds: List[UserId]): Funit =
     userIds
-      .traverse: userId =>
+      .sequentially: userId =>
         userApi
           .enabledById(userId)
           .flatMapz: user =>
@@ -252,7 +251,7 @@ final class TeamApi(
     teamIds <- cached.teamIdsList(userId)
     _       <- memberRepo.removeByUser(userId)
     _       <- requestRepo.removeByUser(userId)
-    _       <- teamIds.map { teamRepo.incMembers(_, -1) }.parallel
+    _       <- teamIds.sequentially(teamRepo.incMembers(_, -1))
     _ = cached.invalidateTeamIds(userId)
   yield teamIds
 
@@ -287,7 +286,7 @@ final class TeamApi(
     val client = lila.common.HTTPRequest.printClient(req)
     logger.info:
       s"kick members ${users.size} by ${me.username} from lichess.org/team/${team.slug} $client | ${users.map(_.id).mkString(" ")}"
-    users.traverse_(kick(team, _))
+    users.sequentiallyVoid(kick(team, _))
 
   object blocklist:
     def set(team: Team, list: String): Funit =
@@ -326,8 +325,12 @@ final class TeamApi(
             users <- memberRepo.userIdsByTeam(team.id)
             _ = users.foreach(cached.invalidateTeamIds)
             _ <- requestRepo.removeByTeam(team.id)
-          yield publish(TeamDisable(team.id))
-        else teamRepo.enable(team).void.andDo(Bus.publish(TeamUpdate(team.data), "team"))
+          yield ()
+        else
+          teamRepo
+            .enable(team)
+            .andDo:
+              Bus.publish(TeamUpdate(team.data, byMod = Granter(_.ManageTeam)), "team")
       else memberRepo.setPerms(team.id, me, Set.empty)
 
   def idAndLeaderIds(teamId: TeamId): Fu[Option[Team.IdAndLeaderIds]] =
@@ -349,7 +352,6 @@ final class TeamApi(
     (teamRepo.coll.delete.one($id(team.id)) >>
       memberRepo.removeByTeam(team.id)).andDo {
       logger.info(s"delete team ${team.id} by @${by.id}: $explain")
-      publish(TeamDelete(team.id))
     }
 
   def syncBelongsTo(teamId: TeamId, userId: UserId): Boolean =

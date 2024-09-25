@@ -3,8 +3,8 @@ package lila.web
 import play.api.libs.json.{ JsArray, Json }
 import play.api.mvc.RequestHeader
 
-import lila.common.Json.given
 import lila.common.HTTPRequest
+import lila.common.Json.given
 import lila.core.config.NetConfig
 
 object StaticContent:
@@ -77,7 +77,7 @@ Allow: /
       case 103  => s"$faq#acpl"
       case 258  => s"$faq#marks"
       case 13   => s"$faq#titles"
-      case 87   => routes.User.ratingDistribution("blitz").url
+      case 87   => routes.User.ratingDistribution(PerfKey.blitz).url
       case 110  => s"$faq#name"
       case 29   => s"$faq#titles"
       case 4811 => s"$faq#lm"

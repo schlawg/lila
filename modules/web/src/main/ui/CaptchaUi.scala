@@ -1,13 +1,13 @@
 package lila.web
 package ui
 
+import play.api.data.{ Field, Form }
 import play.api.libs.json.Json
-import play.api.data.{ Form, Field }
-import scala.reflect.Selectable.reflectiveSelectable
 
-import lila.ui.*
-import ScalatagsTemplate.{ *, given }
 import lila.core.captcha.Captcha
+import lila.ui.*
+
+import ScalatagsTemplate.{ *, given }
 
 final class CaptchaUi(helpers: Helpers):
   import helpers.{ *, given }
@@ -21,7 +21,7 @@ final class CaptchaUi(helpers: Helpers):
       form3.hidden(formField(form, "gameId"), captcha.gameId.value.some),
       if ctx.blind then form3.hidden(formField(form, "move"), captcha.solutions.head.some)
       else
-        val url = s"$netBaseUrl${routes.Round.watcher(captcha.gameId, captcha.color.name)}"
+        val url = s"$netBaseUrl${routes.Round.watcher(captcha.gameId, captcha.color)}"
         div(
           cls := List(
             "captcha form-group" -> true,

@@ -1,17 +1,16 @@
 import * as licon from 'common/licon';
 import * as game from 'game';
-import * as round from '../round';
 import * as status from 'game/status';
 import * as util from '../util';
-import isCol1 from 'common/isCol1';
+import { isCol1 } from 'common/device';
 import RoundController from '../ctrl';
-import throttle from 'common/throttle';
+import { throttle } from 'common/timing';
 import viewStatus from 'game/view/status';
 import { game as gameRoute } from 'game/router';
 import { VNode } from 'snabbdom';
 import { Step } from '../interfaces';
 import { toggleButton as boardMenuToggleButton } from 'board/menu';
-import { LooseVNodes, looseH as h } from 'common/snabbdom';
+import { LooseVNodes, LooseVNode, looseH as h } from 'common/snabbdom';
 import boardMenu from './boardMenu';
 
 const scrollMax = 99999,
@@ -26,7 +25,7 @@ const autoScroll = throttle(100, (movesEl: HTMLElement, ctrl: RoundController) =
     if (ctrl.data.steps.length < 7) return;
     let st: number | undefined;
     if (ctrl.ply < 3) st = 0;
-    else if (ctrl.ply == round.lastPly(ctrl.data)) st = scrollMax;
+    else if (ctrl.ply == util.lastPly(ctrl.data)) st = scrollMax;
     else {
       const plyEl = movesEl.querySelector('.a1t') as HTMLElement | undefined;
       if (plyEl)
@@ -47,9 +46,9 @@ const renderDrawOffer = () => h('draw', { attrs: { title: 'Draw offer' } }, '½?
 const renderMove = (step: Step, curPly: number, orEmpty: boolean, drawOffers: Set<number>) =>
   step
     ? h(moveTag, { class: { a1t: step.ply === curPly } }, [
-        step.san[0] === 'P' ? step.san.slice(1) : step.san,
-        drawOffers.has(step.ply) ? renderDrawOffer() : undefined,
-      ])
+      step.san[0] === 'P' ? step.san.slice(1) : step.san,
+      drawOffers.has(step.ply) ? renderDrawOffer() : undefined,
+    ])
     : orEmpty && h(moveTag, '…');
 
 export function renderResult(ctrl: RoundController): VNode | undefined {
@@ -85,8 +84,8 @@ export function renderResult(ctrl: RoundController): VNode | undefined {
 
 function renderMoves(ctrl: RoundController): LooseVNodes {
   const steps = ctrl.data.steps,
-    firstPly = round.firstPly(ctrl.data),
-    lastPly = round.lastPly(ctrl.data),
+    firstPly = util.firstPly(ctrl.data),
+    lastPly = util.lastPly(ctrl.data),
     indexOffset = Math.trunc(firstPly / 2) + 1,
     drawPlies = new Set(ctrl.data.game.drawOffers || []);
 
@@ -112,7 +111,7 @@ function renderMoves(ctrl: RoundController): LooseVNodes {
   return els;
 }
 
-export function analysisButton(ctrl: RoundController) {
+export function analysisButton(ctrl: RoundController): LooseVNode {
   const forecastCount = ctrl.data.forecastCount;
   return (
     game.userAnalysable(ctrl.data) &&
@@ -133,8 +132,8 @@ export function analysisButton(ctrl: RoundController) {
 
 function renderButtons(ctrl: RoundController) {
   const d = ctrl.data,
-    firstPly = round.firstPly(d),
-    lastPly = round.lastPly(d);
+    firstPly = util.firstPly(d),
+    lastPly = util.lastPly(d);
 
   return h(
     'div.buttons',
@@ -194,7 +193,7 @@ const col1Button = (ctrl: RoundController, dir: number, icon: string, disabled: 
     }),
   });
 
-export function render(ctrl: RoundController) {
+export function render(ctrl: RoundController): LooseVNode {
   const d = ctrl.data,
     moves =
       ctrl.replayEnabledByPref() &&
@@ -230,10 +229,10 @@ export function render(ctrl: RoundController) {
       initMessage(ctrl) ||
         (isCol1()
           ? h('div.col1-moves', [
-              col1Button(ctrl, -1, licon.JumpPrev, ctrl.ply == round.firstPly(d)),
-              renderMovesOrResult,
-              col1Button(ctrl, 1, licon.JumpNext, ctrl.ply == round.lastPly(d)),
-            ])
+            col1Button(ctrl, -1, licon.JumpPrev, ctrl.ply == util.firstPly(d)),
+            renderMovesOrResult,
+            col1Button(ctrl, 1, licon.JumpNext, ctrl.ply == util.lastPly(d)),
+          ])
           : renderMovesOrResult),
     ])
   );

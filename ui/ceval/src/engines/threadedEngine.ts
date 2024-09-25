@@ -32,30 +32,30 @@ export class ThreadedEngine implements CevalEngine {
 
   constructor(
     readonly info: BrowserEngineInfo,
-    readonly status?: EngineNotifier,
+    readonly status?: EngineNotifier | undefined,
     readonly variantMap?: (v: string) => string,
   ) {}
 
-  onError = (err: Error) => {
+  onError = (err: Error): void => {
     console.error(err);
     this.failed = err;
     this.status?.({ error: String(err) });
   };
 
-  getInfo() {
+  getInfo(): BrowserEngineInfo {
     return this.info;
   }
 
-  getState() {
+  getState(): CevalState {
     return !this.protocol
       ? CevalState.Initial
       : this.failed
-      ? CevalState.Failed
-      : !this.protocol.engineName
-      ? CevalState.Loading
-      : this.protocol.isComputing()
-      ? CevalState.Computing
-      : CevalState.Idle;
+        ? CevalState.Failed
+        : !this.protocol.engineName
+          ? CevalState.Loading
+          : this.protocol.isComputing()
+            ? CevalState.Computing
+            : CevalState.Idle;
   }
 
   private async boot() {
@@ -106,7 +106,7 @@ export class ThreadedEngine implements CevalEngine {
       printErr: (msg: string) => this.onError(new Error(msg)),
       onError: this.onError,
       locateFile: (path: string) =>
-        site.asset.url(`${root}/${path}`, { version, sameDomain: path.endsWith('.worker.js') }),
+        site.asset.url(`${root}/${path}`, { version, pathOnly: path.endsWith('.worker.js') }),
       wasmMemory: sharedWasmMemory(this.info.minMem!),
     });
 
@@ -115,7 +115,7 @@ export class ThreadedEngine implements CevalEngine {
     this.module = sf;
   }
 
-  async start(work: Work) {
+  async start(work: Work): Promise<void> {
     if (!this.protocol) {
       this.protocol = new Protocol(this.variantMap);
       this.boot().catch(this.onError);
@@ -123,11 +123,11 @@ export class ThreadedEngine implements CevalEngine {
     this.protocol.compute(work);
   }
 
-  stop() {
+  stop(): void {
     this.protocol.compute(undefined);
   }
 
-  destroy() {
+  destroy(): void {
     this.module?.postMessage('quit');
     this.module = undefined;
   }

@@ -141,3 +141,5 @@ object Icon:
   val Mute: Icon                 = "" // e077
   val AccountCircle: Icon        = "" // e078
   val Logo: Icon                 = "" // e079
+  val Blindfold: Icon            = "" // e07a
+  val Switch: Icon               = "" // e07a

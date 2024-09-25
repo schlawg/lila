@@ -1,13 +1,13 @@
 package lila.mod
 package ui
 
-import lila.ui.*
-import ScalatagsTemplate.{ *, given }
-import lila.user.WithPerfsAndEmails
 import lila.core.perm.Permission
 import lila.core.playban.RageSit
-import lila.core.LightUser
 import lila.evaluation.Display
+import lila.ui.*
+import lila.user.WithPerfsAndEmails
+
+import ScalatagsTemplate.{ *, given }
 
 final class ModUserUi(helpers: Helpers, modUi: ModUi):
   import helpers.{ *, given }
@@ -23,6 +23,7 @@ final class ModUserUi(helpers: Helpers, modUi: ModUi):
   val clean: Frag     = iconTag(Icon.User)
   val reportban       = iconTag(Icon.CautionTriangle)
   val notesText       = iconTag(Icon.Pencil)
+  val rankban         = i("R")
 
   def mzSection(key: String) =
     div(cls := s"mz-section mz-section--$key", dataRel := key, id := s"mz_$key")
@@ -102,24 +103,38 @@ final class ModUserUi(helpers: Helpers, modUi: ModUi):
             submitButton(cls := List("btn-rack__btn" -> true, "active" -> u.marks.boost))("Booster")
           )
         },
-        Granter.opt(_.Shadowban).option {
-          postForm(
-            action := routes.Mod.troll(u.username, !u.marks.troll),
-            title  := "Enable/disable communication features for this user.",
-            cls    := "xhr"
-          )(
-            submitButton(cls := List("btn-rack__btn" -> true, "active" -> u.marks.troll))("Shadowban")
-          )
-        },
-        (u.marks.troll && Granter.opt(_.Shadowban)).option {
-          postForm(
-            action := routes.Mod.deletePmsAndChats(u.username),
-            title  := "Delete all PMs and public chat messages",
-            cls    := "xhr"
-          )(
-            submitButton(cls := "btn-rack__btn confirm")("Clear PMs & chats")
-          )
-        },
+        Granter
+          .opt(_.Shadowban)
+          .option:
+            frag(
+              postForm(
+                action := routes.Mod.troll(u.username, !u.marks.troll),
+                title  := "Enable/disable communication features for this user.",
+                cls    := "xhr"
+              )(
+                submitButton(cls := List("btn-rack__btn" -> true, "active" -> u.marks.troll))("Shadowban")
+              ),
+              u.marks.troll.option:
+                frag(
+                  postForm(
+                    action := routes.Mod.deletePmsAndChats(u.username),
+                    title  := "Delete all PMs and public chat messages",
+                    cls    := "xhr"
+                  )(
+                    submitButton(cls := "btn-rack__btn confirm")("Clear PMs & chats")
+                  ),
+                  postForm(
+                    action := routes.Mod.isolate(u.username, !u.marks.isolate),
+                    title  := "Isolate user by preventing all PMs, follows and challenges",
+                    cls    := "xhr"
+                  )(
+                    submitButton(cls := List("btn-rack__btn confirm" -> true, "active" -> u.marks.isolate))(
+                      "Isolate"
+                    )
+                  )
+                )
+            )
+        ,
         Granter.opt(_.SetKidMode).option {
           postForm(
             action := routes.Mod.kid(u.username),
@@ -159,7 +174,7 @@ final class ModUserUi(helpers: Helpers, modUi: ModUi):
         Granter.opt(_.ReportBan).option {
           postForm(
             action := routes.Mod.reportban(u.username, !u.marks.reportban),
-            title  := "Enable/disable the boost/cheat report feature for this user.",
+            title  := "Enable/disable the report feature for this user.",
             cls    := "xhr"
           )(
             submitButton(cls := List("btn-rack__btn" -> true, "active" -> u.marks.reportban))("Reportban")
@@ -201,7 +216,7 @@ final class ModUserUi(helpers: Helpers, modUi: ModUi):
           )
         },
         (Granter.opt(_.Impersonate) || (Granter.opt(_.Admin) && u.id == UserId.lichess)).option {
-          postForm(action := routes.Mod.impersonate(u.username))(
+          postForm(action := routes.Mod.impersonate(u.username.value))(
             submitButton(cls := "btn-rack__btn")("Impersonate")
           )
         }
@@ -233,10 +248,11 @@ final class ModUserUi(helpers: Helpers, modUi: ModUi):
           frag(
             postForm(cls := "email", action := routes.Mod.setEmail(u.username))(
               st.input(
-                tpe         := "email",
-                value       := emails.current.so(_.value),
-                name        := "email",
-                placeholder := "Email address"
+                tpe          := "email",
+                value        := emails.current.so(_.value),
+                name         := "email",
+                placeholder  := "Email address",
+                autocomplete := "off"
               ),
               submitButton(cls := "button", dataIcon := Icon.Checkmark)
             ),
@@ -315,7 +331,7 @@ final class ModUserUi(helpers: Helpers, modUi: ModUi):
                 b(e.showAction),
                 " ",
                 e.gameId.fold[Frag](e.details.orZero: String) { gameId =>
-                  a(href := s"${routes.Round.watcher(gameId, "white").url}?pov=${e.user.so(_.value)}")(
+                  a(href := s"${routes.Round.watcher(gameId, Color.white).url}?pov=${e.user.so(_.value)}")(
                     e.details.orZero: String
                   )
                 },
@@ -336,9 +352,9 @@ final class ModUserUi(helpers: Helpers, modUi: ModUi):
           reports.by.isEmpty.option(": nothing to show.")
         ),
         reports.by.map: r =>
-          r.atomBy(lila.report.ReporterId(u.id))
+          r.atomBy(u.id.into(lila.report.ReporterId))
             .map: atom =>
-              postForm(action := routes.Report.inquiry(r.id))(
+              postForm(action := routes.Report.inquiry(r.id.value))(
                 reportSubmitButton(r),
                 " ",
                 userIdLink(r.user.some),
@@ -354,7 +370,7 @@ final class ModUserUi(helpers: Helpers, modUi: ModUi):
           reports.about.isEmpty.option(": nothing to show.")
         ),
         reports.about.map: r =>
-          postForm(action := routes.Report.inquiry(r.id))(
+          postForm(action := routes.Report.inquiry(r.id.value))(
             reportSubmitButton(r),
             div(cls := "atoms")(
               r.bestAtoms(3).map { atom =>
@@ -460,7 +476,7 @@ final class ModUserUi(helpers: Helpers, modUi: ModUi):
             .map: result =>
               tr(
                 td(
-                  a(href := routes.Round.watcher(result.gameId, result.color.name)):
+                  a(href := routes.Round.watcher(result.gameId, result.color)):
                     pag
                       .pov(result)
                       .fold[Frag](result.gameId): p =>
@@ -470,7 +486,7 @@ final class ModUserUi(helpers: Helpers, modUi: ModUi):
                   pag
                     .pov(result)
                     .map: p =>
-                      a(href := routes.Round.watcher(p.gameId, p.color.name))(
+                      a(href := routes.Round.watcher(p.gameId, p.color))(
                         p.game.isTournament.option(iconTag(Icon.Trophy)),
                         iconTag(p.game.perfKey.perfIcon)(cls := "text"),
                         shortClockName(p.game.clock.map(_.config))
@@ -500,7 +516,7 @@ final class ModUserUi(helpers: Helpers, modUi: ModUi):
                   pag
                     .pov(result)
                     .map: p =>
-                      a(href := routes.Round.watcher(p.gameId, p.color.name), cls := "glpt")(
+                      a(href := routes.Round.watcher(p.gameId, p.color), cls := "glpt")(
                         momentFromNowServerText(p.game.movedAt)
                       )
                 ),
@@ -587,15 +603,15 @@ final class ModUserUi(helpers: Helpers, modUi: ModUi):
         if r.open then "open"
         else s"closed: ${r.done.fold("no data")(done => s"by ${done.by} at ${showInstant(done.at)}")}"
       }
-    )(lila.report.ui.ReportUi.reportScore(r.score), " ", strong(r.reason.name))
+    )(lila.report.ui.ReportUi.reportScore(r.score), " ", strong(r.room.name))
 
   def userMarks(o: User, playbans: Option[Int]) =
     div(cls := "user_marks")(
-      playbans.map: nb =>
-        playban(nb),
+      playbans.map(playban(_)),
       o.marks.troll.option(shadowban),
       o.marks.boost.option(boosting),
       o.marks.engine.option(engine),
       o.enabled.no.option(closed),
-      o.marks.reportban.option(reportban)
+      o.marks.reportban.option(reportban),
+      o.marks.rankban.option(rankban)
     )

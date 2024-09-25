@@ -2,20 +2,20 @@ package lila.fide
 
 import akka.stream.contrib.ZipInputStreamSource
 import akka.stream.scaladsl.*
-import akka.util.ByteString
-import chess.{ FideId, PlayerName, PlayerTitle }
+import chess.{ FideId, PlayerName, PlayerTitle, Elo, KFactor }
 import play.api.libs.ws.StandaloneWSClient
 import reactivemongo.api.bson.*
-
 import java.util.zip.ZipInputStream
 
+import lila.core.fide.{ Federation, FideTC }
 import lila.db.dsl.{ *, given }
-import lila.core.fide.{ FideTC, Federation }
 
 final private class FidePlayerSync(repo: FideRepo, ws: StandaloneWSClient)(using
     Executor,
     akka.stream.Materializer
 ):
+
+  private val listUrl = "http://ratings.fide.com/download/players_list.zip"
 
   import FidePlayer.*
 
@@ -94,12 +94,12 @@ final private class FidePlayerSync(repo: FideRepo, ws: StandaloneWSClient)(using
           .zipWithIndex
           .map: (fed, index) =>
             fed.stats(tc).modify(_.copy(rank = index + 1))
-      _ <- ranked.traverse(repo.federation.upsert)
+      _ <- ranked.sequentially(repo.federation.upsert)
     yield ()
 
   private object playersFromHttpFile:
     def apply(): Funit =
-      ws.url("http://ratings.fide.com/download/players_list.zip")
+      ws.url(listUrl)
         .stream()
         .flatMap:
           case res if res.status == 200 =>
@@ -131,33 +131,40 @@ final private class FidePlayerSync(repo: FideRepo, ws: StandaloneWSClient)(using
     private def parseLine(line: String): Option[FidePlayer] =
       def string(start: Int, end: Int) = line.substring(start, end).trim.some.filter(_.nonEmpty)
       def number(start: Int, end: Int) = string(start, end).flatMap(_.toIntOption)
+      def rating(start: Int)           = Elo.from(number(start, start + 4).filter(_ >= 1400))
+      def kFactor(start: Int)          = KFactor.from(number(start, start + 2).filter(_ > 0))
       for
         id    <- number(0, 15)
         name1 <- string(15, 76)
-        name = name1.filterNot(_.isDigit).trim
+        name = name1.trim
         if name.sizeIs > 2
         title  = string(84, 89).flatMap(PlayerTitle.get)
         wTitle = string(89, 105).flatMap(PlayerTitle.get)
         year   = number(152, 156).filter(_ > 1000)
         flags  = string(158, 160)
+        token  = FidePlayer.tokenize(name)
+        if token.sizeIs > 2
       yield FidePlayer(
         id = FideId(id),
         name = PlayerName(name),
-        token = FidePlayer.tokenize(name),
-        fed = Federation.Id.from(string(76, 79)),
+        token = token,
+        fed = Federation.Id.from(string(76, 79).filter(_ != "NON")),
         title = PlayerTitle.mostValuable(title, wTitle),
-        standard = number(113, 117),
-        rapid = number(126, 132),
-        blitz = number(139, 145),
+        standard = rating(113),
+        standardK = kFactor(123),
+        rapid = rating(126),
+        rapidK = kFactor(136),
+        blitz = rating(139),
+        blitzK = kFactor(149),
         year = year,
-        inactive = flags.isDefined.some,
+        inactive = flags.exists(_.contains("i")),
         fetchedAt = nowInstant
       )
 
     private def upsert(ps: Seq[FidePlayer]) =
       val update = repo.playerColl.update(ordered = false)
       for
-        elements <- ps.traverse: p =>
+        elements <- ps.toList.sequentially: p =>
           update.element(
             q = $id(p.id),
             u = repo.player.handler.writeOpt(p).get,

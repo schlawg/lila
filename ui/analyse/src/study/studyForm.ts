@@ -1,7 +1,9 @@
 import { VNode } from 'snabbdom';
 import * as licon from 'common/licon';
 import { prop } from 'common';
-import { bindSubmit, bindNonPassive, looseH as h } from 'common/snabbdom';
+import { snabDialog } from 'common/dialog';
+import flairPickerLoader from 'bits/flairPicker';
+import { bindSubmit, bindNonPassive, onInsert, looseH as h } from 'common/snabbdom';
 import { emptyRedButton } from '../view/util';
 import { StudyData } from './interfaces';
 import { Redraw } from '../interfaces';
@@ -9,6 +11,7 @@ import RelayCtrl from './relay/relayCtrl';
 
 export interface FormData {
   name: string;
+  flair?: string;
   visibility: string;
   computer: string;
   explorer: string;
@@ -80,12 +83,13 @@ export function view(ctrl: StudyForm): VNode {
     ['member', ctrl.trans.noarg('members')],
     ['everyone', ctrl.trans.noarg('everyone')],
   ];
-  return site.dialog.snab({
+  return snabDialog({
     class: 'study-edit',
     onClose() {
       ctrl.open(false);
       ctrl.redraw();
     },
+    noClickAway: true,
     vnodes: [
       h('h2', ctrl.trans.noarg(ctrl.relay ? 'editRoundStudy' : isNew ? 'createStudy' : 'editStudy')),
       h(
@@ -100,6 +104,7 @@ export function view(ctrl: StudyForm): VNode {
             ctrl.save(
               {
                 name: getVal('name'),
+                flair: getVal('flair'),
                 visibility: getVal('visibility'),
                 computer: getVal('computer'),
                 explorer: getVal('explorer'),
@@ -114,15 +119,48 @@ export function view(ctrl: StudyForm): VNode {
           }, ctrl.redraw),
         },
         [
-          h('div.form-group' + (ctrl.relay ? '.none' : ''), [
-            h('label.form-label', { attrs: { for: 'study-name' } }, ctrl.trans.noarg('name')),
-            h('input#study-name.form-control', {
-              attrs: { minlength: 3, maxlength: 100 },
-              hook: {
-                insert: vnode => updateName(vnode, false),
-                postpatch: (_, vnode) => updateName(vnode, true),
-              },
-            }),
+          h('div.form-split.flair-and-name' + (ctrl.relay ? '.none' : ''), [
+            h('div.form-group', [
+              h('label.form-label', 'Flair'),
+              h(
+                'details.form-control.emoji-details',
+                {
+                  hook: onInsert(el => flairPickerLoader(el)),
+                },
+                [
+                  h('summary.button.button-metal.button-no-upper', [
+                    h('span.flair-container', [
+                      h('img.uflair', {
+                        attrs: { src: data.flair ? site.asset.flairSrc(data.flair) : '' },
+                      }),
+                    ]),
+                  ]),
+                  h('input#study-flair', {
+                    attrs: { type: 'hidden', name: 'flair', value: data.flair || '' },
+                  }),
+                  h('div.flair-picker', {
+                    attrs: { 'data-except-emojis': 'activity.lichess' },
+                  }),
+                ],
+              ),
+              data.flair && h(removeEmojiButton, 'Delete'),
+            ]),
+            h('div.form-group', [
+              h('label.form-label', { attrs: { for: 'study-name' } }, ctrl.trans.noarg('name')),
+              h('input#study-name.form-control', {
+                attrs: { minlength: 3, maxlength: 100 },
+                hook: {
+                  insert: vnode => {
+                    updateName(vnode, false);
+                    const el = vnode.elm as HTMLInputElement;
+                    el.addEventListener('focus', () => el.select());
+                    // set initial modal focus
+                    setTimeout(() => el.focus());
+                  },
+                  postpatch: (_, vnode) => updateName(vnode, true),
+                },
+              }),
+            ]),
           ]),
           h('div.form-split', [
             select({
@@ -242,3 +280,5 @@ export function view(ctrl: StudyForm): VNode {
     ],
   });
 }
+
+const removeEmojiButton = emptyRedButton + '.text.emoji-remove';

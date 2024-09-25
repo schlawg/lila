@@ -8,8 +8,8 @@ body > header {
   display: flex;
   justify-content: space-between;
   position: relative;
-
-  z-index: z('site-header');
+  z-index: $z-site-header-106;
+  max-width: 1800px; // TODO wide
   margin: 0 auto;
   user-select: none;
 
@@ -60,6 +60,13 @@ body > header {
           visibility 0s linear $transition-duration;
       }
     }
+  }
+}
+
+body.zen {
+  @include topnav-unsticky;
+  header::before {
+    display: none;
   }
 }
 

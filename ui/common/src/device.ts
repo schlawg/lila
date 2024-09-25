@@ -1,9 +1,10 @@
+import { Hooks } from 'snabbdom';
 import { memoize } from './common';
 import { bind } from './snabbdom';
 
 const longPressDuration = 610;
 
-export function bindMobileTapHold(el: HTMLElement, f: (e: Event) => unknown, redraw?: () => void) {
+export function bindMobileTapHold(el: HTMLElement, f: (e: Event) => unknown, redraw?: () => void): void {
   let longPressCountdown: number;
 
   el.addEventListener('touchstart', e => {
@@ -22,22 +23,42 @@ export function bindMobileTapHold(el: HTMLElement, f: (e: Event) => unknown, red
 
 export const bindMobileMousedown =
   (f: (e: Event) => unknown, redraw?: () => void) =>
-  (el: HTMLElement): void => {
-    for (const mousedownEvent of ['touchstart', 'mousedown']) {
-      el.addEventListener(
-        mousedownEvent,
-        e => {
-          f(e);
-          e.preventDefault();
-          if (redraw) redraw();
-        },
-        { passive: false },
-      );
-    }
-  };
+    (el: HTMLElement): void => {
+      for (const mousedownEvent of ['touchstart', 'mousedown']) {
+        el.addEventListener(
+          mousedownEvent,
+          e => {
+            f(e);
+            e.preventDefault();
+            if (redraw) redraw();
+          },
+          { passive: false },
+        );
+      }
+    };
 
-export const hookMobileMousedown = (f: (e: Event) => any) =>
+export const hookMobileMousedown = (f: (e: Event) => any): Hooks =>
   bind('ontouchstart' in window ? 'click' : 'mousedown', f);
+
+let col1cache: 'init' | 'rec' | boolean = 'init';
+
+export function isCol1(): boolean {
+  if (typeof col1cache == 'string') {
+    if (col1cache == 'init') {
+      // only once
+      window.addEventListener('resize', () => {
+        col1cache = 'rec';
+      }); // recompute on resize
+      if (navigator.userAgent.indexOf('Edge/') > -1)
+        // edge gets false positive on page load, fix later
+        requestAnimationFrame(() => {
+          col1cache = 'rec';
+        });
+    }
+    col1cache = !!window.getComputedStyle(document.body).getPropertyValue('---col1');
+  }
+  return col1cache;
+}
 
 export const isMobile = (): boolean => isAndroid() || isIOS();
 
@@ -45,7 +66,7 @@ export const isAndroid = (): boolean => /Android/.test(navigator.userAgent);
 
 export const isSafari = (): boolean => /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
-export const isIOS = (constraint?: { below?: number; atLeast?: number }) => {
+export const isIOS = (constraint?: { below?: number; atLeast?: number }): boolean => {
   let answer = ios();
   if (!constraint || !answer) return answer;
   const version = parseFloat(navigator.userAgent.slice(navigator.userAgent.indexOf('Version/') + 8));
@@ -65,16 +86,16 @@ export const getFirefoxMajorVersion = (): number | undefined => {
 
 export const isIOSChrome = (): boolean => /CriOS/.test(navigator.userAgent);
 
-export const isTouchDevice = () => !hasMouse();
+export const isTouchDevice = (): boolean => !hasMouse();
 
 export const isIPad = (): boolean =>
   navigator?.maxTouchPoints > 2 && /iPad|Macintosh/.test(navigator.userAgent);
 
 export type Feature = 'wasm' | 'sharedMem' | 'simd';
 
-export const hasFeature = (feat?: string) => !feat || features().includes(feat as Feature);
+export const hasFeature = (feat?: string): boolean => !feat || features().includes(feat as Feature);
 
-export const features = memoize<readonly Feature[]>(() => {
+export const features: () => readonly Feature[] = memoize<readonly Feature[]>(() => {
   const features: Feature[] = [];
   if (
     typeof WebAssembly === 'object' &&
@@ -85,7 +106,7 @@ export const features = memoize<readonly Feature[]>(() => {
     if (sharedMemoryTest()) {
       features.push('sharedMem');
       // i32x4.dot_i16x8_s, i32x4.trunc_sat_f64x2_u_zero
-      const sourceWithSimd = Uint8Array.from([0, 97, 115, 109, 1, 0, 0, 0, 1, 12, 2, 96, 2, 123, 123, 1, 123, 96, 1, 123, 1, 123, 3, 3, 2, 0, 1, 7, 9, 2, 1, 97, 0, 0, 1, 98, 0, 1, 10, 19, 2, 9, 0, 32, 0, 32, 1, 253, 186, 1, 11, 7, 0, 32, 0, 253, 253, 1, 11]); // prettier-ignore
+      const sourceWithSimd = Uint8Array.from([0, 97, 115, 109, 1, 0, 0, 0, 1, 12, 2, 96, 2, 123, 123, 1, 123, 96, 1, 123, 1, 123, 3, 3, 2, 0, 1, 7, 9, 2, 1, 97, 0, 0, 1, 98, 0, 1, 10, 19, 2, 9, 0, 32, 0, 32, 1, 253, 186, 1, 11, 7, 0, 32, 0, 253, 253, 1, 11]); // eslint-disable-line
       if (WebAssembly.validate(sourceWithSimd)) features.push('simd');
     }
   }
@@ -95,6 +116,10 @@ export const features = memoize<readonly Feature[]>(() => {
 const ios = memoize<boolean>(() => /iPhone|iPod/.test(navigator.userAgent) || isIPad());
 
 const hasMouse = memoize<boolean>(() => window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+
+export const reducedMotion: () => boolean = memoize<boolean>(
+  () => window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+);
 
 function sharedMemoryTest(): boolean {
   if (typeof Atomics !== 'object') return false;

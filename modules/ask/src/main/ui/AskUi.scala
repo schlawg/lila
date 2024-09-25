@@ -97,21 +97,21 @@ private case class RenderAsk(
             button(
               cls        := (if tallyView then "view" else "tally"),
               formmethod := "GET",
-              formaction := routes.Ask.view(ask._id.value, viewParam.some, !tallyView)
+              formaction := routes.Ask.view(ask._id, viewParam.some, !tallyView)
             )
           ),
           (ctx.me.exists(_.userId == ask.creator) || Granter.opt(_.ModerateForum)).option(
             button(
               cls        := "admin",
               formmethod := "GET",
-              formaction := routes.Ask.admin(ask._id.value),
+              formaction := routes.Ask.admin(ask._id),
               title      := "Administrate this poll"
             )
           ),
           ((ask.hasPickFor(voterId) || ask.hasFormFor(voterId)) && !ask.isConcluded).option(
             button(
               cls        := "unset",
-              formaction := routes.Ask.unset(ask._id.value, viewParam.some, ask.isAnon),
+              formaction := routes.Ask.unset(ask._id, viewParam.some, ask.isAnon),
               title      := "Unset your submission"
             )
           )

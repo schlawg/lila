@@ -2,12 +2,14 @@ package lila.web
 package ui
 
 import lila.ui.*
-import ScalatagsTemplate.{ *, given }
+
+import ScalatagsTemplate.*
 
 def mobile(helpers: Helpers)(renderedCmsPage: Frag)(using Context) =
   import helpers.{ *, given }
   Page("Mobile")
-    .cssTag("mobile")
+    .js(Esm("bits.qrcode"))
+    .css("bits.mobile")
     .hrefLangs(lila.ui.LangPath(routes.Main.mobile)):
       main(
         div(cls := "mobile page-small box box-pad")(
@@ -49,13 +51,7 @@ def mobile(helpers: Helpers)(renderedCmsPage: Frag)(using Context) =
                 src     := assetUrl("images/mobile/lichesstv-mobile.png"),
                 alt     := "Lichess TV on mobile"
               ),
-              img(
-                cls     := "qrcode",
-                widthA  := "200",
-                heightA := "200",
-                src     := assetUrl("images/mobile/qr-code.png"),
-                alt     := "Download QR code"
-              )
+              qrcode(s"$netBaseUrl${routes.Main.redirectToAppStore}")
             )
           )
         )

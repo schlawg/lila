@@ -10,9 +10,11 @@ import {
   Pane,
   Redraw,
 } from './interfaces';
-import throttle from 'common/throttle';
+import { throttle } from 'common/timing';
 import * as network from './network';
 import { scroller } from './view/scroller';
+import { storage, type LichessStorage } from 'common/storage';
+import { pubsub } from 'common/pubsub';
 
 export default class MsgCtrl {
   data: MsgData;
@@ -83,7 +85,7 @@ export default class MsgCtrl {
   };
 
   private onLoadConvo = (convo: Convo) => {
-    this.textStore = site.storage.make(`msg:area:${convo.user.id}`);
+    this.textStore = storage.make(`msg:area:${convo.user.id}`);
     this.onLoadMsgs(convo.msgs);
     if (this.typing) {
       clearTimeout(this.typing.timeout);
@@ -169,7 +171,7 @@ export default class MsgCtrl {
   setRead = () => {
     const msg = this.currentContact()?.lastMsg;
     if (msg && msg.user != this.data.me.id) {
-      site.pubsub.emit('notify-app.set-read', msg.user);
+      pubsub.emit('notify-app.set-read', msg.user);
       if (msg.read) return false;
       msg.read = true;
       network.setRead(msg.user);
@@ -188,20 +190,6 @@ export default class MsgCtrl {
         history.replaceState({}, '', '/inbox');
       });
   };
-
-  report = () => {
-    const user = this.data.convo?.user;
-    if (user) {
-      const text = this.reportableMsg()?.text.replace(/\n/g, '\r\n').slice(0, 140);
-      if (text)
-        network
-          .report(user.name, text)
-          .then(_ => alert('Your report has been sent.'))
-          .catch(err => alert('Failed to send report: ' + err));
-    }
-  };
-
-  reportableMsg = (): Msg | undefined => this.data.convo?.msgs.find(m => m.user != this.data.me.id);
 
   block = () => {
     const userId = this.data.convo?.user.id;

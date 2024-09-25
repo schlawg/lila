@@ -1,10 +1,15 @@
 import * as xhr from 'common/xhr';
-import debounce from 'common/debounce';
+import { debounce } from 'common/timing';
+import { addPasswordVisibilityToggleListener } from 'common/password';
 import { storedJsonProp } from 'common/storage';
+import { spinnerHtml } from 'common/spinner';
 
-export function initModule(mode: 'login' | 'signup') {
-  mode === 'login' ? loginStart() : signupStart();
+export function initModule(mode: 'login' | 'signup' | 'reset'): void {
+  mode === 'login' ? loginStart() : mode === 'signup' ? signupStart() : resetStart();
+
+  addPasswordVisibilityToggleListener();
 }
+
 class LoginHistory {
   historyStorage = storedJsonProp<number[]>('login.history', () => []);
   private now = () => Math.round(Date.now() / 1000);
@@ -25,7 +30,6 @@ function loginStart() {
 
   const toggleSubmit = ($submit: Cash, v: boolean) =>
     $submit.prop('disabled', !v).toggleClass('disabled', !v);
-
   (function load() {
     const form = document.querySelector(selector) as HTMLFormElement,
       $f = $(form);
@@ -66,6 +70,7 @@ function loginStart() {
               if (el.length) {
                 history.add();
                 $f.replaceWith(el);
+                addPasswordVisibilityToggleListener();
                 load();
               } else {
                 alert(text || res.statusText + '. Please wait some time before trying again.');
@@ -104,9 +109,13 @@ function signupStart() {
         .prop('disabled', true)
         .removeAttr('data-icon')
         .addClass('frameless')
-        .html(site.spinnerHtml);
+        .html(spinnerHtml);
     else return false;
   });
 
   site.asset.loadEsm('bits.passwordComplexity', { init: 'form3-password' });
+}
+
+function resetStart() {
+  site.asset.loadEsm('bits.passwordComplexity', { init: 'form3-newPasswd1' });
 }

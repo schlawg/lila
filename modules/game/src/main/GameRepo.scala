@@ -1,17 +1,17 @@
 package lila.game
 
 import chess.format.Fen
-import chess.format.pgn.{ PgnStr, SanStr }
-import chess.{ Color, ByColor, Status }
-import scalalib.ThreadLocalRandom
+import chess.format.pgn.SanStr
+import chess.{ ByColor, Color, Status }
 import reactivemongo.akkastream.{ AkkaStreamCursor, cursorProducer }
 import reactivemongo.api.bson.*
 import reactivemongo.api.commands.WriteResult
 import reactivemongo.api.{ Cursor, WriteConcern }
+import scalalib.ThreadLocalRandom
 
+import lila.core.game.*
 import lila.db.dsl.{ *, given }
 import lila.db.isDuplicateKey
-import lila.core.game.*
 import lila.game.GameExt.*
 
 final class GameRepo(c: Coll)(using Executor) extends lila.core.game.GameRepo(c):
@@ -68,9 +68,6 @@ final class GameRepo(c: Coll)(using Executor) extends lila.core.game.GameRepo(c)
 
   def pov(gameId: GameId, color: Color): Fu[Option[Pov]] =
     game(gameId).dmap2 { Pov(_, color) }
-
-  def pov(gameId: GameId, color: String): Fu[Option[Pov]] =
-    Color.fromName(color).so(pov(gameId, _))
 
   def pov(playerRef: PlayerRef): Fu[Option[Pov]] =
     game(playerRef.gameId).dmap { _.flatMap { _.playerIdPov(playerRef.playerId) } }
@@ -154,7 +151,7 @@ final class GameRepo(c: Coll)(using Executor) extends lila.core.game.GameRepo(c)
       hint: Option[Bdoc] = none
   ): AkkaStreamCursor[Game] =
     val query = coll.find(selector).sort(sort).batchSize(batchSize)
-    hint.map(coll.hint).foldLeft(query)(_ hint _).cursor[Game](ReadPref.priTemp)
+    hint.map(coll.hint).foldLeft(query)(_.hint(_)).cursor[Game](ReadPref.priTemp)
 
   def sortedCursor(user: UserId, pk: PerfKey): AkkaStreamCursor[Game] =
     sortedCursor(
@@ -475,9 +472,8 @@ final class GameRepo(c: Coll)(using Executor) extends lila.core.game.GameRepo(c)
     initialFen(game).dmap { WithInitialFen(game, _) }
 
   def withInitialFens(games: List[Game]): Fu[List[(Game, Option[Fen.Full])]] =
-    games.map { game =>
+    games.parallel: game =>
       initialFen(game).dmap { game -> _ }
-    }.parallel
 
   def count(query: Query.type => Bdoc): Fu[Int]    = coll.countSel(query(Query))
   def countSec(query: Query.type => Bdoc): Fu[Int] = coll.secondaryPreferred.countSel(query(Query))

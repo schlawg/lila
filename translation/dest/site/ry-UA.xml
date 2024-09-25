@@ -206,7 +206,7 @@
   <string name="rating">Рейтінґ</string>
   <string name="ratingStats">Подїленя рейтінґув</string>
   <string name="username">Имня хосновача</string>
-  <string name="usernameOrEmail">Имня вадь почта</string>
+  <string name="usernameOrEmail">Имня вадь пошта</string>
   <string name="changeUsername">Поміняти имня</string>
   <string name="changeUsernameNotSame">Мож поміняти лем реґістр. Приміром \"johndoe\" на \"JohnDoe\".</string>
   <string name="changeUsernameDescription">Перемінити своє имня. Мож учинити лем раз, при тум перемінити мож лем реґістр.</string>
@@ -215,7 +215,7 @@
   <string name="password">Парола</string>
   <string name="changePassword">Поміняти паролу</string>
   <string name="changeEmail">Перемінити адрес почты</string>
-  <string name="email">Електрона почта</string>
+  <string name="email">Електрона пошта</string>
   <string name="passwordReset">Зверженя паролы</string>
   <string name="forgotPassword">Забыли сьте паролу?</string>
   <string name="error.weakPassword">Сися парола дуже легка, ї дуже просто угадати.</string>
@@ -429,7 +429,6 @@
   <string name="duration">Триманя</string>
   <string name="winner">Побідник</string>
   <string name="standing">Турнірна табела</string>
-  <string name="fewerPlayers">Кідь покладете условія, менше зможе бавити на турнірови.</string>
   <string name="join">Прикапчати ся</string>
   <string name="withdraw">Лишити</string>
   <string name="points">Балув</string>
@@ -444,7 +443,6 @@
   <string name="isPrivate">Закрытый</string>
   <string name="xRating">Рейтінґ %s</string>
   <string name="profile">Профіл</string>
-  <string name="lastName">Прозвище</string>
   <string name="biography">За ся</string>
   <string name="clearSavedMoves">Захарити ходы</string>
   <string name="success">Успіх</string>
@@ -471,10 +469,8 @@
   <string name="user">Хосновач</string>
   <string name="reason">Причина</string>
   <string name="cheat">Чітерство</string>
-  <string name="insult">Оскорба</string>
   <string name="troll">Тролінґ</string>
   <string name="other">Иншакоє</string>
-  <string name="reportDescriptionHelp">Подїліт ся из нами одкликованями на бавкы, де вам ся видит, были нарушені правила, ай опишіт, у чому дїло. Не доста просто написати \"ун чітер\", уповічте чому сьте так рішили. Наріканя достане одвіт скорше, кідь оно на анґлійськув бисідї.</string>
   <string name="by">%s</string>
   <string name="importedByX">Перенесено %s</string>
   <string name="blog">Блоґ</string>
@@ -561,7 +557,6 @@
   <string name="light">Світлый</string>
   <string name="dark">Темный</string>
   <string name="transparent">Тоненькый</string>
-  <string name="boardTheme">Тема дощкы</string>
   <string name="pieceSet">Тема фіґур</string>
   <string name="usernameAlreadyUsed">Сисе имня уже занято, попробуйте другоє.</string>
   <string name="usernameCharsInvalid">Имня має мати лем ціфры, числа, подчеркув ай дефісув.</string>

@@ -4,16 +4,16 @@ import cats.derived.*
 import chess.format.Fen
 import chess.variant.{ Chess960, FromPosition, Horde, RacingKings, Variant }
 import chess.{ Color, Mode, Speed }
-import scalalib.ThreadLocalRandom
 import reactivemongo.api.bson.Macros.Annotations.Key
-
+import scalalib.ThreadLocalRandom
 import scalalib.model.Days
-import lila.core.i18n.I18nKey
-import lila.core.{ challenge as hub }
+
+import lila.core.challenge as hub
 import lila.core.game.GameRule
+import lila.core.i18n.I18nKey
+import lila.core.id.GameFullId
+import lila.core.user.{ GameUser, WithPerf }
 import lila.rating.PerfType
-import lila.core.user.WithPerf
-import lila.core.user.GameUser
 
 case class Challenge(
     @Key("_id") id: ChallengeId,
@@ -23,7 +23,7 @@ case class Challenge(
     timeControl: Challenge.TimeControl,
     mode: Mode,
     colorChoice: Challenge.ColorChoice,
-    finalColor: chess.Color,
+    finalColor: Color,
     challenger: Challenge.Challenger,
     destUser: Option[Challenge.Challenger.Registered],
     rematchOf: Option[GameId],
@@ -37,6 +37,8 @@ case class Challenge(
 ) extends hub.Challenge:
 
   import Challenge.*
+
+  def gameId = id.into(GameId)
 
   def challengerUserId = challengerUser.map(_.id)
   def challengerIsOpen = challenger match
@@ -87,6 +89,10 @@ case class Challenge(
   def isBotCompatible: Boolean   = speed >= Speed.Bullet
 
   def nonEmptyRules = rules.nonEmpty.option(rules)
+
+  def fullIdOf(game: lila.core.game.Game, direction: Direction): GameFullId =
+    game.fullIdOf:
+      if direction == Direction.Out then finalColor else !finalColor
 
 object Challenge:
 
@@ -158,7 +164,7 @@ object Challenge:
   def toRegistered(u: WithPerf): Challenger.Registered =
     Challenger.Registered(u.id, Rating(u.perf.intRating, u.perf.provisional))
 
-  def randomColor = chess.Color.fromWhite(ThreadLocalRandom.nextBoolean())
+  def randomColor = Color.fromWhite(ThreadLocalRandom.nextBoolean())
 
   def makeTimeControl(clock: Option[chess.Clock.Config], days: Option[Days]): TimeControl =
     clock

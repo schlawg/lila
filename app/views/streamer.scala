@@ -3,16 +3,16 @@ package views.streamer
 import scalalib.paginator.Paginator
 
 import lila.app.UiEnv.{ *, given }
-import lila.streamer.Streamer
 import lila.core.perf.{ UserPerfs, UserWithPerfs }
 import lila.rating.UserPerfsExt.best6Perfs
+import lila.streamer.Streamer
 
 lazy val bits       = lila.streamer.ui.StreamerBits(helpers)(picfitUrl)
 private lazy val ui = lila.streamer.ui.StreamerUi(helpers, bits)
 export ui.index
 
-def show(s: Streamer.WithUserAndStream, perfs: UserPerfs, activities: Vector[lila.activity.ActivityView])(
-    using Context
+def show(s: Streamer.WithUserAndStream, perfs: UserPerfs, activities: Seq[lila.activity.ActivityView])(using
+    Context
 ) =
   ui.show(
     s,
@@ -26,7 +26,7 @@ def create(using Context) =
       title = trans.streamer.becomeStreamer.txt(),
       icon = Some(Icon.Mic)
     )
-    .cssTag("streamer.form")(bits.create)
+    .css("bits.streamer.form")(bits.create)
 
 object edit:
 

@@ -127,21 +127,21 @@ piece {
   width: 12.5%;
   height: 12.5%;
   background-size: cover;
-  z-index: z('cg__piece');
+  z-index: $z-cg__piece-2;
   will-change: transform;
   pointer-events: none;
 
   &.dragging {
     cursor: move;
-    z-index: z('cg__piece.dragging') !important;
+    z-index: $z-cg__piece_dragging-204 !important;
   }
 
   &.anim {
-    z-index: z('cg__piece.anim');
+    z-index: $z-cg__piece_anim-3;
   }
 
   &.fading {
-    z-index: z('cg__piece.fading');
+    z-index: $z-cg__piece_fading-1;
     opacity: 0.5;
   }
 
@@ -173,11 +173,11 @@ cg-auto-pieces {
 
 cg-container .cg-shapes {
   opacity: 0.6;
-  z-index: z('cg__svg.cg-shapes');
+  z-index: $z-cg__svg_cg-shapes-2;
 }
 
 cg-container .cg-custom-svgs {
-  z-index: z('cg__svg.cg-custom-svgs');
+  z-index: $z-cg__svg_cg-custom-svgs-4;
 }
 
 cg-container .cg-shapes {
@@ -189,7 +189,7 @@ cg-container .cg-custom-svgs svg {
 }
 
 cg-auto-pieces {
-  z-index: z('cg__cg-auto-pieces');
+  z-index: $z-cg__cg-auto-pieces-2;
 
   piece {
     opacity: 0.3;
@@ -197,20 +197,67 @@ cg-auto-pieces {
 }
 
 html:not(.transp) body:not(.simple-board) {
-  ---bright-factor: calc(0.3 + 0.0059 * min(120, var(---board-brightness)));
-
-  &.coords-in coord {
-    filter: brightness(var(---bright-factor));
-  }
-
-  cg-board piece {
-    filter: brightness(var(---bright-factor));
+  &.coords-in coord,
+  cg-board piece,
+  cg-board square,
+  .cg-custom-svgs {
+    filter: brightness(calc(0.3 + 0.0059 * min(120, var(---board-brightness))));
+    //hue-rotate(calc(var(---board-hue) * 3.6deg));
   }
 }
 
-html.transp body:not(.simple-board) {
-  cg-board piece {
+html.transp body:not(.simple-board) cg-board {
+  piece,
+  square {
     opacity: calc(min(1, 0.5 + var(---board-opacity) / 100));
-    filter: unset;
+    //filter: hue-rotate(calc(var(---board-hue) * 3.6deg));
+  }
+}
+
+coords.squares {
+  text-transform: uppercase;
+  text-align: right;
+  flex-flow: column-reverse;
+  height: 100%;
+  width: 12.5%;
+
+  &.black {
+    flex-flow: column;
+  }
+
+  &.left {
+    text-align: left;
+  }
+
+  coord {
+    padding: 6% 4%;
+  }
+
+  &.rank2 {
+    transform: translateX(100%);
+  }
+
+  &.rank3 {
+    transform: translateX(200%);
+  }
+
+  &.rank4 {
+    transform: translateX(300%);
+  }
+
+  &.rank5 {
+    transform: translateX(400%);
+  }
+
+  &.rank6 {
+    transform: translateX(500%);
+  }
+
+  &.rank7 {
+    transform: translateX(600%);
+  }
+
+  &.rank8 {
+    transform: translateX(700%);
   }
 }

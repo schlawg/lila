@@ -1,12 +1,11 @@
 package lila.puzzle
 
+import chess.format.*
 import play.api.libs.json.*
 
-import lila.common.Json.{ *, given }
-
+import lila.common.Json.given
+import lila.core.i18n.{ Translate, Translator }
 import lila.tree.{ Metas, NewBranch, NewTree }
-import lila.core.i18n.{ Translate, Translator, defaultLang }
-import chess.format.*
 
 final class JsonView(
     gameJson: GameJson,
@@ -44,6 +43,10 @@ final class JsonView(
               .add("chapter" -> a.asTheme.flatMap(PuzzleTheme.studyChapterIds.get))
               .add("opening" -> a.opening.map: op =>
                 Json.obj("key" -> op.key, "name" -> op.name))
+              .add("openingAbstract" -> a.match
+                case op: PuzzleAngle.Opening => op.isAbstract
+                case _                       => false
+              )
         )
 
   def userJson(using me: Option[Me], perf: Perf) = me.map: me =>
@@ -108,14 +111,14 @@ final class JsonView(
 
   def batch(puzzles: Seq[Puzzle])(using me: Option[Me], perf: Perf): Fu[JsObject] = for
     games <- gameRepo.gameOptionsFromSecondary(puzzles.map(_.gameId))
-    jsons <- (puzzles
-      .zip(games))
-      .collect { case (puzzle, Some(game)) =>
-        gameJson.noCache(game, puzzle.initialPly).map {
-          puzzleAndGamejson(puzzle, _)
+    jsons <- Future.sequence:
+      puzzles
+        .zip(games)
+        .collect { case (puzzle, Some(game)) =>
+          gameJson.noCache(game, puzzle.initialPly).map {
+            puzzleAndGamejson(puzzle, _)
+          }
         }
-      }
-      .parallel
   yield
     import lila.rating.Glicko.glickoWrites
     Json.obj("puzzles" -> jsons).add("glicko" -> me.map(_ => perf.glicko))
@@ -133,17 +136,17 @@ final class JsonView(
 
     def batch(puzzles: Seq[Puzzle])(using me: Option[Me], perf: Perf): Fu[JsObject] = for
       games <- gameRepo.gameOptionsFromSecondary(puzzles.map(_.gameId))
-      jsons <- (puzzles
-        .zip(games))
-        .collect { case (puzzle, Some(game)) =>
-          gameJson.noCacheBc(game, puzzle.initialPly).map { gameJson =>
-            Json.obj(
-              "game"   -> gameJson,
-              "puzzle" -> puzzleJson(puzzle)
-            )
+      jsons <- Future.sequence:
+        puzzles
+          .zip(games)
+          .collect { case (puzzle, Some(game)) =>
+            gameJson.noCacheBc(game, puzzle.initialPly).map { gameJson =>
+              Json.obj(
+                "game"   -> gameJson,
+                "puzzle" -> puzzleJson(puzzle)
+              )
+            }
           }
-        }
-        .parallel
     yield Json
       .obj("puzzles" -> jsons)
       .add("user" -> me.map(_ => perf.intRating).map(userJson))

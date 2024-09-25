@@ -3,13 +3,13 @@ package lila.round
 import chess.format.Fen
 import chess.variant.*
 import chess.{ ByColor, Clock, Color as ChessColor, Game as ChessGame, Ply, Situation }
+import scalalib.cache.ExpireSetMemo
 
 import lila.common.Bus
-import lila.game.{ AnonCookie, Event, Rematches }
-import lila.core.game.{ IdGenerator, GameRepo }
-import lila.core.i18n.{ I18nKey as trans, defaultLang, Translator }
-import scalalib.cache.ExpireSetMemo
+import lila.core.game.{ GameRepo, IdGenerator }
+import lila.core.i18n.{ I18nKey as trans, Translator, defaultLang }
 import lila.core.user.{ GameUsers, UserApi }
+import lila.game.{ AnonCookie, Event, Rematches }
 
 import ChessColor.White
 
@@ -19,7 +19,7 @@ final private class Rematcher(
     messenger: Messenger,
     onStart: lila.core.game.OnStart,
     rematches: Rematches
-)(using Executor, Translator)(using idGenerator: IdGenerator):
+)(using Executor, Translator, lila.core.config.RateLimit)(using idGenerator: IdGenerator):
 
   private given play.api.i18n.Lang = defaultLang
 
@@ -91,6 +91,7 @@ final private class Rematcher(
     yield
       messenger.volatile(pov.game, trans.site.rematchOfferAccepted.txt())
       onStart(nextGame.id)
+      incUserColors(nextGame)
       redirectEvents(nextGame)
 
     rematches.get(pov.gameId) match
@@ -120,6 +121,15 @@ final private class Rematcher(
         fuccess(sloppy.withId(id))
     yield game
 
+  private def incUserColors(game: Game): Unit =
+    if game.lobbyOrPool
+    then
+      game.userIds match
+        case List(u1, u2) =>
+          userApi.incColor(u1, game.whitePlayer.color)
+          userApi.incColor(u2, game.blackPlayer.color)
+        case _ => ()
+
   private def returnPlayer(game: Game, color: ChessColor, users: GameUsers): lila.core.game.Player =
     game.opponent(color).aiLevel match
       case Some(ai) => lila.game.Player.makeAnon(color, ai.some)
@@ -147,7 +157,7 @@ object Rematcher:
       case Chess960                                 => Situation(Chess960)
       case variant                                  => prevSituation.fold(Situation(variant))(_.situation)
     val ply   = prevSituation.fold(Ply.initial)(_.ply)
-    val color = prevSituation.fold[chess.Color](White)(_.situation.color)
+    val color = prevSituation.fold[Color](White)(_.situation.color)
     ChessGame(
       situation = newSituation.copy(color = color),
       clock = clock.map(c => Clock(c.config)),

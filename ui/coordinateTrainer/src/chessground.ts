@@ -3,13 +3,19 @@ import { Config as CgConfig } from 'chessground/config';
 import * as cg from 'chessground/types';
 import resizeHandle from 'common/resize';
 import CoordinateTrainerCtrl from './ctrl';
+import { Chessground as makeChessground } from 'chessground';
+import { pubsub } from 'common/pubsub';
 
-export default function (ctrl: CoordinateTrainerCtrl): VNode {
+export default function(ctrl: CoordinateTrainerCtrl): VNode {
   return h('div.cg-wrap', {
     hook: {
       insert: vnode => {
         const el = vnode.elm as HTMLElement;
-        ctrl.chessground = site.makeChessground(el, makeConfig(ctrl));
+        ctrl.chessground = makeChessground(el, makeConfig(ctrl));
+        pubsub.on('board.change', (is3d: boolean) => {
+          ctrl.chessground!.state.addPieceZIndex = is3d;
+          ctrl.chessground!.redrawAll();
+        });
       },
       destroy: () => ctrl.chessground!.destroy(),
     },
@@ -22,6 +28,7 @@ function makeConfig(ctrl: CoordinateTrainerCtrl): CgConfig {
     orientation: ctrl.orientation,
     blockTouchScroll: true,
     coordinates: ctrl.showCoordinates(),
+    coordinatesOnSquares: ctrl.showCoordsOnAllSquares(),
     addPieceZIndex: ctrl.config.is3d,
     movable: { free: false, color: undefined },
     drawable: { enabled: false },

@@ -1,12 +1,8 @@
 package lila.game
 
-import chess.Color
-
 import lila.core.game.*
 
 object Pov:
-
-  import lila.core.game.Pov.*
 
   def list(game: Game): List[Pov] = game.players.mapList(lila.core.game.Pov(game, _))
 

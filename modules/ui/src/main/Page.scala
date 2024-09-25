@@ -1,6 +1,6 @@
 package lila.ui
 
-import ScalatagsTemplate.{ *, given }
+import ScalatagsTemplate.*
 
 opaque type LangPath = String
 object LangPath extends OpaqueString[LangPath]:
@@ -21,7 +21,7 @@ case class Page(
     body: Option[Frag] = None,
     fullTitle: Option[String] = None,
     robots: Boolean = true,
-    cssFrag: Option[Frag] = None,
+    cssKeys: List[String] = Nil,
     modules: EsmList = Nil,
     jsFrag: Option[WithNonce[Frag]] = None,
     pageModule: Option[PageModule] = None,
@@ -30,12 +30,12 @@ case class Page(
     zoomable: Boolean = false,
     zenable: Boolean = false,
     csp: Option[Update[ContentSecurityPolicy]] = None,
-    wrapClass: String = "",
+    fullScreenClass: Boolean = false,
     atomLinkTag: Option[Tag] = None,
     withHrefLangs: Option[LangPath] = None,
     transform: Update[Frag] = identity
 ):
-  def js(esm: EsmInit): Page               = copy(modules = modules :+ esm.some)
+  def js(esm: Esm): Page                   = copy(modules = modules :+ esm.some)
   def js(esm: EsmList): Page               = copy(modules = modules ::: esm)
   def js(f: WithNonce[Frag]): Page         = copy(jsFrag = jsFrag.foldLeft(f)(_ |+| _).some)
   def js(f: Option[WithNonce[Frag]]): Page = f.foldLeft(this)(_.js(_))
@@ -47,14 +47,15 @@ case class Page(
   def graph(og: OpenGraph): Page                                   = copy(openGraph = og.some)
   def graph(title: String, description: String, url: String): Page = graph(OpenGraph(title, description, url))
   def robots(b: Boolean): Page                                     = copy(robots = b)
-  def css(f: Frag): Page                           = copy(cssFrag = cssFrag.foldLeft(f)(_ |+| _).some)
-  def csp(up: Update[ContentSecurityPolicy]): Page = copy(csp = csp.fold(up)(up.compose).some)
-  def hrefLangs(path: Option[LangPath]): Page      = copy(withHrefLangs = path)
-  def hrefLangs(path: LangPath): Page              = copy(withHrefLangs = path.some)
-  def fullScreen: Page                             = copy(wrapClass = "full-screen-force")
-  def noRobot: Page                                = robots(false)
-  def zoom                                         = copy(zoomable = true)
-  def zen                                          = copy(zenable = true)
+  def css(keys: String*): Page                                     = copy(cssKeys = cssKeys ::: keys.toList)
+  def css(key: Option[String]): Page                               = copy(cssKeys = cssKeys ::: key.toList)
+  def csp(up: Update[ContentSecurityPolicy]): Page                 = copy(csp = csp.fold(up)(up.compose).some)
+  def hrefLangs(path: Option[LangPath]): Page                      = copy(withHrefLangs = path)
+  def hrefLangs(path: LangPath): Page                              = copy(withHrefLangs = path.some)
+  def fullScreen: Page                                             = copy(fullScreenClass = true)
+  def noRobot: Page                                                = robots(false)
+  def zoom                                                         = copy(zoomable = true)
+  def zen                                                          = copy(zenable = true)
 
   // body stuff
   def body(b: Frag): Page              = copy(body = b.some)

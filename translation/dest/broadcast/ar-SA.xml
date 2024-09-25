@@ -27,14 +27,12 @@
   <string name="tournamentDescription">وصف موجز للبطولة</string>
   <string name="fullDescription">الوصف الكامل</string>
   <string name="fullDescriptionHelp">الوصف الاختياري الطويل للبث. %1$s متوفر. يجب أن لا يتجاوز طول النص %2$s حرفاً.</string>
-  <string name="sourceUrlOrGameIds">URL المصدر، أو ID المباراة</string>
+  <string name="sourceSingleUrl">رابط مصدر PGN</string>
   <string name="sourceUrlHelp">URL الذي سيتحقق منه Lichess للحصول على تحديثات PGN. يجب أن يكون متاحًا للجميع على الإنترنت.</string>
-  <string name="gameIdsHelp">بدلاً من ذلك، يمكنك إدخال ما يصل إلى 64 ID لمباريات Lichess، مفصولة بمسافات.</string>
+  <string name="sourceGameIds">حتى 64 معرف لُعْبَة ليتشيس، مفصولة بمسافات.</string>
   <string name="startDate">تاريخ البدء في المنطقة الزمنية الخاصة بك</string>
   <string name="startDateHelp">اختياري، إذا كنت تعرف متى يبدأ الحدث</string>
   <string name="credits">ائتمن المصدر</string>
-  <string name="broadcastUrl">رابط البث</string>
-  <string name="currentRoundUrl">رابط الجولة الحالية</string>
   <string name="currentGameUrl">رابط المباراة الحالية</string>
   <string name="downloadAllRounds">تحميل جميع المباريات</string>
   <string name="resetRound">إعادة ضبط هذه الجولة</string>
@@ -44,8 +42,11 @@
   <string name="editRoundStudy">تعديل دراسة الجولة</string>
   <string name="deleteTournament">حذف هذه المسابقة</string>
   <string name="definitivelyDeleteTournament">قم بحذف البطولة جميعها و جميع جولاتها و جميع ألعابها.</string>
-  <string name="automaticLeaderboard">لوحة متصدرين تلقائية</string>
-  <string name="automaticLeaderboardHelp">حساب النتائج وعرض لوحة متصدرين بسيطة بناء على تلك النتائج</string>
+  <string name="replacePlayerTags">اختياري: استبدل أسماء اللاعبين وتقييماتهم وألقابهم</string>
   <string name="periodInSeconds">المدّة بالثواني</string>
   <string name="periodInSecondsHelp">أختياري، كم مدة الانتظار بين الطلبات، تتراوح المدة بين الثانيتين والدقيقة، يحدد الإعداد الافتراضي بناء على عدد المشاهدين.</string>
+  <string name="fidePlayers">لاعبين FIDE</string>
+  <string name="fideProfile">مِلَفّ FIDE</string>
+  <string name="ageThisYear">العمر هذا العام</string>
+  <string name="unrated">غير مقيم</string>
 </resources>

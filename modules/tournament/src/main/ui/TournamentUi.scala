@@ -1,10 +1,11 @@
 package lila.tournament
 package ui
 
-import lila.ui.*
-import ScalatagsTemplate.{ *, given }
-import lila.rating.PerfType
 import lila.core.i18n.Translate
+import lila.rating.PerfType
+import lila.ui.*
+
+import ScalatagsTemplate.{ *, given }
 
 final class TournamentUi(helpers: Helpers)(getTourName: GetTourName):
   import helpers.{ *, given }
@@ -67,7 +68,7 @@ final class TournamentUi(helpers: Helpers)(getTourName: GetTourName):
           ),
           td(
             if tour.isStarted then timeRemaining(tour.finishesAt)
-            else momentFromNow(tour.schedule.fold(tour.startsAt)(_.at.instant))
+            else momentFromNow(tour.schedule.fold(tour.startsAt)(_.atInstant))
           ),
           td(tour.durationString),
           tour.conditions.teamMember match
@@ -84,14 +85,14 @@ final class TournamentUi(helpers: Helpers)(getTourName: GetTourName):
     a(
       dataIcon := Icon.Trophy.value,
       cls      := (if tour.isScheduled then "text is-gold" else "text"),
-      href     := routes.Tournament.show(tour.id.value).url
+      href     := routes.Tournament.show(tour.id).url
     )(tour.name())
 
   def tournamentLink(tourId: TourId)(using Translate): Frag =
     a(
       dataIcon := Icon.Trophy.value,
       cls      := "text",
-      href     := routes.Tournament.show(tourId.value).url
+      href     := routes.Tournament.show(tourId).url
     )(tournamentIdToName(tourId))
 
   def tournamentIdToName(id: TourId)(using translate: Translate): String =

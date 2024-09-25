@@ -6,7 +6,7 @@ type Config = {
   onEmojiSelect: (i?: { id: string; src: string }) => void;
 };
 
-export function initModule(cfg: Config) {
+export function initModule(cfg: Config): void {
   if (cfg.element.classList.contains('emoji-done')) return;
   const opts = {
     ...cfg,
@@ -25,7 +25,7 @@ export function initModule(cfg: Config) {
   $(cfg.element).find('em-emoji-picker').attr('trap-bypass', '1'); // disable mousetrap within the shadow DOM
 }
 
-const makeEmojiData = async () => {
+const makeEmojiData = async() => {
   const res = await fetch(site.asset.url('flair/list.txt'));
   const text = await res.text();
   const lines = text.split('\n').slice(0, -1);

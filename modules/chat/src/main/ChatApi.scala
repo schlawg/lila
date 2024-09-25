@@ -1,17 +1,15 @@
 package lila.chat
 
-import chess.Color
-
 import lila.common.Bus
 import lila.common.String.{ fullCleanUp, noShouting }
+import lila.core.chat.{ OnReinstate, OnTimeout }
 import lila.core.config.NetDomain
-import lila.db.dsl.{ *, given }
-import lila.core.shutup.PublicSource
-import lila.memo.CacheApi.*
 import lila.core.perm.Granter
-import lila.core.security.{ FloodSource, FloodApi, SpamApi }
-import lila.core.chat.{ OnTimeout, OnReinstate }
+import lila.core.security.{ FloodApi, FloodSource, SpamApi }
+import lila.core.shutup.PublicSource
 import lila.core.user.{ FlairGet, FlairGetMap }
+import lila.db.dsl.{ *, given }
+import lila.memo.CacheApi.*
 
 final class ChatApi(
     coll: Coll,
@@ -80,10 +78,11 @@ final class ChatApi(
           if _ then
             linkCheck(line, publicSource).flatMap:
               if _ then
-                (persist
+                val actuallyPersist = persist && (publicSource.isEmpty || !isGarbage(text))
+                (actuallyPersist
                   .so(persistLine(chatId, line)))
                   .andDo:
-                    if persist then
+                    if actuallyPersist then
                       if publicSource.isDefined then cached.invalidate(chatId)
                       publicSource.match
                         case Some(source) => shutupApi.publicText(userId, text, source)
@@ -98,6 +97,14 @@ final class ChatApi(
           else
             logger.info(s"Can't post $line in $publicSource: chat is closed")
             funit
+
+    private def isGarbage(text: String) = {
+      val x = text.filter(_.isLetter).toLowerCase
+      x == "last" || x == "first" || x == "second" || x == "third"
+    } || {
+      val x = text.filter(_.isLetterOrDigit).toLowerCase
+      x == "1st" || x == "1" || x == "2nd" || x == "2"
+    }
 
     private def linkCheck(line: UserLine, source: Option[PublicSource]) =
       source.fold(fuccess(true)): s =>

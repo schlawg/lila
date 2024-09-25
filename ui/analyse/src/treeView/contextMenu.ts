@@ -82,6 +82,10 @@ function view(opts: Opts, coords: Coords): VNode {
 
       action(licon.Trash, trans('deleteFromHere'), () => ctrl.deleteNode(opts.path)),
 
+      action(licon.PlusButton, trans('expandVariations'), () => ctrl.setAllCollapsed(opts.path, false)),
+
+      action(licon.MinusButton, trans('collapseVariations'), () => ctrl.setAllCollapsed(opts.path, true)),
+
       ...(ctrl.study ? studyView.contextMenu(ctrl.study, opts.path, node) : []),
 
       onMainline &&
@@ -94,7 +98,7 @@ function view(opts: Opts, coords: Coords): VNode {
   );
 }
 
-export default function (e: MouseEvent, opts: Opts): void {
+export default function(e: MouseEvent, opts: Opts): void {
   let pos = getPosition(e);
   if (pos === null) {
     if (opts.root.contextMenuPath) return;

@@ -2,16 +2,21 @@ import * as xhr from 'common/xhr';
 
 const showError = (error: string) => alert(error);
 
+export function initModule(stripePublicKey?: string): void {
+  if (stripePublicKey) stripeStart(stripePublicKey);
+  else payPalStart();
+}
+
 const changeForm = () => {
   const $change = $('.plan table.all .change');
-  $change.find('a').on('click', function (this: HTMLLinkElement) {
+  $change.find('a').on('click', function(this: HTMLLinkElement) {
     const f = this.dataset.form!;
     $change.find('form:not(.' + f + ')').hide();
     $change.find('form.' + f).toggle();
   });
 };
 
-export function stripeStart(publicKey: string) {
+export function stripeStart(publicKey: string): void {
   $('.update-payment-method').on('click', () => {
     const stripe = window.Stripe(publicKey);
     xhr.json('/patron/stripe/update-payment', { method: 'post' }).then(data => {
@@ -30,8 +35,6 @@ export function stripeStart(publicKey: string) {
   changeForm();
 }
 
-export function payPalStart() {
+export function payPalStart(): void {
   changeForm();
 }
-
-(window as any).plan = { payPalStart, stripeStart };

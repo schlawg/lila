@@ -1,13 +1,13 @@
 package lila.report
 
-import lila.core.game.{ GameRepo, GameApi }
+import lila.core.game.{ GameApi, GameRepo }
 
 final class AutoAnalysis(gameRepo: GameRepo, gameApi: GameApi)(using ec: Executor, scheduler: Scheduler):
 
   def apply(candidate: Report.Candidate): Funit =
     if candidate.isCheat then doItNow(candidate)
     else
-      candidate.isPrint.so(fuccess:
+      (candidate.reason == Reason.AltPrint).so(fuccess:
         List(30, 90).foreach: minutes =>
           scheduler.scheduleOnce(minutes minutes) { doItNow(candidate) }
       )
@@ -18,7 +18,7 @@ final class AutoAnalysis(gameRepo: GameRepo, gameApi: GameApi)(using ec: Executo
         logger.info(s"Auto-analyse ${games.size} games after report by ${candidate.reporter.user.id}")
       games.foreach: game =>
         lila.mon.cheat.autoAnalysis("Report").increment()
-        lila.common.Bus.named.fishnet.analyseGame(game.id)
+        lila.common.Bus.pub(lila.core.fishnet.Bus.GameRequest(game.id))
 
   private def gamesToAnalyse(candidate: Report.Candidate): Fu[List[Game]] =
     gameRepo

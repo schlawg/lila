@@ -69,6 +69,8 @@
   <string name="promoteVariation">เลื่อนขั้นตัวแปร</string>
   <string name="makeMainLine">สร้างเส้นทางหลัก</string>
   <string name="deleteFromHere">ลบจากที่นี่</string>
+  <string name="collapseVariations">ซ่อนตาเดินอื่นๆ</string>
+  <string name="expandVariations">ขยายตาเดินอื่นๆ</string>
   <string name="forceVariation">ทำให้เป็นการผันแปร</string>
   <string name="copyVariationPgn">คัดลอก PGN แขนงต่างๆ</string>
   <string name="move">ตาเดิน</string>
@@ -169,6 +171,7 @@
   <string name="latestForumPosts">โพสต์อภิปรายล่าสุด</string>
   <string name="players">ผู้เล่น</string>
   <string name="friends">เพื่อน</string>
+  <string name="otherPlayers">ผู้เล่นอื่นๆ</string>
   <string name="discussions">การสนทนา</string>
   <string name="today">วันนี้</string>
   <string name="yesterday">เมื่อวาน</string>
@@ -432,9 +435,6 @@
   <string name="safeTournamentName">เลือกชื่อที่ปลอดภัยสุดสำหรับทัวร์นาเมนต์</string>
   <string name="inappropriateNameWarning">อะไรที่ไม่เหมาะสมแม้เพียงเล็กน้อย ก็สามารถทำให้บัญชีของคุณถูกปิดได้</string>
   <string name="emptyTournamentName">ปล่อยว่างไว้เพื่อตั้งชื่อทัวร์นาเมนต์หลังจากสุ่มแกรนด์มาสเตอร์</string>
-  <string name="recommendNotTouching">เราแนะนำว่าอย่าแตะต้องสิ่งเหล่านี้</string>
-  <string name="fewerPlayers">ถ้าคุณตั้งค่าเงื่อนไขการเข้าร่วม ทัวร์นาเมนต์ของคุณจะมีผู้เข้าเล่นได้น้อยลง</string>
-  <string name="showAdvancedSettings">แสดงการตั้งค่าขั้นสูง</string>
   <string name="makePrivateTournament">ทำทัวร์นาเมนต์ให้เป็นส่วนตัว และจำกัดการเข้าถึงด้วยรหัสผ่าน</string>
   <string name="join">เข้าร่วม</string>
   <string name="withdraw">ถอนตัว</string>
@@ -474,8 +474,7 @@
   <string name="ifNoneLeaveEmpty">ถ้าไม่มี, จงเว้นว่าง</string>
   <string name="profile">ข้อมูลประจำตัว</string>
   <string name="editProfile">แก้ไขข้อมูลประจำตัว</string>
-  <string name="firstName">ชื่อจริง</string>
-  <string name="lastName">นามสกุล</string>
+  <string name="realName">ชื่อจริง</string>
   <string name="setFlair">ตั้งค่ารูปตกแต่ง</string>
   <string name="flair">รูปตกแต่ง</string>
   <string name="youCanHideFlair">มันมีการตั้งค่าที่ทำให้ไม่สามารถเห็นรูปตกแต่งของผู้ใช้ได้ทั้งเวบไซต์</string>
@@ -505,6 +504,8 @@
   <string name="descPrivateHelp">ข้อความที่สมาชิกทีมเท่านั้นที่เห็นได้ ถ้าตั้งไว้ก็จะไปแทนที่คำอธิบายสาธารณะสำหรับสมาชิกทีม</string>
   <string name="no">ไม่</string>
   <string name="yes">ใช่</string>
+  <string name="website">เวบไซต์</string>
+  <string name="mobile">มือถือ</string>
   <string name="help">ช่วยเหลือ:</string>
   <string name="createANewTopic">สร้างหัวข้อใหม่</string>
   <string name="topics">หัวข้อ</string>
@@ -521,11 +522,11 @@
   <string name="reason">เหตุผล</string>
   <string name="whatIsIheMatter">เกิดอะไรขึ้น?</string>
   <string name="cheat">โกง</string>
-  <string name="insult">ดูหมิ่น</string>
   <string name="troll">ป่วน</string>
-  <string name="ratingManipulation">การปรับแต่งระดับคะแนน</string>
   <string name="other">อื่นๆ</string>
-  <string name="reportDescriptionHelp">วางลิงค์ที่ไปสู่เกม และอธิบายว่าผู้ใช้นี้มีพฤติกรรมที่ผิดอะไร อย่าบอกเพียงว่า \"พวกเขาโกง\" แต่บอกเราว่าคุณสรุปแบบนี้เพราะอะไร การรายงานของคุณจะเร็วขึ้นถ้าเขียนด้วยภาษาอังกฤษ</string>
+  <string name="reportCheatBoostHelp" comment="This is a generic message and not specific to cheating reports. It attempts to educate the player on how to write a useful report for the Lichess team. It also requests evidence.&#10;&#10;Appears on the &quot;Report a user&quot; page https://lichess.org/report.">วางลิงก์ไปยังเกม และอธิบายสิ่งผิดปกติเกี่ยวกับพฤติกรรมของผู้ใช้นี้ อย่าแค่พูดว่า \"พวกเขาโกง\" แต่บอกเราว่าคุณมาถึงข้อสรุปนี้ได้อย่างไร</string>
+  <string name="reportUsernameHelp" comment="This is a generic message, which attempts to educate the player on how to write a useful report for the Lichess team.&#10;&#10;Appears on the &quot;Report a user&quot; page https://lichess.org/report, when selecting the 'User name' option.">อธิบายว่าชื่อผู้ใช้นี้ไม่เหมาะสมอย่างไร อย่าเพียงแค่พูดว่า \"มันน่ารังเกียจ/ไม่เหมาะสม\" แต่บอกเราว่าคุณมาถึงข้อสรุปนี้ได้อย่างไร โดยเฉพาะหากชื่อนั้นคลุมเครือ ไม่ใช่ภาษาอังกฤษ เป็นคำสแลง หรือเป็นการอ้างอิงทางประวัติศาสตร์/วัฒนธรรม</string>
+  <string name="reportProcessedFasterInEnglish" comment="Appears on the &quot;Report a user&quot; page https://lichess.org/report, to encourage users to write in English, so any Lichess moderator can process it.">รายงานของคุณจะได้รับการดำเนินการเร็วขึ้นหากเขียนเป็นภาษาอังกฤษ</string>
   <string name="error.provideOneCheatedGameLink">โปรดระบุอย่างน้อยหนึ่งลิงก์ เพื่อเชื่อมโยงไปยังเกมที่มีการโกง</string>
   <string name="by">โดย %s</string>
   <string name="importedByX">ถูกนำเข้าโดย %s</string>
@@ -558,6 +559,7 @@
   <string name="slow">ช้า</string>
   <string name="insideTheBoard">ด้านในกระดาน</string>
   <string name="outsideTheBoard">ด้านนอกกระดาน</string>
+  <string name="allSquaresOfTheBoard">ทุกช่องบนกระดาน</string>
   <string name="onSlowGames">ในเกมรูปแบบช้า</string>
   <string name="always">เสมอ</string>
   <string name="never">ไม่ต้อง</string>
@@ -752,9 +754,12 @@
   <string name="transparent">โปร่งใส</string>
   <string name="deviceTheme">ธีมของเครื่อง</string>
   <string name="backgroundImageUrl">URL รูปภาพพื้นหลัง:</string>
-  <string name="boardGeometry">ทรงกระดาน</string>
-  <string name="boardTheme">รูปลักษณ์กระดาน</string>
-  <string name="boardSize">ขนาดกระดาน</string>
+  <string name="board">สีกระดาน</string>
+  <string name="size">ขนาด</string>
+  <string name="opacity">ค่าความทึบ</string>
+  <string name="brightness">ความสว่าง</string>
+  <string name="hue">เฉดสี</string>
+  <string name="boardReset">เปลี่ยนสีเป็นค่าตั้งต้น</string>
   <string name="pieceSet">ชุดหมาก</string>
   <string name="embedInYourWebsite">ฝังในเว็บไซต์ของคุณ</string>
   <string name="usernameAlreadyUsed">ชื่อผู้ใช้นี้ถูกใช้ไปแล้ว, โปรดตั้งชื่อใหม่</string>

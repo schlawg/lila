@@ -24,7 +24,7 @@ final private class ChallengeRepo(colls: ChallengeColls)(using
     coll.insert.one(c) >> c.challengerUser.so: challenger =>
       createdByChallengerId()(challenger.id).flatMap:
         case challenges if challenges.sizeIs <= maxPlayingRealtime.value => funit
-        case challenges => challenges.drop(maxPlayingRealtime.value).map(_.id).map(remove).parallel.void
+        case challenges => challenges.drop(maxPlayingRealtime.value).map(_.id).sequentiallyVoid(remove)
 
   def update(c: Challenge): Funit = coll.update.one($id(c.id), c).void
 
@@ -47,7 +47,7 @@ final private class ChallengeRepo(colls: ChallengeColls)(using
     )
   yield realTime ::: corres
 
-  def setChallenger(c: Challenge, color: Option[chess.Color]) =
+  def setChallenger(c: Challenge, color: Option[Color]) =
     coll.update
       .one(
         $id(c.id),

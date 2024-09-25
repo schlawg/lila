@@ -16,11 +16,11 @@ import enpassant from './enpassant';
 import stalemate from './stalemate';
 import value from './value';
 import check2 from './check2';
-import { MNode } from '../mithrilFix';
-import { Shape } from '../ground';
-import { AssertData } from '../level';
+import { AssertData } from '../levelCtrl';
 import { ScenarioLevel } from '../scenario';
-import type { Square as Key } from 'chess.js';
+import type { SquareName as Key } from 'chessops';
+import { VNode } from 'snabbdom';
+import { Shape } from '../chessground';
 
 export type Level = LevelBase & LevelDefaults;
 export type LevelPartial = LevelBase & Partial<LevelDefaults>;
@@ -62,10 +62,12 @@ export interface Stage {
   image: string;
   intro: string;
   complete: string;
-  illustration: MNode;
+  illustration: VNode;
   levels: Level[];
   cssClass?: string;
 }
+
+export type StageNoID = Omit<Stage, 'id'>;
 
 interface Categ {
   key: string;
@@ -108,27 +110,16 @@ const rawCategs: RawCateg[] = [
 ];
 
 let stageId = 1;
-const stages: Stage[] = [];
+export const categs: Categ[] = rawCategs.map(c => ({
+  ...c,
+  stages: c.stages.map(s => ({ ...s, id: stageId++ })),
+}));
 
-export const categs: Categ[] = rawCategs.map(function (c) {
-  c.stages = c.stages.map(function (frozenStage) {
-    // Module exports get frozen, so we copy them to be able to mutate them
-    const stage = { ...frozenStage, id: stageId++ };
-    stages.push(stage);
-    return stage;
-  });
-  return c as Categ;
-});
+const stages: Stage[] = categs.reduce<Stage[]>((prev, c) => prev.concat(c.stages), []);
 
-const stagesByKey: { [K in string]: Stage } = {};
-stages.forEach(function (s) {
-  stagesByKey[s.key] = s;
-});
+const stagesByKey: { [K in string]: Stage } = Object.fromEntries(stages.map(s => [s.key, s]));
 
-const stagesById: { [K in number]: Stage } = {};
-stages.forEach(function (s) {
-  stagesById[s.id] = s;
-});
+const stagesById: { [K in number]: Stage } = Object.fromEntries(stages.map(s => [s.id, s]));
 
 export const list = stages;
 export const byId = stagesById;
@@ -136,12 +127,6 @@ export const byKey = stagesByKey;
 
 export function stageIdToCategId(stageId: number): number | undefined {
   const stage = stagesById[stageId];
-  for (let id = 0; id < categs.length; id++)
-    if (
-      categs[id].stages.some(function (s) {
-        return s.key === stage.key;
-      })
-    )
-      return id;
-  return;
+  const maybeFound = categs.findIndex(c => c.stages.some(s => s.key === stage.key));
+  return maybeFound >= 0 ? maybeFound : undefined;
 }

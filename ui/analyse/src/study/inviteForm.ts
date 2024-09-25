@@ -6,6 +6,9 @@ import { prop, Prop } from 'common';
 import { StudyMemberMap } from './interfaces';
 import { AnalyseSocketSend } from '../socket';
 import { storedSet, StoredSet } from 'common/storage';
+import { snabDialog } from 'common/dialog';
+import { userComplete } from 'common/userComplete';
+import { pubsub } from 'common/pubsub';
 
 export interface StudyInviteFormCtrl {
   open: Prop<boolean>;
@@ -29,12 +32,12 @@ export function makeCtrl(
     spectators = prop<string[]>([]);
 
   const toggle = () => {
-    if (!open()) site.pubsub.emit('analyse.close-all');
+    if (!open()) pubsub.emit('analyse.close-all');
     open(!open());
     redraw();
   };
 
-  site.pubsub.on('analyse.close-all', () => open(false));
+  pubsub.on('analyse.close-all', () => open(false));
 
   const previouslyInvited = storedSet<string>('study.previouslyInvited', 10);
   return {
@@ -58,12 +61,13 @@ export function view(ctrl: ReturnType<typeof makeCtrl>): VNode {
   const candidates = [...new Set([...ctrl.spectators(), ...ctrl.previouslyInvited()])]
     .filter(s => !ctrl.members()[titleNameToId(s)]) // remove existing members
     .sort();
-  return site.dialog.snab({
+  return snabDialog({
     class: 'study__invite',
     onClose() {
       ctrl.open(false);
       ctrl.redraw();
     },
+    noScrollable: true,
     vnodes: [
       h('h2', ctrl.trans.noarg('inviteToTheStudy')),
       h(
@@ -76,31 +80,30 @@ export function view(ctrl: ReturnType<typeof makeCtrl>): VNode {
         h('input', {
           attrs: { placeholder: ctrl.trans.noarg('searchByUsername'), spellcheck: 'false' },
           hook: onInsert<HTMLInputElement>(input =>
-            site.asset
-              .userComplete({
-                input,
-                tag: 'span',
-                onSelect(v) {
-                  input.value = '';
-                  ctrl.invite(v.name);
-                  ctrl.redraw();
-                },
-              })
-              .then(() => input.focus()),
+            userComplete({
+              input,
+              focus: true,
+              tag: 'span',
+              onSelect(v) {
+                input.value = '';
+                ctrl.invite(v.name);
+                ctrl.redraw();
+              },
+            })
           ),
         }),
       ]),
       candidates.length
         ? h(
-            'div.users',
-            candidates.map(function (username: string) {
-              return h(
-                'span.button.button-metal',
-                { key: username, hook: bind('click', () => ctrl.invite(username)) },
-                username,
-              );
-            }),
-          )
+          'div.users',
+          candidates.map(function(username: string) {
+            return h(
+              'span.button.button-metal',
+              { key: username, hook: bind('click', () => ctrl.invite(username)) },
+              username,
+            );
+          }),
+        )
         : undefined,
     ],
   });

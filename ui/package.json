@@ -2,6 +2,7 @@
   "name": "ui",
   "version": "2.0.0",
   "private": true,
+  "type": "module",
   "keywords": [
     "chess",
     "lichess"
@@ -9,11 +10,11 @@
   "author": "Thibault Duplessis",
   "license": "AGPL-3.0-or-later",
   "dependencies": {
-    "@types/jest": "^29.5.12",
-    "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0"
+    "jsdom": "^25.0.1",
+    "vitest": "^2.1.1"
   },
   "scripts": {
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+    "test": "vitest run",
+    "test:watch": "vitest"
   }
 }

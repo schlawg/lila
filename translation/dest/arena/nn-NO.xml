@@ -8,7 +8,7 @@
   <string name="isNotRated">Turneringa er *ikkje* rangert og vil *ikkje* påverke ratinga di.</string>
   <string name="someRated">Nokre av turneringane er rangerte og vil påverke ratingen din.</string>
   <string name="howAreScoresCalculated">Korleis vert poenga rekna ut?</string>
-  <string name="howAreScoresCalculatedAnswer">Ein siger gjev to basispoeng, ein remis eitt poeng og eit tap null poeng. Vinn du to parti på rad vert det starta ein dobbelpoeng-serie, det kjem då fram ein flamme som ikon. Partia som fylgjer er då verde doble poeng heilt til du mislukkast i å vinne eit parti. Dette vil seie at ein siger er verd fire poeng, ein remis to poeng og eit tap null poeng.
+  <string name="howAreScoresCalculatedAnswer">Ein siger gjev to basispoeng, ein remis eitt poeng og eit tap null poeng. Vinn du to parti på rad vert det starta ein dobbelpoeng-serie, det kjem då fram ein flamme som ikon. Partia som følgjer er då verde doble poeng heilt til du mislukkast i å vinne eit parti. Dette vil seie at ein siger er verd fire poeng, ein remis to poeng og eit tap null poeng.
 
 Til dømes gjev to sigrar med ein remis etterpå seks poeng: 2 + 2 + (2 *1)</string>
   <string name="berserk">Arena Berserk</string>
@@ -72,8 +72,8 @@ Til dømes vil ein tredjeplass i ei turnering med 100 deltakarar gje plasserings
   <string name="allAveragesAreX" comment="The full sentence says 'All averages on this page are medians.' (as in median averages)&#10;&#10;%s is the word 'medians', which is available for translation separately.">Alle snittverdiar på denne sida er %s.</string>
   <string name="total">Totalt</string>
   <string name="pointsAvg">Poengsnitt</string>
-  <string name="pointsSum">Poengsum</string>
-  <string name="rankAvg">Snittplassering</string>
+  <string name="pointsSum" comment="Refers to a total sum of points earned across multiple tournaments. See https://lichess.org/@/Assios/tournaments/chart for an example.">Poengsum</string>
+  <string name="rankAvg" comment="Please see the tournament stats page for an explanation (shown in screenshot). Example here:  https://lichess.org/@/Assios/tournaments/chart">Snittplassering</string>
   <string name="tournamentWinners">Turneringsvinnarar</string>
   <string name="tournamentShields">Turneringsskjold</string>
   <string name="onlyTitled">Berre spelarar med sjakktittel</string>

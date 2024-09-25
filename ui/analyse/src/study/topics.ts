@@ -1,6 +1,7 @@
 import { prop } from 'common';
 import { bind, bindSubmit, onInsert } from 'common/snabbdom';
 import * as xhr from 'common/xhr';
+import { snabDialog } from 'common/dialog';
 import { h, VNode } from 'snabbdom';
 import { Redraw } from '../interfaces';
 import { Topic } from './interfaces';
@@ -26,17 +27,17 @@ export const view = (ctrl: StudyCtrl): VNode =>
       ),
     ctrl.members.canContribute()
       ? h(
-          'a.manage',
-          { hook: bind('click', () => ctrl.topics.open(true), ctrl.redraw) },
-          ctrl.trans.noarg('manageTopics'),
-        )
+        'a.manage',
+        { hook: bind('click', () => ctrl.topics.open(true), ctrl.redraw) },
+        ctrl.trans.noarg('manageTopics'),
+      )
       : null,
   ]);
 
 let tagify: Tagify | undefined;
 
 export const formView = (ctrl: TopicsCtrl, userId?: string): VNode =>
-  site.dialog.snab({
+  snabDialog({
     class: 'study-topics',
     onClose() {
       ctrl.open(false);
@@ -72,8 +73,8 @@ export const formView = (ctrl: TopicsCtrl, userId?: string): VNode =>
   });
 
 function setupTagify(elm: HTMLInputElement | HTMLTextAreaElement, userId?: string) {
-  site.asset.loadCssPath('tagify');
-  site.asset.loadIife('npm/tagify/tagify.min.js').then(() => {
+  site.asset.loadCssPath('bits.tagify');
+  site.asset.loadIife('npm/tagify.min.js').then(() => {
     const tagi = (tagify = new window.Tagify(elm, { pattern: /.{2,}/, maxTags: 30 }));
     let abortCtrl: AbortController | undefined; // for aborting the call
     tagi.on('input', e => {
@@ -91,7 +92,7 @@ function setupTagify(elm: HTMLInputElement | HTMLTextAreaElement, userId?: strin
           tagi.loading(false).dropdown.show.call(tagi, term); // render the suggestions dropdown
         });
     });
-    $('.tagify__input').each(function (this: HTMLInputElement) {
+    $('.tagify__input').each(function(this: HTMLInputElement) {
       this.focus();
     });
   });

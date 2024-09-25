@@ -70,6 +70,8 @@
   <string name="promoteVariation">Προώθηση βαριάντας</string>
   <string name="makeMainLine">Δημιουργία κύριας γραμμής</string>
   <string name="deleteFromHere">Διαγραφή από εδώ</string>
+  <string name="collapseVariations">Σύμπτυξη παραλλαγών</string>
+  <string name="expandVariations">Εμφάνιση βαριάντων</string>
   <string name="forceVariation">Θέσε σε βαριάντα</string>
   <string name="copyVariationPgn">Αντιγραφή PGN αρχείου κινήσεων</string>
   <string name="move">Κίνηση</string>
@@ -178,6 +180,7 @@
   <string name="latestForumPosts">Τελευταίες δημοσιεύσεις στο φόρουμ</string>
   <string name="players">Παίκτες</string>
   <string name="friends">Φίλοι</string>
+  <string name="otherPlayers">άλλους παίκτες</string>
   <string name="discussions">Συζητήσεις</string>
   <string name="today">Σήμερα</string>
   <string name="yesterday">Χθες</string>
@@ -466,9 +469,6 @@
   <string name="safeTournamentName">Διαλέξτε ένα πολύ ασφαλές όνομα για το τουρνουά.</string>
   <string name="inappropriateNameWarning">Οτιδήποτε ακόμα και ελάχιστα ακατάλληλο μπορεί να κλείσει τον λογαριασμό σας.</string>
   <string name="emptyTournamentName">Αφήστε το κενό για να πάρει το όνομά του τυχαία από κάποιον γνωστό σκακιστή.</string>
-  <string name="recommendNotTouching">Σας συνιστούμε να μην τα αλλάξετε αυτά.</string>
-  <string name="fewerPlayers">Εάν ορίσετε προϋποθέσεις εισόδου, το τουρνουά σας θα έχει λιγότερους παίκτες.</string>
-  <string name="showAdvancedSettings">Εμφάνιση ρυθμίσεων για προχωρημένους</string>
   <string name="makePrivateTournament">Κάντε το τουρνουά ιδιωτικό, και περιορίστε την πρόσβαση με κωδικό</string>
   <string name="join">Συμμετοχή</string>
   <string name="withdraw">Απόσυρση</string>
@@ -508,8 +508,7 @@
   <string name="ifNoneLeaveEmpty">Αν δεν υπάρχει, αφήστε κενό</string>
   <string name="profile">Προφίλ</string>
   <string name="editProfile">Επεξεργασία προφίλ</string>
-  <string name="firstName">Όνομα</string>
-  <string name="lastName">Επώνυμο</string>
+  <string name="realName">Πραγματικό όνομα</string>
   <string name="setFlair">Ορίστε τη νιφάδα σας</string>
   <string name="flair">Νιφάδα</string>
   <string name="youCanHideFlair">Υπάρχει μια ρύθμιση για να κρύψει όλες τις νιφάδες χρήστη σε ολόκληρη την ιστοσελίδα.</string>
@@ -540,6 +539,8 @@
   <string name="descPrivateHelp">Κείμενο που θα δουν μόνο τα μέλη της ομάδας. Εάν οριστεί, αντικαθιστά τη δημόσια περιγραφή για τα μέλη της ομάδας.</string>
   <string name="no">Όχι</string>
   <string name="yes">Ναι</string>
+  <string name="website">Ιστοσελίδα</string>
+  <string name="mobile">Εφαρμογή Κινητού</string>
   <string name="help">Βοήθεια:</string>
   <string name="createANewTopic">Δημιουργήστε καινούριο θέμα</string>
   <string name="topics">Θέματα</string>
@@ -556,11 +557,11 @@
   <string name="reason">Αιτία</string>
   <string name="whatIsIheMatter">Τι τρέχει;</string>
   <string name="cheat">Απάτη</string>
-  <string name="insult">Προσβολή</string>
   <string name="troll">Εμπαιγμός</string>
-  <string name="ratingManipulation">Παραποίηση βαθμολογίας</string>
   <string name="other">Άλλο</string>
-  <string name="reportDescriptionHelp">Κάντε επικόλληση τον σύνδεσμο για το παιχνίδι(α) και εξηγήστε τι είναι παράξενο στη συμπεριφορά του χρήστη. Μην πείτε απλά «επειδή κλέβει», πείτε μας πως καταλήξατε σε αυτό το συμπέρασμα. Η αναφορά σας θα επεξεργαστεί πιο γρήγορα αν είναι γραμμένη στα αγγλικά.</string>
+  <string name="reportCheatBoostHelp" comment="This is a generic message and not specific to cheating reports. It attempts to educate the player on how to write a useful report for the Lichess team. It also requests evidence.&#10;&#10;Appears on the &quot;Report a user&quot; page https://lichess.org/report.">Επικολλήστε τους συνδέσμους με τα παιχνίδια και εξηγήστε μας γιατί θεωρείτε ότι η συμπεριφορά του χρήστη είναι παράξενη σε αυτά. Μη λέτε απλώς ότι «κλέβει» (\"they cheat\"), αλλά πείτε μας πως καταλήξατε σε αυτό το συμπέρασμα.</string>
+  <string name="reportUsernameHelp" comment="This is a generic message, which attempts to educate the player on how to write a useful report for the Lichess team.&#10;&#10;Appears on the &quot;Report a user&quot; page https://lichess.org/report, when selecting the 'User name' option.">Εξηγήστε μας γιατί είναι προσβλητικό το όνομα αυτού του χρήστη. Μη λέτε απλώς ότι \"είναι προσβλητικό/ακατάλληλο\" (\"it\'s offensive/inappropriate\"), αλλά πείτε μας πώς καταλήξατε σε αυτό το συμπέρασμα, ειδικά αν πρόκειται για προσβολή η οποία δεν είναι ιδιαίτερα εμφανής: για παράδειγμα αν δεν είναι στα αγγλικά, είναι σε κάποια αργκό ή κάνει κάποια προσβλητική ιστορική/πολιτιστική αναφορά.</string>
+  <string name="reportProcessedFasterInEnglish" comment="Appears on the &quot;Report a user&quot; page https://lichess.org/report, to encourage users to write in English, so any Lichess moderator can process it.">Η αναφορά σας θα επεξεργαστεί γρηγορότερα αν είναι γραμμένη στα αγγλικά.</string>
   <string name="error.provideOneCheatedGameLink">Καταχωρίστε τουλάχιστον έναν σύνδεσμο σε ένα παιχνίδι εξαπάτησης.</string>
   <string name="by">από τον %s</string>
   <string name="importedByX">Εισήχθη από τον χρήστη %s</string>
@@ -593,6 +594,7 @@
   <string name="slow">Αργή</string>
   <string name="insideTheBoard">Μέσα στη σκακιέρα</string>
   <string name="outsideTheBoard">Εκτός της σκακιέρας</string>
+  <string name="allSquaresOfTheBoard">Σε όλα τα τετράγωνα της σκακιέρας</string>
   <string name="onSlowGames">Σε αργά παιχνίδια</string>
   <string name="always">Πάντα</string>
   <string name="never">Ποτέ</string>
@@ -792,9 +794,12 @@
   <string name="transparent">Διάφανο</string>
   <string name="deviceTheme">Θέμα συσκευής</string>
   <string name="backgroundImageUrl">Διεύθυνση εικόνας φόντου:</string>
-  <string name="boardGeometry">Γεωμετρία σκακιέρας</string>
-  <string name="boardTheme">Θέμα σκακιέρας</string>
-  <string name="boardSize">Μέγεθος σκακιέρας</string>
+  <string name="board">Σκακιέρα</string>
+  <string name="size">Μέγεθος</string>
+  <string name="opacity">Αδιαφάνεια</string>
+  <string name="brightness">Φωτεινότητα</string>
+  <string name="hue">Χροιά</string>
+  <string name="boardReset">Επαναφορά χρωμάτων στα προκαθορισμένα</string>
   <string name="pieceSet">Επιλογή κομματιών</string>
   <string name="embedInYourWebsite">Ενσωματώστε στην ιστοσελίδα σας</string>
   <string name="usernameAlreadyUsed">Αυτό το όνομα χρήστη ήδη χρησιμοποιείται, παρακαλώ δοκιμάστε ένα άλλο.</string>

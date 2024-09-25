@@ -74,6 +74,8 @@
   <string name="promoteVariation">رفع سلسلة الحركات</string>
   <string name="makeMainLine">رفع الى التسلسل الرئيسي</string>
   <string name="deleteFromHere">احذف من هنا</string>
+  <string name="collapseVariations">أعلى</string>
+  <string name="expandVariations">وسع التفريع</string>
   <string name="forceVariation">فرض التسلسل</string>
   <string name="copyVariationPgn">انسخ التفريع بصيغة PGN</string>
   <string name="move">التقلة</string>
@@ -214,6 +216,7 @@
   <string name="latestForumPosts">آخر منشورات المنتدى</string>
   <string name="players">اللاعبون</string>
   <string name="friends">الأصدقاء</string>
+  <string name="otherPlayers">لاعبون آخرون</string>
   <string name="discussions">المحادثات</string>
   <string name="today">اليوم</string>
   <string name="yesterday">الأمس</string>
@@ -597,9 +600,6 @@
   <string name="safeTournamentName">اختر اسماً ملائماً لهذه البطولة.</string>
   <string name="inappropriateNameWarning">أي شيء غير مناسب ولو حتى قليلاً يمكن أن يعرّض حسابك للإغلاق.</string>
   <string name="emptyTournamentName">أترك الحقل فارغاً وسيتم تسمية البطولة باسم غراند ماستر عشوائي.</string>
-  <string name="recommendNotTouching">نوصي بعدم تغيير هذه الخيارات.</string>
-  <string name="fewerPlayers">إذا حددت شروطَ دخولٍ للبطولة فقد يكون لديك لاعبون أقل.</string>
-  <string name="showAdvancedSettings">إظهار الإعدادات المتقدمة</string>
   <string name="makePrivateTournament">جعل البطولة خاصة، وتقييد الوصول بكلمة مرور</string>
   <string name="join">إشترك</string>
   <string name="withdraw">انسحاب</string>
@@ -639,8 +639,7 @@
   <string name="ifNoneLeaveEmpty">إذا لم يوجد، أتركه فارغًا</string>
   <string name="profile">الملف الشخصي</string>
   <string name="editProfile">حرر الملف الشخصي</string>
-  <string name="firstName">الاسم الأول</string>
-  <string name="lastName">اسم العائلة</string>
+  <string name="realName">الاسم الحقيقي</string>
   <string name="setFlair">اختيار الشارة</string>
   <string name="flair">الشارة</string>
   <string name="youCanHideFlair">يستخدم هذا الإعداد لإخفاء جميع شارات المستخدمين في الموقع.</string>
@@ -668,12 +667,15 @@
   <string name="automaticallyProceedToNextGameAfterMoving">الإنتقال تلقائيًا للمباراة التالية بعد النقل</string>
   <string name="autoSwitch">تبديل تلقائي</string>
   <string name="puzzles">الألغاز</string>
+  <string name="onlineBots">الروبوتات المتصلة</string>
   <string name="name">الاسم</string>
   <string name="description">الوصف</string>
   <string name="descPrivate">وصف خاص</string>
   <string name="descPrivateHelp">هذا النص سيراه فقط أعضاء الفريق. في حالة ضبطه، سيحل محل الوصف العام لأعضاء الفريق.</string>
   <string name="no">لا</string>
   <string name="yes">نعم</string>
+  <string name="website">الموقع</string>
+  <string name="mobile">الهاتف المحمول</string>
   <string name="help">مساعدة:</string>
   <string name="createANewTopic">إنشاء موضوع جديد</string>
   <string name="topics">المواضيع</string>
@@ -690,11 +692,8 @@
   <string name="reason">السبب</string>
   <string name="whatIsIheMatter">ما الأمر؟</string>
   <string name="cheat">غش</string>
-  <string name="insult">إهانة</string>
   <string name="troll">إزعاج</string>
-  <string name="ratingManipulation">تلاعب بالتقييم</string>
   <string name="other">أخرى</string>
-  <string name="reportDescriptionHelp">الصق رابط المباراة (المباريات) واشرح بالتفصيل المشكلة في تصرف هذا المستحدم. لا تقل فقط \"انهم يغشون\"، ولكن اشرح لنا سبب استنتاجك. سيكون الرد أسرع إن كتبت بالإنكليزية.</string>
   <string name="error.provideOneCheatedGameLink">برجاء تقديم رابط واحد علي الأقل لمباراة حدث فيها غش.</string>
   <string name="by">كتبها %s</string>
   <string name="importedByX">استيراد \'%s\'</string>
@@ -727,6 +726,7 @@
   <string name="slow">بطيء</string>
   <string name="insideTheBoard">داخل الرقعة</string>
   <string name="outsideTheBoard">خارج الرقعة</string>
+  <string name="allSquaresOfTheBoard">جميع مربعات اللوح</string>
   <string name="onSlowGames">في المباريات البطيئة</string>
   <string name="always">دائماً</string>
   <string name="never">إطلاقا</string>
@@ -853,6 +853,7 @@
   <string name="toggleVariationArrows">تبديل أسهم النقلات المرشحة</string>
   <string name="cyclePreviousOrNextVariation">الدورة السابقة/التفريع التالي</string>
   <string name="toggleGlyphAnnotations">تبديل الرموز التوضيحية</string>
+  <string name="togglePositionAnnotations">تبديل تحليل الموقف</string>
   <string name="variationArrowsInfo">أسمهم النقلات تسمح لك بلعبها دون استخدام قائمة النقلات المرشحة.</string>
   <string name="playSelectedMove">لعب النقلة المحددة</string>
   <string name="newTournament">مسابقة جديدة</string>
@@ -945,9 +946,12 @@
   <string name="transparent">شفّاف</string>
   <string name="deviceTheme">مظهر الجهاز</string>
   <string name="backgroundImageUrl">رابط صورة الخلفية:</string>
-  <string name="boardGeometry">شكل الرقعة</string>
-  <string name="boardTheme">مربعات الرقعة</string>
-  <string name="boardSize">حجم الرقعة</string>
+  <string name="board">اللوحة</string>
+  <string name="size">الحجم</string>
+  <string name="opacity">الشفافيّة</string>
+  <string name="brightness">السطوع</string>
+  <string name="hue">التدرج اللوني</string>
+  <string name="boardReset">إعادة تعيين الألوان إلى الافتراضي</string>
   <string name="pieceSet">مجموعة القطع</string>
   <string name="embedInYourWebsite">تضمين في موقع الويب الخاص بك</string>
   <string name="usernameAlreadyUsed">اسم المستخدم الذي اخترته موجود بالفعل، الرجاء كتابة اسم آخر.</string>

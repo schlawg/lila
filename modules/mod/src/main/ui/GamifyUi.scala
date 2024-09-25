@@ -1,9 +1,10 @@
 package lila.mod
 package ui
 
-import lila.ui.*
-import ScalatagsTemplate.{ *, given }
 import lila.mod.Gamify.Period
+import lila.ui.*
+
+import ScalatagsTemplate.{ *, given }
 
 final class GamifyUi(helpers: Helpers, modUi: ModUi):
   import helpers.{ *, given }
@@ -19,7 +20,7 @@ final class GamifyUi(helpers: Helpers, modUi: ModUi):
         th("Report points")
       )
 
-    Page(title).cssTag("mod.gamify"):
+    Page(title).css("mod.gamify"):
       main(cls := "page-menu")(
         modUi.menu("gamify"),
         div(id := "mod-gamify", cls := "page-menu__content index box")(
@@ -53,7 +54,7 @@ final class GamifyUi(helpers: Helpers, modUi: ModUi):
 
   def period(leaderboards: Gamify.Leaderboards, period: Gamify.Period)(using ctx: Context) =
     val title = s"Moderators of the ${period.name}"
-    Page(title).cssTag("mod.gamify"):
+    Page(title).css("mod.gamify"):
       main(cls := "page-menu")(
         modUi.menu("gamify"),
         div(id := "mod-gamify", cls := "page-menu__content box")(

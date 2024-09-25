@@ -1,11 +1,10 @@
 package lila.cms
-
-import play.api.i18n.Lang
-import play.api.mvc.RequestHeader
 import reactivemongo.api.bson.*
 
+import lila.core.i18n.{ LangList, LangPicker, Language, defaultLanguage }
+import lila.core.id.{ CmsPageId, CmsPageKey }
 import lila.db.dsl.{ *, given }
-import lila.core.i18n.{ LangPicker, LangList, Language, defaultLanguage }
+import lila.ui.Context
 
 final class CmsApi(coll: Coll, markup: CmsMarkup, langList: LangList, langPicker: LangPicker)(using Executor):
 
@@ -13,25 +12,28 @@ final class CmsApi(coll: Coll, markup: CmsMarkup, langList: LangList, langPicker
 
   import CmsPage.*
 
-  def get(id: Id): Fu[Option[CmsPage]] = coll.byId[CmsPage](id)
+  def get(id: CmsPageId): Fu[Option[CmsPage]] = coll.byId[CmsPage](id)
 
-  def get(key: Key, lang: Language): Fu[Option[CmsPage]] =
+  def get(key: CmsPageKey, lang: Language): Fu[Option[CmsPage]] =
     coll.one[CmsPage]($doc("key" -> key, "language" -> lang))
 
-  def withAlternatives(id: Id): Fu[Option[NonEmptyList[CmsPage]]] =
+  def withAlternatives(id: CmsPageId): Fu[Option[NonEmptyList[CmsPage]]] =
     get(id).flatMapz: page =>
       getAlternatives(page.key).map: alts =>
         NonEmptyList(page, alts.filter(_.id != id)).some
 
-  def getAlternatives(key: Key): Fu[List[CmsPage]] =
+  def getAlternatives(key: CmsPageKey): Fu[List[CmsPage]] =
     coll
       .list[CmsPage]($doc("key" -> key))
       .map(_.sortLike(langList.popularLanguages.toVector, _.language))
 
-  def render(key: Key)(req: RequestHeader, prefLang: Lang): Fu[Option[Render]] =
-    getBestFor(key)(req, prefLang).flatMapz: page =>
+  def render(key: CmsPageKey)(using Context): Fu[Option[Render]] =
+    getBestFor(key).flatMapz: page =>
       markup(page).map: html =>
         Render(page, html).some
+
+  def renderOpt(key: CmsPageKey)(using Context): Fu[RenderOpt] =
+    render(key).map(RenderOpt(key, _))
 
   def list: Fu[List[CmsPage]] = coll.list[CmsPage]($empty)
 
@@ -41,10 +43,10 @@ final class CmsApi(coll: Coll, markup: CmsMarkup, langList: LangList, langPicker
     val page = data.update(prev, me)
     coll.update.one($id(page.id), page).inject(page)
 
-  def delete(id: Id): Funit = coll.delete.one($id(id)).void
+  def delete(id: CmsPageId): Funit = coll.delete.one($id(id)).void
 
-  private def getBestFor(key: Key)(req: RequestHeader, prefLang: Lang): Fu[Option[CmsPage]] =
-    val prefered = langPicker.preferedLanguages(req, prefLang) :+ defaultLanguage
+  private def getBestFor(key: CmsPageKey)(using ctx: Context): Fu[Option[CmsPage]] =
+    val prefered = langPicker.preferedLanguages(ctx.req, ctx.lang) :+ defaultLanguage
     coll
       .list[CmsPage]($doc("key" -> key, "language".$in(prefered)))
       .map: pages =>

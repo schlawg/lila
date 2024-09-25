@@ -65,17 +65,12 @@ final class AskEmbed(val repo: lila.ask.AskRepo)(using Executor) extends lila.co
 
   def isOpen(aid: AskId): Fu[Boolean] = repo.isOpen(aid)
 
-  def stripAsks(text: String, n: Int = -1): String           = AskEmbed.stripAsks(text, n)
   def bake(text: String, askFrags: Iterable[String]): String = AskEmbed.bake(text, askFrags)
 
 object AskEmbed:
   val askNotFoundFrag = "&lt;deleted&gt;<br>"
 
   def hasAskId(text: String): Boolean = text.contains(frozenIdMagic)
-
-  // remove frozen magic (for summaries)
-  def stripAsks(text: String, n: Int = -1): String =
-    frozenIdRe.replaceAllIn(text, "").take(if n == -1 then text.length else n)
 
   // the bake method interleaves rendered ask fragments within the html fragment, which is usually an
   // inner html or <p>. any embedded asks should be directly in that root element. we make a best effort

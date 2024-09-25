@@ -3,6 +3,7 @@ import * as xhr from 'common/xhr';
 import { header, elementScrollBarWidthSlowGuess } from './util';
 import { bind } from 'common/snabbdom';
 import { DasherCtrl, PaneCtrl } from './interfaces';
+import { pubsub } from 'common/pubsub';
 
 type Piece = string;
 type PieceDimData = { current: Piece; list: Piece[] };
@@ -19,7 +20,7 @@ export class PieceCtrl extends PaneCtrl {
 
   render(): VNode {
     const maxHeight = window.innerHeight - 150; // safari vh brokenness
-    const pieceSize = (222 - elementScrollBarWidthSlowGuess()) / 3;
+    const pieceSize = (222 - elementScrollBarWidthSlowGuess()) / 4;
     const pieceImage = (t: Piece) =>
       this.is3d
         ? `images/staunton/piece/${t}/White-Knight${t == 'Staunton' ? '-Preview' : ''}.png`
@@ -45,14 +46,14 @@ export class PieceCtrl extends PaneCtrl {
     ]);
   }
 
-  apply = (t: Piece = this.dimData.current) => {
+  apply = (t: Piece = this.dimData.current): void => {
     this.dimData.current = t;
     document.body.dataset[this.is3d ? 'pieceSet3d' : 'pieceSet'] = t;
     if (!this.is3d) {
       const sprite = document.getElementById('piece-sprite') as HTMLLinkElement;
       sprite.href = sprite.href.replace(/[\w-]+(\.external|)\.css/, t + '$1.css');
     }
-    site.pubsub.emit('theme.change');
+    pubsub.emit('board.change', this.is3d);
   };
 
   private get dimData() {

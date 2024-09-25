@@ -3,9 +3,10 @@ package ui
 
 import play.api.data.Form
 
-import lila.ui.*
-import ScalatagsTemplate.{ *, given }
 import lila.common.MarkdownRender
+import lila.ui.*
+
+import ScalatagsTemplate.{ *, given }
 
 final class EventUi(helpers: Helpers)(modMenu: Context ?=> Frag)(using Executor):
   import helpers.{ *, given }
@@ -14,8 +15,8 @@ final class EventUi(helpers: Helpers)(modMenu: Context ?=> Frag)(using Executor)
 
   private def page(title: String, css: String = "mod.misc")(using Context) =
     Page(title)
-      .cssTag(css)
-      .js(EsmInit("bits.flatpickr"))
+      .css(css)
+      .js(Esm("bits.flatpickr"))
       .wrap: body =>
         main(cls := "page-menu")(modMenu, body)
 
@@ -23,7 +24,7 @@ final class EventUi(helpers: Helpers)(modMenu: Context ?=> Frag)(using Executor)
     page(title = "New event", css = "mod.form"):
       div(cls := "crud page-menu__content box box-pad")(
         h1(cls := "box__top")("New event"),
-        postForm(cls := "content_box_content form3", action := routes.Event.create)(inForm(form))
+        postForm(cls := "form3", action := routes.Event.create)(inForm(form))
       )
 
   def edit(event: Event, form: Form[?])(using Context) =
@@ -42,7 +43,7 @@ final class EventUi(helpers: Helpers)(modMenu: Context ?=> Frag)(using Executor)
           )
         ),
         standardFlash,
-        postForm(cls := "content_box_content form3", action := routes.Event.update(event.id))(inForm(form))
+        postForm(cls := "form3", action := routes.Event.update(event.id))(inForm(form))
       )
 
   def iconOf(e: Event) =
@@ -53,8 +54,8 @@ final class EventUi(helpers: Helpers)(modMenu: Context ?=> Frag)(using Executor)
 
   def show(e: Event)(using Context) =
     Page(e.title)
-      .cssTag("event")
-      .js(EsmInit("bits.eventCountdown")):
+      .css("bits.event")
+      .js(esmInitBit("eventCountdown")):
         main(cls := "page-small event box box-pad")(
           boxTop(
             iconOf(e),

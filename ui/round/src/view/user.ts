@@ -1,14 +1,14 @@
-import { looseH as h } from 'common/snabbdom';
+import { looseH as h, VNode } from 'common/snabbdom';
 import * as licon from 'common/licon';
 import { Player } from 'game';
 import { Position } from '../interfaces';
 import RoundController from '../ctrl';
 import { ratingDiff, userLink } from 'common/userLink';
 
-export const aiName = (ctrl: RoundController, level: number) =>
+export const aiName = (ctrl: RoundController, level: number): string =>
   ctrl.trans('aiNameLevelAiLevel', 'Stockfish', level);
 
-export function userHtml(ctrl: RoundController, player: Player, position: Position) {
+export function userHtml(ctrl: RoundController, player: Player, position: Position): VNode {
   const d = ctrl.data,
     user = player.user,
     perf = (user?.perfs || {})[d.game.perf],
@@ -33,8 +33,8 @@ export function userHtml(ctrl: RoundController, player: Player, position: Positi
             title: connecting
               ? 'Connecting to the game'
               : player.onGame
-              ? 'Joined the game'
-              : 'Left the game',
+                ? 'Joined the game'
+                : 'Left the game',
           },
         }),
         userLink({
@@ -75,9 +75,9 @@ const signalBars = (signal: number) => {
   return h('signal.q' + signal, bars);
 };
 
-export const userTxt = (ctrl: RoundController, player: Player) =>
+export const userTxt = (ctrl: RoundController, player: Player): string =>
   player.user
     ? (player.user.title ? player.user.title + ' ' : '') + player.user.username
     : player.ai
-    ? aiName(ctrl, player.ai)
-    : ctrl.noarg('anonymous');
+      ? aiName(ctrl, player.ai)
+      : ctrl.noarg('anonymous');

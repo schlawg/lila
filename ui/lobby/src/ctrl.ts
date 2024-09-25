@@ -23,6 +23,8 @@ import LobbySocket from './socket';
 import Filter from './filter';
 import SetupController from './setupCtrl';
 import { TabCtrl } from './tabCtrl';
+import { storage, type LichessStorage } from 'common/storage';
+import { pubsub } from 'common/pubsub';
 
 export default class LobbyController {
   data: LobbyData;
@@ -55,7 +57,7 @@ export default class LobbyController {
     this.me = opts.data.me;
     this.pools = opts.pools;
     this.playban = opts.playban;
-    this.filter = new Filter(site.storage.make('lobby.filter'), this);
+    this.filter = new Filter(storage.make('lobby.filter'), this);
     this.setupCtrl = new SetupController(this);
 
     hookRepo.initAll(this);
@@ -73,27 +75,42 @@ export default class LobbyController {
       const forceOptions: ForceSetupOptions = {};
       const urlParams = new URLSearchParams(location.search);
       const friendUser = urlParams.get('user') ?? undefined;
-      if (locationHash === 'hook') {
-        if (urlParams.get('time') === 'realTime') {
-          this.setTab('real_time');
-          forceOptions.timeMode = 'realTime';
-        } else if (urlParams.get('time') === 'correspondence') {
-          this.setTab('correspondence');
-          forceOptions.timeMode = 'correspondence';
-        }
-      } else if (urlParams.get('fen')) {
+      const minutesPerSide = urlParams.get('minutesPerSide');
+      const increment = urlParams.get('increment');
+      const variant = urlParams.get('variant');
+      const time = urlParams.get('time');
+
+      if (variant) forceOptions.variant = variant as VariantKey;
+
+      if (minutesPerSide) {
+        forceOptions.time = parseInt(minutesPerSide);
+      }
+
+      if (increment) {
+        forceOptions.increment = parseInt(increment);
+      }
+
+      if (time === 'realTime') {
+        if (locationHash === 'hook') this.setTab('real_time');
+        forceOptions.timeMode = 'realTime';
+      } else if (time === 'correspondence') {
+        if (locationHash === 'hook') this.setTab('correspondence');
+        forceOptions.timeMode = 'correspondence';
+      }
+
+      if (locationHash !== 'hook' && urlParams.get('fen')) {
         forceOptions.fen = urlParams.get('fen')!;
         forceOptions.variant = 'fromPosition';
       }
 
-      site.dialog.ready.then(() => {
-        this.setupCtrl.openModal(locationHash as GameType, forceOptions, friendUser);
+      pubsub.after('dialog.polyfill').then(() => {
+        this.setupCtrl.openModal(locationHash as Exclude<GameType, 'local'>, forceOptions, friendUser);
         redraw();
       });
       history.replaceState(null, '', '/');
     }
 
-    this.poolInStorage = site.storage.make('lobby.pool-in');
+    this.poolInStorage = storage.make('lobby.pool-in');
     this.poolInStorage.listen(_ => {
       // when another tab joins a pool
       this.leavePool();
@@ -114,7 +131,7 @@ export default class LobbyController {
       this.joinPoolFromLocationHash();
     }
 
-    site.pubsub.on('socket.open', () => {
+    pubsub.on('socket.open', () => {
       if (this.tab.showingHooks) {
         this.data.hooks = [];
         this.socket.realTimeIn();

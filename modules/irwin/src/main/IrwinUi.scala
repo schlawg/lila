@@ -1,15 +1,16 @@
 package lila.irwin
 
-import lila.ui.*
-import ScalatagsTemplate.{ *, given }
 import lila.core.game.Pov
 import lila.game.GameExt.playerBlurPercent
+import lila.ui.*
+
+import ScalatagsTemplate.{ *, given }
 
 final class IrwinUi(helpers: Helpers)(menu: String => Context ?=> Frag):
   import helpers.{ *, given }
 
   private def povLink(pov: Pov)(using Context) =
-    a(href := routes.Round.watcher(pov.gameId, pov.color.name))(
+    a(href := routes.Round.watcher(pov.gameId, pov.color))(
       playerLink(
         pov.opponent,
         withRating = true,
@@ -49,7 +50,7 @@ final class IrwinUi(helpers: Helpers)(menu: String => Context ?=> Frag):
             case IrwinReport.GameReport.WithPov(gameReport, pov) =>
               tr(cls := "text")(
                 td(cls := "moves")(
-                  a(href := routes.Round.watcher(pov.gameId, pov.color.name))(
+                  a(href := routes.Round.watcher(pov.gameId, pov.color))(
                     gameReport.moves.map: move =>
                       span(
                         cls      := percentClass(move.activation),
@@ -79,7 +80,7 @@ final class IrwinUi(helpers: Helpers)(menu: String => Context ?=> Frag):
 
   private def DashPage(title: String, active: String)(using Context) =
     Page(title)
-      .cssTag("mod.misc")
+      .css("mod.misc")
       .wrap: body =>
         main(cls := "page-menu")(
           menu(active),

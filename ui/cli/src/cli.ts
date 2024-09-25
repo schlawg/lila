@@ -1,7 +1,10 @@
 import { load as loadDasher } from 'dasher';
+import { domDialog } from 'common/dialog';
+import { escapeHtml } from 'common';
+import { userComplete } from 'common/userComplete';
 
 export function initModule({ input }: { input: HTMLInputElement }) {
-  site.asset.userComplete({
+  userComplete({
     input,
     friend: true,
     focus: true,
@@ -21,14 +24,15 @@ function execute(q: string) {
   // 5kr1/p1p2p2/2b2Q2/3q2r1/2p4p/2P4P/P2P1PP1/1R1K3R b - - 1 23
   if (q.match(/^([1-8pnbrqk]+\/){7}.*/i))
     return (location.href = '/analysis/standard/' + q.replace(/ /g, '_'));
-  location.href = '/@/' + q;
+  if (q.match(/^[a-zA-Z0-9_-]{2,30}$/)) location.href = '/@/' + q;
+  else location.href = '/player/search/' + q;
 }
 
 function command(q: string) {
   const parts = q.split(' '),
     exec = parts[0];
 
-  const is = function (commands: string) {
+  const is = function(commands: string) {
     return commands.split(' ').includes(exec);
   };
 
@@ -46,15 +50,15 @@ function commandHelp(aliases: string, args: string, desc: string) {
     '<div class="command"><div>' +
     aliases
       .split(' ')
-      .map(a => `<p>${a} ${site.escapeHtml(args)}</p>`)
+      .map(a => `<p>${a} ${escapeHtml(args)}</p>`)
       .join('') +
     `</div> <span>${desc}<span></div>`
   );
 }
 
 function help() {
-  site.dialog.dom({
-    css: [{ themed: 'clinput.help' }],
+  domDialog({
+    css: [{ hashed: 'cli.help' }],
     class: 'clinput-help',
     show: 'modal',
     htmlText:

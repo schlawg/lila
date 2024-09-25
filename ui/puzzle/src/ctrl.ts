@@ -5,7 +5,7 @@ import keyboard from './keyboard';
 import moveTest from './moveTest';
 import PuzzleSession from './session';
 import PuzzleStreak from './streak';
-import throttle from 'common/throttle';
+import { throttle } from 'common/timing';
 import { PuzzleOpts, PuzzleData, MoveTest, ThemeKey, ReplayEnd, NvuiPlugin, PuzzleRound } from './interfaces';
 import { Api as CgApi } from 'chessground/api';
 import { build as treeBuild, ops as treeOps, path as treePath, TreeWrapper } from 'tree';
@@ -16,19 +16,21 @@ import { CevalCtrl } from 'ceval';
 import { makeVoiceMove, VoiceMove } from 'voice';
 import { ctrl as makeKeyboardMove, KeyboardMove, KeyboardMoveRootCtrl } from 'keyboardMove';
 import { Deferred, defer } from 'common/defer';
-import { defined, prop, Prop, propWithEffect, Toggle, toggle } from 'common';
+import { defined, prop, Prop, propWithEffect, Toggle, toggle, requestIdleCallback } from 'common';
 import { makeSanAndPlay } from 'chessops/san';
 import { parseFen, makeFen } from 'chessops/fen';
 import { parseSquare, parseUci, makeSquare, makeUci, opposite } from 'chessops/util';
 import { pgnToTree, mergeSolution } from './moveTree';
 import { PromotionCtrl } from 'chess/promotion';
 import { Role, Move, Outcome } from 'chessops/types';
-import { StoredProp, storedBooleanProp, storedBooleanPropWithEffect } from 'common/storage';
+import { StoredProp, storedBooleanProp, storedBooleanPropWithEffect, storage } from 'common/storage';
 import { fromNodeList } from 'tree/dist/path';
 import { last } from 'tree/dist/ops';
 import { uciToMove } from 'chessground/util';
 import { Redraw } from 'common/snabbdom';
 import { ParentCtrl } from 'ceval/src/types';
+import { trans } from 'common/i18n';
+import { pubsub } from 'common/pubsub';
 
 export default class PuzzleCtrl implements ParentCtrl {
   data: PuzzleData;
@@ -41,7 +43,7 @@ export default class PuzzleCtrl implements ParentCtrl {
   ground: Prop<CgApi> = prop<CgApi | undefined>(undefined) as Prop<CgApi>;
   threatMode: Toggle = toggle(false);
   streak?: PuzzleStreak;
-  streakFailStorage = site.storage.make('puzzle.streak.fail');
+  streakFailStorage = storage.make('puzzle.streak.fail');
   session: PuzzleSession;
   menu: Toggle;
   flipped = toggle(false);
@@ -74,7 +76,7 @@ export default class PuzzleCtrl implements ParentCtrl {
     readonly redraw: Redraw,
     readonly nvui?: NvuiPlugin,
   ) {
-    this.trans = site.trans(opts.i18n);
+    this.trans = trans(opts.i18n);
     this.rated = storedBooleanPropWithEffect('puzzle.rated', true, this.redraw);
     this.autoNext = storedBooleanProp(
       `puzzle.autoNext${opts.data.streak ? '.streak' : ''}`,
@@ -101,22 +103,20 @@ export default class PuzzleCtrl implements ParentCtrl {
     // If the page loads while being hidden (like when changing settings),
     // chessground is not displayed, and the first move is not fully applied.
     // Make sure chessground is fully shown when the page goes back to being visible.
-    document.addEventListener('visibilitychange', () =>
-      site.requestIdleCallback(() => this.jump(this.path), 500),
-    );
+    document.addEventListener('visibilitychange', () => requestIdleCallback(() => this.jump(this.path), 500));
 
-    site.pubsub.on('zen', () => {
+    pubsub.on('zen', () => {
       const zen = $('body').toggleClass('zen').hasClass('zen');
       window.dispatchEvent(new Event('resize'));
       if (!$('body').hasClass('zen-auto')) xhr.setZen(zen);
     });
     $('body').addClass('playing'); // for zen
-    $('#zentog').on('click', () => site.pubsub.emit('zen'));
+    $('#zentog').on('click', () => pubsub.emit('zen'));
   }
 
-  private loadSound = (file: string, volume?: number) => {
-    site.sound.load(file, `${site.sound.baseUrl}/${file}`);
-    return () => site.sound.play(file, volume);
+  private loadSound = (name: string, volume?: number) => {
+    site.sound.load(name, site.sound.url(`${name}.mp3`));
+    return () => site.sound.play(name, volume);
   };
   sound = {
     good: this.loadSound('lisp/PuzzleStormGood', 0.7),
@@ -156,6 +156,12 @@ export default class PuzzleCtrl implements ParentCtrl {
       this.keyboardMove.update(up);
     }
     requestAnimationFrame(() => this.redraw());
+    pubsub.on('board.change', (is3d: boolean) => {
+      this.withGround(g => {
+        g.state.addPieceZIndex = is3d;
+        g.redrawAll();
+      });
+    });
   };
 
   pref = this.opts.pref;
@@ -221,13 +227,13 @@ export default class PuzzleCtrl implements ParentCtrl {
     const canMove = this.mode === 'view' || (color === this.pov && (!nextNode || nextNode.puzzle == 'fail'));
     const movable = canMove
       ? {
-          color: dests.size > 0 ? color : undefined,
-          dests,
-        }
+        color: dests.size > 0 ? color : undefined,
+        dests,
+      }
       : {
-          color: undefined,
-          dests: new Map(),
-        };
+        color: undefined,
+        dests: new Map(),
+      };
     const config = {
       fen: node.fen,
       orientation: this.flipped() ? opposite(this.pov) : this.pov,
@@ -249,7 +255,10 @@ export default class PuzzleCtrl implements ParentCtrl {
     return config;
   };
 
-  showGround = (g: CgApi): void => g.set(this.makeCgOpts());
+  showGround = (g: CgApi): void => {
+    g.set(this.makeCgOpts());
+    this.setAutoShapes();
+  };
 
   pluginMove = (orig: Key, dest: Key, role?: Role) => {
     if (role) this.playUserMove(orig, dest, role);
@@ -312,6 +321,7 @@ export default class PuzzleCtrl implements ParentCtrl {
     this.withGround(g => g.playPremove());
 
     const progress = moveTest(this);
+    this.setAutoShapes();
     if (progress === 'fail') site.sound.say('incorrect');
     if (progress) this.applyProgress(progress);
     this.reorderChildren(path);
@@ -340,7 +350,7 @@ export default class PuzzleCtrl implements ParentCtrl {
 
   revertUserMove = (): void => {
     if (site.blindMode) this.instantRevertUserMove();
-    else setTimeout(this.instantRevertUserMove, 100);
+    else setTimeout(this.instantRevertUserMove, 300);
   };
 
   applyProgress = (progress: undefined | 'fail' | 'win' | MoveTest): void => {
@@ -385,7 +395,7 @@ export default class PuzzleCtrl implements ParentCtrl {
     this.sound.end();
   };
 
-  sendResult = async (win: boolean): Promise<void> => {
+  sendResult = async(win: boolean): Promise<void> => {
     if (this.resultSent) return Promise.resolve();
     this.resultSent = true;
     this.session.complete(this.data.puzzle.id, win);
@@ -422,7 +432,10 @@ export default class PuzzleCtrl implements ParentCtrl {
   private isPuzzleData = (d: PuzzleData | ReplayEnd): d is PuzzleData => 'puzzle' in d;
 
   nextPuzzle = (): void => {
-    if (this.streak && this.lastFeedback != 'win') return;
+    if (this.streak && this.lastFeedback != 'win') {
+      if (this.lastFeedback == 'fail') site.redirect(router.withLang('/streak'));
+      return;
+    }
     if (this.mode !== 'view') return;
 
     this.ceval.stop();
@@ -452,6 +465,11 @@ export default class PuzzleCtrl implements ParentCtrl {
         name: 'Standard',
         key: 'standard',
       },
+      externalEngines:
+        this.data.externalEngines?.map(engine => ({
+          ...engine,
+          endpoint: this.opts.externalEngineEndpoint,
+        })) || [],
       initialFen: undefined, // always standard starting position
       possible: true,
       emit: (ev, work) => {
@@ -540,7 +558,7 @@ export default class PuzzleCtrl implements ParentCtrl {
     this.justPlayed = undefined;
     this.autoScrollRequested = true;
     this.pluginUpdate(this.node.fen);
-    site.pubsub.emit('ply', this.node.ply);
+    pubsub.emit('ply', this.node.ply);
   };
 
   userJump = (path: Tree.Path): void => {
@@ -638,7 +656,9 @@ export default class PuzzleCtrl implements ParentCtrl {
     static: new Set(this.opts.themes.static.split(' ')),
   };
   toggleRated = () => this.rated(!this.rated());
-  // implement cetal ParentCtrl:
+  // tsc 5.6 --noCheck can generate conflicts on private member types of the same class imported
+  // from different paths. This ts-ignore is a workaround to avoid the error. TODO
+  // @ts-ignore
   getCeval = () => this.ceval;
   ongoing = false;
   getNode = () => this.node;

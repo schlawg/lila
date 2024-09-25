@@ -4,6 +4,7 @@ import com.github.benmanes.caffeine.cache.Cache as CaffeineCache
 import kamon.metric.{ Counter, Timer }
 import kamon.tag.TagSet
 
+import lila.core.id.*
 import lila.core.net.*
 
 object mon:
@@ -156,6 +157,10 @@ object mon:
     object correspondenceEmail:
       val emails = histogram("round.correspondenceEmail.emails").withoutTags()
       val time   = future("round.correspondenceEmail.time")
+    object farming:
+      val bot         = counter("round.farming.bot").withoutTags()
+      val provisional = counter("round.farming.provisional").withoutTags()
+    val fideGWR = counter("round.fideGWR").withoutTags()
   object playban:
     def outcome(out: String) = counter("playban.outcome").withTag("outcome", out)
     object ban:
@@ -276,15 +281,20 @@ object mon:
     def zoneSegment(name: String) = future("mod.zone.segment", name)
   object relay:
     private def by(official: Boolean) = if official then "official" else "user"
-    private def relay(official: Boolean, slug: String) =
-      tags("by" -> by(official), "slug" -> slug)
-    def ongoing(official: Boolean)                 = gauge("relay.ongoing").withTag("by", by(official))
-    def games(official: Boolean, slug: String)     = gauge("relay.games").withTags(relay(official, slug))
-    def moves(official: Boolean, slug: String)     = counter("relay.moves").withTags(relay(official, slug))
-    def fetchTime(official: Boolean, slug: String) = timer("relay.fetch.time").withTags(relay(official, slug))
-    def syncTime(official: Boolean, slug: String)  = timer("relay.sync.time").withTags(relay(official, slug))
+    private def relay(official: Boolean, id: RelayTourId, slug: String) =
+      tags("by" -> by(official), "slug" -> s"$slug/$id")
+    def ongoing(official: Boolean) = gauge("relay.ongoing").withTag("by", by(official))
+    def games(official: Boolean, id: RelayTourId, slug: String) =
+      gauge("relay.games").withTags(relay(official, id, slug))
+    def moves(official: Boolean, id: RelayTourId, slug: String) =
+      counter("relay.moves").withTags(relay(official, id, slug))
+    def fetchTime(official: Boolean, id: RelayTourId, slug: String) =
+      timer("relay.fetch.time").withTags(relay(official, id, slug))
+    def syncTime(official: Boolean, id: RelayTourId, slug: String) =
+      timer("relay.sync.time").withTags(relay(official, id, slug))
     def httpGet(host: String, proxy: Option[String]) =
       future("relay.http.get", tags("host" -> host, "proxy" -> proxy.getOrElse("none")))
+    val dedup = counter("relay.fetch.dedup").withoutTags()
 
   object bot:
     def moves(username: String)   = counter("bot.moves").withTag("name", username)
@@ -326,6 +336,9 @@ object mon:
     object verifyMailApi:
       def fetch(success: Boolean, ok: Boolean) =
         timer("verifyMail.fetch").withTags(tags("success" -> successTag(success), "ok" -> ok))
+    object mailcheckApi:
+      def fetch(success: Boolean, ok: Boolean) =
+        timer("mailcheck.fetch").withTags(tags("success" -> successTag(success), "ok" -> ok))
     def usersAlikeTime(field: String)  = timer("security.usersAlike.time").withTag("field", field)
     def usersAlikeFound(field: String) = histogram("security.usersAlike.found").withTag("field", field)
     object hCaptcha:
@@ -341,6 +354,10 @@ object mon:
         counter("security.login.attempt").withTags:
           tags("by" -> (if byEmail then "email" else "name"), "stuffing" -> stuffing, "result" -> result)
       def proxy(tpe: String) = counter("security.login.proxy").withTag("proxy", tpe)
+    def secretScanning(tokenType: String, source: String, hit: Boolean) =
+      counter("security.githubSecretScanning.hit").withTags(
+        tags("type" -> tokenType, "source" -> source, "hit" -> hit)
+      )
   object shutup:
     def analyzer = timer("shutup.analyzer.time").withoutTags()
   object tv:
@@ -445,8 +462,8 @@ object mon:
     def post(verdict: String, isNew: Boolean, multi: Boolean) = counter("msg.post").withTags(
       tags("verdict" -> verdict, "isNew" -> isNew, "multi" -> multi)
     )
-    def teamBulk(teamId: String) = histogram("msg.bulk.team").withTag("id", teamId)
-    def clasBulk(clasId: String) = histogram("msg.bulk.clas").withTag("id", clasId)
+    def teamBulk(teamId: TeamId) = histogram("msg.bulk.team").withTag("id", teamId.value)
+    def clasBulk(clasId: ClasId) = histogram("msg.bulk.clas").withTag("id", clasId.value)
   object puzzle:
     object selector:
       object user:
@@ -547,7 +564,8 @@ object mon:
     object pgn:
       def encode(format: String) = timer("game.pgn.encode").withTag("format", format)
       def decode(format: String) = timer("game.pgn.decode").withTag("format", format)
-    val idCollision = counter("game.idCollision").withoutTags()
+    val idCollision                  = counter("game.idCollision").withoutTags()
+    def idGenerator(collisions: Int) = timer("game.idGenerator").withTags(tags("collisions" -> collisions))
   object chat:
     def message(parent: String, troll: Boolean) =
       counter("chat.message").withTags:
@@ -621,6 +639,8 @@ object mon:
         def totalSecond(client: String) = counter("fishnet.analysis.total.second").withTag("client", client)
       def requestCount(tpe: String) = counter("fishnet.analysis.request").withTag("type", tpe)
       val evalCacheHits             = histogram("fishnet.analysis.evalCacheHits").withoutTags()
+      val skipPositionsGame         = future("fishnet.analysis.skipPositions.game")
+      val skipPositionsStudy        = future("fishnet.analysis.skipPositions.study")
     object http:
       def request(hit: Boolean) = counter("fishnet.http.acquire").withTag("hit", hit)
     def move(level: Int) = counter("fishnet.move.time").withTag("level", level)

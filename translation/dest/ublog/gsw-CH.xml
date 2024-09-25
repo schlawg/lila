@@ -44,7 +44,6 @@
   <string name="imageAlt">Alternative Bildtegscht</string>
   <string name="imageCredit">Bild Herkunft</string>
   <string name="deleteBlog">Lösch de Tagebuech-Post definitiv</string>
-  <string name="deleteImage">Lösch s\'Bild</string>
   <string name="safeToUseImages">Es isch sicher, Bilder vu folgende Website z\'verwände: </string>
   <string name="selectPostTopics">Wähl d\'Theme vu dim Post us</string>
   <string name="useImagesYouMadeYourself">Du chasch auch sälber g\'machti- oder knipsti Bilder verwände oder Screenshots vu Lichess... eifach alles, was nöd vu öpper anderem urheberrächtlich gschützt isch.</string>

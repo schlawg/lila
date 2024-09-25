@@ -11,18 +11,14 @@ final class Coordinate(env: Env) extends LilaController(env):
 
   private def serveHome(using ctx: Context): Fu[Result] =
     ctx.userId
-      .so { userId =>
+      .so: userId =>
         env.coordinate.api.getScore(userId).map(_.some)
-      }
-      .flatMap { score =>
+      .flatMap: score =>
         Ok.page(views.coordinate.show(score))
-      }
 
   def score = AuthBody { ctx ?=> me ?=>
-    env.coordinate.forms.score
-      .bindFromRequest()
-      .fold(
-        _ => fuccess(BadRequest),
-        data => env.coordinate.api.addScore(data.mode, data.color, data.score).inject(Ok(()))
-      )
+    bindForm(env.coordinate.forms.score)(
+      _ => fuccess(BadRequest),
+      data => env.coordinate.api.addScore(data.mode, data.color, data.score).inject(Ok(()))
+    )
   }

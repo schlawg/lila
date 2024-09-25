@@ -27,11 +27,17 @@ import {
 } from './common';
 import { AnalyseData, Player, PlyChart } from './interface';
 import division from './division';
+import { pubsub } from 'common/pubsub';
 
 resizePolyfill();
 Chart.register(LineController, LinearScale, PointElement, LineElement, Tooltip, BarElement, BarController);
 
-export default async function (el: HTMLCanvasElement, data: AnalyseData, trans: Trans, hunter: boolean) {
+export default async function(
+  el: HTMLCanvasElement,
+  data: AnalyseData,
+  trans: Trans,
+  hunter: boolean,
+): Promise<PlyChart | undefined> {
   const possibleChart = maybeChart(el);
   if (possibleChart) return possibleChart as PlyChart;
   const moveCentis = data.game.moveCentis;
@@ -146,17 +152,17 @@ export default async function (el: HTMLCanvasElement, data: AnalyseData, trans: 
 
   const moveSeriesSet: ChartDataset[] = showTotal
     ? colors.map(color => ({
-        type: 'bar',
-        data: moveSeries[color].map(point => ({ x: point.x, y: point.y / moveSeriesMax })),
-        backgroundColor: color,
-        grouped: false,
-        categoryPercentage: 2,
-        barPercentage: 1,
-        order: 2,
-        borderColor: color == 'white' ? '#838383' : '#616161',
-        borderWidth: 1,
-        datalabels: { display: false },
-      }))
+      type: 'bar',
+      data: moveSeries[color].map(point => ({ x: point.x, y: point.y / moveSeriesMax })),
+      backgroundColor: color,
+      grouped: false,
+      categoryPercentage: 2,
+      barPercentage: 1,
+      order: 2,
+      borderColor: color == 'white' ? '#838383' : '#616161',
+      borderWidth: 1,
+      datalabels: { display: false },
+    }))
     : lineBuilder(moveSeries, true);
   const divisionLines = division(trans, data.game.division);
   const datasets: ChartDataset[] = [...moveSeriesSet];
@@ -200,14 +206,14 @@ export default async function (el: HTMLCanvasElement, data: AnalyseData, trans: 
       onClick(_event, elements, _chart) {
         let blackOffset = elements[0].datasetIndex & 1;
         if ((firstPly & 1) != 0) blackOffset = blackOffset ^ 1;
-        site.pubsub.emit('analysis.chart.click', elements[0].index * 2 + blackOffset);
+        pubsub.emit('analysis.chart.click', elements[0].index * 2 + blackOffset);
       },
     },
   };
   const movetimeChart = new Chart(el, config) as PlyChart;
   movetimeChart.selectPly = selectPly.bind(movetimeChart);
-  site.pubsub.on('ply', movetimeChart.selectPly);
-  site.pubsub.emit('ply.trigger');
+  pubsub.on('ply', movetimeChart.selectPly);
+  pubsub.emit('ply.trigger');
   return movetimeChart;
 }
 

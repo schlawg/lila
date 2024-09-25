@@ -1,8 +1,8 @@
 import * as xhr from 'common/xhr';
-import throttle from 'common/throttle';
+import { throttle } from 'common/timing';
 import { isTouchDevice } from 'common/device';
 
-export default function initModule() {
+export default function initModule(): void {
   site.load.then(() => $('.ask-container').each((_, e: EleLoose) => new Ask(e.firstElementChild!)));
 }
 
@@ -64,7 +64,7 @@ function rewire(el: Element | null, frag: string): Ask | undefined {
 
 function askXhr(req: { ask: Ask; url: string; method?: string; body?: FormData; after?: (_: Ask) => void }) {
   return xhr.textRaw(req.url, { method: req.method ? req.method : 'POST', body: req.body }).then(
-    async (rsp: Response) => {
+    async(rsp: Response) => {
       if (rsp.redirected) {
         if (!rsp.url.startsWith(window.location.origin)) throw new Error(`Bad redirect: ${rsp.url}`);
         window.location.href = rsp.url;
@@ -82,7 +82,7 @@ function askXhr(req: { ask: Ask; url: string; method?: string; body?: FormData; 
 function wireSubmit(ask: Ask) {
   ask.submitEl = $('.form-submit', ask.el).get(0);
   if (!ask.submitEl) return;
-  $('input', ask.submitEl).on('click', async () => {
+  $('input', ask.submitEl).on('click', async() => {
     const path = `/ask/form/${ask.el.id}?view=${ask.view}&anon=${ask.el.classList.contains('anon')}`;
     const body = ask.formEl?.value ? xhr.form({ text: ask.formEl.value }) : undefined;
     const newOrder = ask.ranking();
@@ -104,7 +104,7 @@ function wireSubmit(ask: Ask) {
 }
 
 function wireExclusiveChoices(ask: Ask) {
-  $('.choice.exclusive', ask.el).on('click', function (e: Event) {
+  $('.choice.exclusive', ask.el).on('click', function(e: Event) {
     const el = e.target as Element;
     askXhr({
       ask: ask,
@@ -115,7 +115,7 @@ function wireExclusiveChoices(ask: Ask) {
 }
 
 function wireMultipleChoices(ask: Ask) {
-  $('.choice.multiple', ask.el).on('click', function (e: Event) {
+  $('.choice.multiple', ask.el).on('click', function(e: Event) {
     $(e.target as Element).toggleClass('selected');
     const picks = $('.choice', ask.el)
       .filter((_, x) => x.classList.contains('selected'))

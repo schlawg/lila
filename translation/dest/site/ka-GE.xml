@@ -460,9 +460,6 @@
   <string name="safeTournamentName">ტურნირისთვის შეარჩიეთ უსაფრთხო სახელი.</string>
   <string name="inappropriateNameWarning">ნებისმიერი, თუნდაც მცირედი, უტაქტობა გამოიწვევს თქვენი ანგარიშის დახურვას.</string>
   <string name="emptyTournamentName">დატოვეთ ცარიელი, თუ გნებავთ რომ ტურნირს დაერქვას შემთხვევითად შერჩეული ჭადრაკის დიდოსტატის სახელი.</string>
-  <string name="recommendNotTouching">გირჩევთ ამას არ შეეხოთ.</string>
-  <string name="fewerPlayers">თუ თქვენ შესვლის წინაპირობებს დააყენებთ, თქვენს ტურნირს უფრო ცოტა მოთამაშე ეყოლება.</string>
-  <string name="showAdvancedSettings">დამატებითი პარამეტრების ნახვა</string>
   <string name="makePrivateTournament">გახადე ტურნირი დახურული და შეუზღუდე ჭვდომა პაროლით</string>
   <string name="join">შეუერთდით</string>
   <string name="withdraw">გავარდნა</string>
@@ -501,8 +498,7 @@
   <string name="ifNoneLeaveEmpty">არარსებობის შემთხვევაში დატოვე ცარიელი</string>
   <string name="profile">პროფილი</string>
   <string name="editProfile">პროფილის განახლება</string>
-  <string name="firstName">სახელი</string>
-  <string name="lastName">გვარი</string>
+  <string name="flair">ემოჯი</string>
   <string name="biography">ბიოგრაფია</string>
   <string name="thankYou">გმადლობთ შეფასებისთვის!</string>
   <string name="socialMediaLinks">სოციალური მედიის ბმულები</string>
@@ -544,11 +540,8 @@
   <string name="reason">მიზეზი</string>
   <string name="whatIsIheMatter">მიზეზი</string>
   <string name="cheat">ტყული</string>
-  <string name="insult">შეურაცხყოფა</string>
   <string name="troll">პროვოკაცია</string>
-  <string name="ratingManipulation">რეიტინგის მანიპულაცია</string>
   <string name="other">სხვა</string>
-  <string name="reportDescriptionHelp">ჩასვით თამაშ(ებ)ის ბმული და მიუთითეთ თუ რა არის საეჭვო მომხმარებლის ქცევაში.</string>
   <string name="error.provideOneCheatedGameLink">გთხოვთ მიუთითო სულ მცირე ერთი პარტიის ბმული სადაც თვლით რომ მოწინააღმდეგემ წესების დარღვევით ითამაშა.</string>
   <string name="by">%s-ის</string>
   <string name="importedByX">დააიმპორტა %s - მა</string>
@@ -768,9 +761,9 @@
   <string name="transparent">გამჭვირვალე</string>
   <string name="deviceTheme">მოწყობილობის თემა</string>
   <string name="backgroundImageUrl">ფონის სურათის მისამართი:</string>
-  <string name="boardGeometry">საჭადრაკო დაფის გეომეტრია</string>
-  <string name="boardTheme">ჭადრაკის დაფის ფონი</string>
-  <string name="boardSize">ჭადრაკის დაფის ზომა</string>
+  <string name="board">დაფა</string>
+  <string name="size">ზომა</string>
+  <string name="hue">ტონ</string>
   <string name="pieceSet">ფიგურების კომპლექტი</string>
   <string name="embedInYourWebsite">ჩააშენეთ თქვენს საიტში</string>
   <string name="usernameAlreadyUsed">ეს მომხმარებლის სახელი უკვე მოხმარებაშია, გთხოვთ სცადეთ სხვა სახელი.</string>

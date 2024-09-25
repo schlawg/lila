@@ -1,6 +1,4 @@
 package lila.rating
-
-import lila.rating.PerfType
 import lila.core.perf.Perf
 
 object RatingRegulator:
@@ -11,8 +9,8 @@ object RatingRegulator:
     }
 
   private def apply(factor: RatingFactor, perfType: PerfType, before: Perf, after: Perf): Perf =
-    if (after.nb == before.nb + 1) &&              // after playing one game
-      (after.glicko.rating > before.glicko.rating) // and gaining rating
+    if (after.nb == before.nb + 1) &&            // after playing one game
+    (after.glicko.rating > before.glicko.rating) // and gaining rating
     then
       val diff  = after.glicko.rating - before.glicko.rating
       val extra = diff * (factor.value - 1)

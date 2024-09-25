@@ -12,16 +12,21 @@ import * as boards from './boards';
 import podium from './podium';
 import playerInfo from './playerInfo';
 import flatpickr from 'flatpickr';
+import { use24h } from 'common/i18n';
+import { once } from 'common/storage';
+import { initMiniGames } from 'common/miniBoard';
+import { watchers } from 'common/watchers';
+import { makeChat } from 'chat';
 
-export default function (ctrl: SwissCtrl) {
+export default function(ctrl: SwissCtrl) {
   const d = ctrl.data;
   const content =
     d.status == 'created' ? created(ctrl) : d.status == 'started' ? started(ctrl) : finished(ctrl);
-  return h('main.' + ctrl.opts.classes, { hook: { postpatch: () => site.miniGame.initAll() } }, [
+  return h('main.' + ctrl.opts.classes, { hook: { postpatch: () => initMiniGames() } }, [
     h('aside.swiss__side', {
       hook: onInsert(el => {
         $(el).replaceWith(ctrl.opts.$side);
-        ctrl.opts.chat && site.makeChat(ctrl.opts.chat);
+        ctrl.opts.chat && makeChat(ctrl.opts.chat);
       }),
     }),
     h('div.swiss__underchat', {
@@ -29,7 +34,7 @@ export default function (ctrl: SwissCtrl) {
     }),
     playerInfo(ctrl) || stats(ctrl) || boards.top(d.boards, ctrl.opts),
     h('div.swiss__main', [h('div.box.swiss__main-' + d.status, content), boards.many(d.boards, ctrl.opts)]),
-    ctrl.opts.chat && h('div.chat__members.none', { hook: onInsert(site.watchers) }),
+    ctrl.opts.chat && h('div.chat__members.none', { hook: onInsert(watchers) }),
   ]);
 }
 
@@ -103,6 +108,7 @@ function nextRound(ctrl: SwissCtrl): VNode | undefined {
             onClose() {
               (el.parentNode as HTMLFormElement).submit();
             },
+            time_24hr: use24h(),
           }),
         ),
       }),
@@ -130,35 +136,35 @@ function joinButton(ctrl: SwissCtrl): VNode | undefined {
     return ctrl.joinSpinner
       ? spinner()
       : h(
-          'button.fbt.text.highlight',
-          {
-            attrs: dataIcon(licon.PlayTriangle),
-            hook: bind(
-              'click',
-              _ => {
-                if (d.password) {
-                  const p = prompt(ctrl.trans.noarg('tournamentEntryCode'));
-                  if (p !== null) ctrl.join(p);
-                } else ctrl.join();
-              },
-              ctrl.redraw,
-            ),
-          },
-          ctrl.trans.noarg('join'),
-        );
+        'button.fbt.text.highlight',
+        {
+          attrs: dataIcon(licon.PlayTriangle),
+          hook: bind(
+            'click',
+            _ => {
+              if (d.password) {
+                const p = prompt(ctrl.trans.noarg('tournamentEntryCode'));
+                if (p !== null) ctrl.join(p);
+              } else ctrl.join();
+            },
+            ctrl.redraw,
+          ),
+        },
+        ctrl.trans.noarg('join'),
+      );
 
   if (d.me && d.status != 'finished')
     return d.me.absent
       ? ctrl.joinSpinner
         ? spinner()
         : h(
-            'button.fbt.text.highlight',
-            { attrs: dataIcon(licon.PlayTriangle), hook: bind('click', _ => ctrl.join(), ctrl.redraw) },
-            ctrl.trans.noarg('join'),
-          )
+          'button.fbt.text.highlight',
+          { attrs: dataIcon(licon.PlayTriangle), hook: bind('click', _ => ctrl.join(), ctrl.redraw) },
+          ctrl.trans.noarg('join'),
+        )
       : ctrl.joinSpinner
-      ? spinner()
-      : h(
+        ? spinner()
+        : h(
           'button.fbt.text',
           { attrs: dataIcon(licon.FlagOutline), hook: bind('click', ctrl.withdraw, ctrl.redraw) },
           ctrl.trans.noarg('withdraw'),
@@ -183,10 +189,10 @@ function confetti(data: SwissData) {
   return (
     data.me &&
     data.isRecentlyFinished &&
-    site.once('tournament.end.canvas.' + data.id) &&
+    once('tournament.end.canvas.' + data.id) &&
     h('canvas#confetti', {
       hook: {
-        insert: _ => site.asset.loadIife('javascripts/confetti.js'),
+        insert: _ => site.asset.loadEsm('bits.confetti'),
       },
     })
   );

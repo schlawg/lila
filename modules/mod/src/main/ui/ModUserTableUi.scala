@@ -2,8 +2,9 @@ package lila.mod
 package ui
 
 import lila.ui.*
-import ScalatagsTemplate.{ *, given }
 import lila.user.WithPerfsAndEmails
+
+import ScalatagsTemplate.{ *, given }
 
 object ModUserTableUi:
 
@@ -89,7 +90,7 @@ final class ModUserTableUi(helpers: Helpers, modUi: ModUi):
     )
 
   def mods(users: List[User])(using Context) =
-    Page("All mods").cssTag("mod.misc"):
+    Page("All mods").css("mod.misc"):
       main(cls := "page-menu")(
         modUi.menu("mods"),
         div(id := "mod_table", cls := "page-menu__content box")(

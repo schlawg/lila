@@ -18,11 +18,11 @@ function renderPlayer(ctrl: RoundController, position: Position) {
   return ctrl.nvui
     ? undefined
     : player.ai
-    ? h('div.user-link.online.ruser.ruser-' + position, [
+      ? h('div.user-link.online.ruser.ruser-' + position, [
         h('i.line'),
         h('name', renderUser.aiName(ctrl, player.ai)),
       ])
-    : renderUser.userHtml(ctrl, player, position);
+      : (ctrl.opts.local?.userVNode(player, position) ?? renderUser.userHtml(ctrl, player, position));
 }
 
 const isLoading = (ctrl: RoundController): boolean => ctrl.loading || ctrl.redirecting;
@@ -34,14 +34,14 @@ const renderTableWith = (ctrl: RoundController, buttons: LooseVNodes) => [
   buttons.find(x => !!x) && h('div.rcontrols', buttons),
 ];
 
-export const renderTableEnd = (ctrl: RoundController) =>
+export const renderTableEnd = (ctrl: RoundController): LooseVNodes =>
   renderTableWith(ctrl, [
     isLoading(ctrl)
       ? loader()
       : button.backToTournament(ctrl) || button.backToSwiss(ctrl) || button.followUp(ctrl),
   ]);
 
-export const renderTableWatch = (ctrl: RoundController) =>
+export const renderTableWatch = (ctrl: RoundController): LooseVNodes =>
   renderTableWith(ctrl, [
     isLoading(ctrl) ? loader() : game.playable(ctrl.data) ? undefined : button.watcherFollowUp(ctrl),
   ]);
@@ -64,7 +64,7 @@ const prompt = (ctrl: RoundController) => {
   };
 };
 
-export const renderTablePlay = (ctrl: RoundController) => {
+export const renderTablePlay = (ctrl: RoundController): LooseVNodes => {
   const d = ctrl.data,
     loading = isLoading(ctrl),
     { promptVNode, isQuestion } = prompt(ctrl),
@@ -72,50 +72,50 @@ export const renderTablePlay = (ctrl: RoundController) => {
       loading || isQuestion
         ? []
         : [
-            game.abortable(d)
-              ? button.standard(ctrl, undefined, licon.X, 'abortGame', 'abort')
-              : button.standard(
-                  ctrl,
-                  d => ({ enabled: game.takebackable(d) }),
-                  licon.Back,
-                  'proposeATakeback',
-                  'takeback-yes',
-                  ctrl.takebackYes,
-                ),
-            ctrl.drawConfirm
-              ? button.drawConfirm(ctrl)
-              : ctrl.data.game.threefold
+          game.abortable(d)
+            ? button.standard(ctrl, undefined, licon.X, 'abortGame', 'abort')
+            : button.standard(
+              ctrl,
+              d => ({ enabled: game.takebackable(d) }),
+              licon.Back,
+              'proposeATakeback',
+              'takeback-yes',
+              ctrl.takebackYes,
+            ),
+          ctrl.drawConfirm
+            ? button.drawConfirm(ctrl)
+            : ctrl.data.game.threefold
               ? button.claimThreefold(ctrl, d => {
-                  const threefoldable = game.drawableSwiss(d);
-                  return {
-                    enabled: threefoldable,
-                    overrideHint: threefoldable ? undefined : 'noDrawBeforeSwissLimit',
-                  };
-                })
+                const threefoldable = game.drawableSwiss(d);
+                return {
+                  enabled: threefoldable,
+                  overrideHint: threefoldable ? undefined : 'noDrawBeforeSwissLimit',
+                };
+              })
               : button.standard(
-                  ctrl,
-                  d => ({
-                    enabled: ctrl.canOfferDraw(),
-                    overrideHint: game.drawableSwiss(d) ? undefined : 'noDrawBeforeSwissLimit',
-                  }),
-                  licon.OneHalf,
-                  'offerDraw',
-                  'draw-yes',
-                  () => ctrl.offerDraw(true),
-                ),
-            ctrl.resignConfirm
-              ? button.resignConfirm(ctrl)
-              : button.standard(
-                  ctrl,
-                  d => ({ enabled: game.resignable(d) }),
-                  licon.FlagOutline,
-                  'resign',
-                  'resign',
-                  () => ctrl.resign(true),
-                ),
-            replay.analysisButton(ctrl),
-            boardMenuToggleButton(ctrl.menu, ctrl.noarg('menu')),
-          ],
+                ctrl,
+                d => ({
+                  enabled: ctrl.canOfferDraw(),
+                  overrideHint: game.drawableSwiss(d) ? undefined : 'noDrawBeforeSwissLimit',
+                }),
+                licon.OneHalf,
+                'offerDraw',
+                'draw-yes',
+                () => ctrl.offerDraw(true),
+              ),
+          ctrl.resignConfirm
+            ? button.resignConfirm(ctrl)
+            : button.standard(
+              ctrl,
+              d => ({ enabled: game.resignable(d) }),
+              licon.FlagOutline,
+              'resign',
+              'resign',
+              () => ctrl.resign(true),
+            ),
+          replay.analysisButton(ctrl),
+          boardMenuToggleButton(ctrl.menu, ctrl.noarg('menu')),
+        ],
     buttons = loading
       ? [loader()]
       : [promptVNode, button.opponentGone(ctrl), button.threefoldSuggestion(ctrl)];
@@ -158,8 +158,8 @@ export const renderTable = (ctrl: RoundController): LooseVNodes => [
   ...(ctrl.data.player.spectator
     ? renderTableWatch(ctrl)
     : game.playable(ctrl.data)
-    ? renderTablePlay(ctrl)
-    : renderTableEnd(ctrl)),
+      ? renderTablePlay(ctrl)
+      : renderTableEnd(ctrl)),
   renderPlayer(ctrl, 'bottom'),
   /* render clocks after players so they display on top of them in col1,
    * since they occupy the same grid cell. This is required to avoid

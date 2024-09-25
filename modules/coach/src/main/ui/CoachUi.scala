@@ -1,15 +1,16 @@
 package lila.coach
 package ui
 
+import play.api.i18n.Lang
 import scalalib.paginator.Paginator
 
-import lila.ui.*
-import ScalatagsTemplate.{ *, given }
-import lila.rating.UserPerfsExt.{ best6Perfs, hasEstablishedRating }
-import lila.core.data.RichText
 import lila.core.config.NetDomain
-import play.api.i18n.Lang
+import lila.core.data.RichText
 import lila.core.user.{ Flag, Profile }
+import lila.rating.UserPerfsExt.{ best6Perfs, hasEstablishedRating }
+import lila.ui.*
+
+import ScalatagsTemplate.{ *, given }
 
 final class CoachUi(helpers: Helpers)(
     picfitUrl: lila.core.misc.PicfitUrl,
@@ -122,7 +123,7 @@ final class CoachUi(helpers: Helpers)(
     val coachName = s"${c.user.title.so(t => s"$t ")}${c.user.realNameOrUsername}"
     val title     = trc.xCoachesStudents.txt(coachName)
     Page(title)
-      .cssTag("coach")
+      .css("bits.coach")
       .graph(
         OpenGraph(
           title = title,
@@ -148,7 +149,7 @@ final class CoachUi(helpers: Helpers)(
                 cls      := "text button button-empty",
                 dataIcon := Icon.BubbleSpeech,
                 href     := s"${routes.Msg.convo(c.user.username)}"
-              )(trc.sendPM()),
+              )(trc.sendPM())
           ),
           div(cls := "coach-show__main coach-main box")(
             div(cls := "coach-widget")(widget(c, link = false)),
@@ -207,7 +208,7 @@ final class CoachUi(helpers: Helpers)(
       country: Option[Flag]
   )(using ctx: Context) =
     Page(trc.lichessCoaches.txt())
-      .cssTag("coach")
+      .css("bits.coach")
       .js(infiniteScrollEsmInit)
       .hrefLangs(lila.ui.LangPath(routes.Coach.all(1))):
         val langSelections = ("all", "All languages") :: languages(langCodes).map: l =>
@@ -215,9 +216,9 @@ final class CoachUi(helpers: Helpers)(
         main(cls := "coach-list coach-full-page")(
           st.aside(cls := "coach-list__side coach-side")(
             p(
-              trc.areYouCoach(a(href := "https://lichess.org/help/master")(trc.nmOrFideTitle())),
+              trc.areYouCoach(trc.nmOrFideTitle()),
               br,
-              if !ctx.me.exists(_.hasTitle) then a(href := routes.Main.verifyTitle)(trc.confirmTitle())
+              if !ctx.me.exists(_.hasTitle) then a(href := routes.TitleVerify.index)(trc.confirmTitle())
               else trc.sendApplication(a(href := s"mailto:${contactEmail.value}")(contactEmail.value))
             )
           ),

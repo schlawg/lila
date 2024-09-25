@@ -1,7 +1,8 @@
 import flatpickr from 'flatpickr';
+import { use24h } from 'common/i18n';
 
 site.load.then(() => {
-  $('.flatpickr').each(function (this: HTMLInputElement) {
+  $('.flatpickr').each(function(this: HTMLInputElement) {
     const minDate = this.dataset['mindate'];
     const config = this.classList.contains('flatpickr-utc')
       ? {}
@@ -11,6 +12,7 @@ site.load.then(() => {
       maxDate: new Date(Date.now() + 1000 * 3600 * 24 * 31 * 12),
       monthSelectorType: 'static',
       disableMobile: true, // https://flatpickr.js.org/mobile-support/ https://github.com/lichess-org/lila/issues/8110
+      time_24hr: use24h(),
       ...config,
     });
   });

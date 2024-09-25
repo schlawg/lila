@@ -1,12 +1,12 @@
 package lila.study
 
 import akka.stream.scaladsl.*
-import chess.format.pgn.{ Glyphs, InitialComments, Pgn, Tag, Tags, PgnStr, Comment, PgnTree }
-import chess.format.{ pgn as chessPgn }
-
+import chess.format.pgn as chessPgn
+import chess.format.pgn.{ Comment, Glyphs, InitialComments, Pgn, PgnStr, PgnTree, Tag, Tags }
 import scalalib.StringOps.slug
-import lila.tree.{ Analysis, Root, Metas, NewBranch, NewTree, NewRoot }
+
 import lila.tree.Node.{ Shape, Shapes }
+import lila.tree.{ Analysis, Metas, NewBranch, NewRoot, NewTree, Root }
 
 final class PgnDump(
     chapterRepo: ChapterRepo,
@@ -42,14 +42,20 @@ final class PgnDump(
   def filename(study: Study): String =
     val date = dateFormatter.print(study.createdAt)
     fileR.replaceAllIn(
-      s"lichess_study_${slug(study.name.value)}_by_${ownerName(study)}_$date",
+      if study.isRelay
+      then s"lichess_broadcast_${slug(study.name.value)}_$date"
+      else s"lichess_study_${slug(study.name.value)}_by_${ownerName(study)}_$date",
       ""
     )
 
   def filename(study: Study, chapter: Chapter): String =
     val date = dateFormatter.print(chapter.createdAt)
     fileR.replaceAllIn(
-      s"lichess_study_${slug(study.name.value)}_${slug(chapter.name.value)}_by_${ownerName(study)}_$date",
+      if study.isRelay
+      then s"lichess_broadcast_${slug(study.name.value)}_${slug(chapter.name.value)}_$date"
+      else
+        s"lichess_study_${slug(study.name.value)}_${slug(chapter.name.value)}_by_${ownerName(study)}_$date"
+      ,
       ""
     )
 
@@ -65,7 +71,7 @@ final class PgnDump(
       val opening = chapter.opening
       val genTags = List(
         Tag(_.Event, s"${study.name}: ${chapter.name}"),
-        Tag(_.Site, chapterUrl(study.id, chapter.id)),
+        Tag(_.Site, flags.site | chapterUrl(study.id, chapter.id)),
         Tag(_.Variant, chapter.setup.variant.name.capitalize),
         Tag(_.ECO, opening.fold("?")(_.eco)),
         Tag(_.Opening, opening.fold("?")(_.name)),
@@ -86,7 +92,7 @@ final class PgnDump(
         flags.orientation.so(List(Tag("Orientation", chapter.setup.orientation.name))) :::
         chapter.isGamebook.so(List(Tag("ChapterMode", "gamebook")))
       genTags
-        .foldLeft(chapter.tags.value.reverse): (tags, tag) =>
+        .foldLeft(chapter.tagsExport.value.reverse): (tags, tag) =>
           if tags.exists(t => tag.name == t.name) then tags
           else tag :: tags
         .reverse
@@ -103,9 +109,10 @@ object PgnDump:
       variations: Boolean,
       clocks: Boolean,
       source: Boolean,
-      orientation: Boolean
+      orientation: Boolean,
+      site: Option[String]
   )
-  val fullFlags = WithFlags(true, true, true, true, true)
+  val fullFlags = WithFlags(true, true, true, true, true, none)
 
   def rootToPgn(root: Root, tags: Tags, comments: InitialComments)(using WithFlags): Pgn =
     rootToPgn(NewRoot(root), tags, comments)
@@ -117,14 +124,13 @@ object PgnDump:
     rootToPgn(root, tags, InitialComments(root.metas.commentWithShapes))
 
   def rootToPgn(root: NewRoot, tags: Tags, comments: InitialComments)(using WithFlags): Pgn =
-    Pgn(tags, comments, root.tree.map(treeToTree))
+    Pgn(tags, comments, root.tree.map(treeToTree), root.ply.next)
 
   def treeToTree(tree: NewTree)(using flags: WithFlags): PgnTree =
     if flags.variations then tree.map(branchToMove) else tree.mapMainline(branchToMove)
 
   private def branchToMove(node: NewBranch)(using flags: WithFlags) =
     chessPgn.Move(
-      node.ply,
       san = node.move.san,
       glyphs = flags.comments.so(node.metas.glyphs),
       comments = flags.comments.so(node.metas.commentWithShapes),

@@ -7,15 +7,15 @@ export class TabCtrl {
   sel: StoredSelector<AppTab, Selector>;
 
   set(tab: Tab) {
-    console.error('set', this.sel.key, this.sel.has(tab), tab);
+    //console.error('set', this.sel.key, this.sel.has(tab), tab);
     if (this.sel.key === tab || this.sel.value?.key === tab) return;
-    if (this.sel.has(tab)) this.sel.set(tab as AppTab);
+    if (this.sel.has(tab as AppTab)) this.sel.set(tab as AppTab);
     else {
       const secondary = [...this.sel.group.values()].find(x => x.has(tab))!;
       this.sel.set(this.sel.keyOf(secondary));
       secondary.set(tab);
     }
-    console.log(this.sel.key);
+    //console.log(this.sel.key);
   }
 
   get primary() {
@@ -85,11 +85,11 @@ export class TabCtrl {
       group: ctrl.me?.isBot
         ? new Map([['games', gamesTab]])
         : new Map([
-            ['pools', new Selector({ name: 'Pools' })],
-            ['lobby', lobbyTab],
-            ['games', gamesTab],
-            ['events', eventsTab],
-          ]),
+          ['pools', new Selector({ name: 'Pools' })],
+          ['lobby', lobbyTab],
+          ['games', gamesTab],
+          ['events', eventsTab],
+        ]),
     });
   }
 }

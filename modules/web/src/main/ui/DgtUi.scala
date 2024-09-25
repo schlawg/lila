@@ -1,11 +1,9 @@
 package lila.web
 package ui
 
-import scala.util.chaining.*
-
 import lila.ui.*
+
 import ScalatagsTemplate.{ *, given }
-import lila.common.Json.given
 
 final class DgtUi(helpers: Helpers):
   import helpers.{ *, given }
@@ -20,20 +18,18 @@ final class DgtUi(helpers: Helpers):
         p(trd.thisPageAllowsConnectingDgtBoard()),
         br,
         br,
-        st.section(
-          h2(trd.dgtBoardRequirements()),
-          br,
-          p(trd.toConnectTheDgtBoard(s"LiveChess $liveChessVersion")),
-          p(
-            trd.downloadHere(
-              a(href := "https://www.livechesscloud.com/software/")(s"LiveChess $liveChessVersion")
-            )
-          ),
-          p(
-            trd.ifLiveChessRunningOnThisComputer(
-              "LiveChess",
-              a(href := "http://localhost:1982/doc/index.html")(trd.openingThisLink())
-            )
+        h2(trd.dgtBoardRequirements()),
+        br,
+        p(trd.toConnectTheDgtBoard(s"LiveChess $liveChessVersion")),
+        p(
+          trd.downloadHere(
+            a(href := "https://www.livechesscloud.com/software/")(s"LiveChess $liveChessVersion")
+          )
+        ),
+        p(
+          trd.ifLiveChessRunningOnThisComputer(
+            "LiveChess",
+            a(href := "http://localhost:1982/doc/index.html")(trd.openingThisLink())
           )
         ),
         p(
@@ -207,8 +203,8 @@ final class DgtUi(helpers: Helpers):
 
   private def layout(path: String, token: Option[String] = None)(using Context) =
     Page(trd.playWithDgtBoard.txt())
-      .cssTag("dgt")
-      .js(token.fold(jsModuleInit("dgt"))(jsModuleInit("dgt", _)))
+      .css("bits.dgt")
+      .js(token.fold(esmInit("dgt"))(esmInit("dgt", _)))
       .csp(_.withAnyWs)
       .wrap: body =>
         main(cls := "account page-menu dgt")(

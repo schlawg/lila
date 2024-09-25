@@ -2,15 +2,13 @@ package lila.simul
 package ui
 
 import play.api.libs.json.*
-import scalalib.paginator.Paginator
 
-import lila.ui.*
-import ScalatagsTemplate.{ *, given }
-import lila.core.team.LightTeam
+import lila.common.Json.given
 import lila.gathering.Condition.WithVerdicts
 import lila.gathering.ui.GatheringUi
-import lila.common.Json.given
-import lila.core.config.NetDomain
+import lila.ui.*
+
+import ScalatagsTemplate.{ *, given }
 
 final class SimulShow(helpers: Helpers, ui: SimulUi, gathering: GatheringUi):
   import helpers.{ *, given }
@@ -25,7 +23,7 @@ final class SimulShow(helpers: Helpers, ui: SimulUi, gathering: GatheringUi):
   )(using ctx: Context) =
     val userIsHost = ctx.is(sim.hostId)
     Page(sim.fullName)
-      .cssTag("simul.show")
+      .css("simul.show")
       .js(
         PageModule(
           "simul",

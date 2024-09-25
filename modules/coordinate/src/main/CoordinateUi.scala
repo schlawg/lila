@@ -3,16 +3,18 @@ package ui
 
 import play.api.libs.json.Json
 
+import lila.core.i18n.I18nKey
 import lila.ui.*
-import ScalatagsTemplate.{ *, given }
+
+import ScalatagsTemplate.*
 
 final class CoordinateUi(helpers: Helpers):
   import helpers.{ *, given }
 
   def show(scoreOption: Option[Score])(using Context) =
     Page(trans.coordinates.coordinateTraining.txt())
-      .cssTag("coordinateTrainer")
-      .cssTag("voice")
+      .css("coordinateTrainer")
+      .css("voice")
       .js(pageModule(scoreOption))
       .csp(_.withPeer.withWebAssembly)
       .graph(
@@ -55,7 +57,7 @@ final class CoordinateUi(helpers: Helpers):
       )
     ).some
 
-  private val i18nKeys = List(
+  private val i18nKeys: List[I18nKey] = List(
     trans.coordinates.aSquareIsHighlightedExplanation,
     trans.coordinates.aCoordinateAppears,
     trans.coordinates.youHaveThirtySeconds,
@@ -71,6 +73,7 @@ final class CoordinateUi(helpers: Helpers):
     trans.coordinates.findSquare,
     trans.coordinates.nameSquare,
     trans.coordinates.showCoordinates,
+    trans.coordinates.showCoordsOnAllSquares,
     trans.coordinates.showPieces,
     trans.storm.score,
     trans.study.back,

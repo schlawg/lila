@@ -10,7 +10,7 @@ export function findTransforms(
   pos = 0, // for recursion
   line: Transform[] = [], // for recursion
   lines: Transform[][] = [], // for recursion
-  crumbs = new Map<string, number>(), // for (finite) recursion
+  crumbs: Map<string, number> = new Map<string, number>(), // for (finite) recursion
 ): Transform[][] {
   if (h === x) return [line];
   if (pos >= x.length && !mode.del) return [];
@@ -76,3 +76,10 @@ export type Transform = {
   to: string; // zero or more tokens, (empty string for erasure)
   at: number; // index (unused now, previously for breadcrumbs)
 };
+
+export function as<T>(v: T, f: () => void): () => T {
+  return () => {
+    f();
+    return v;
+  };
+}

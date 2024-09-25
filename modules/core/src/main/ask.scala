@@ -9,6 +9,13 @@ import lila.core.userId.*
 
 case class Frozen(text: String, asks: Iterable[Ask])
 
+// https://www.unicode.org/faq/private_use.html
+val frozenIdMagic = "\ufdd6\ufdd4\ufdd2\ufdd0"
+val frozenIdRe    = s"$frozenIdMagic\\{(\\S{8})}".r
+
+def stripAsks(text: String, n: Int = -1): String =
+  frozenIdRe.replaceAllIn(text, "").take(if n == -1 then text.length else n)
+
 trait AskEmbed:
   def freeze(text: String, creator: UserId): Frozen
   def commit(frozen: Frozen, url: Option[String] = none[String]): Fu[Iterable[Ask]]
@@ -16,7 +23,6 @@ trait AskEmbed:
   def unfreezeAndLoad(text: String): Fu[String]
   def unfreeze(text: String): String
   def isOpen(aid: AskId): Fu[Boolean]
-  def stripAsks(text: String, n: Int = -1): String
   def bake(text: String, askFrags: Iterable[String]): String
   val repo: AskRepo
 

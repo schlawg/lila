@@ -1,5 +1,7 @@
 import * as xhr from 'common/xhr';
-import flairPicker from './load/flairPicker';
+import flairPickerLoader from './exports/flairPicker';
+import StrongSocket from 'common/socket';
+import { makeChat } from 'chat';
 
 interface TeamOpts {
   id: string;
@@ -7,15 +9,15 @@ interface TeamOpts {
   chat?: any;
 }
 
-export function initModule(opts: TeamOpts) {
-  site.socket = new site.StrongSocket('/team/' + opts.id, opts.socketVersion);
+export function initModule(opts: TeamOpts): void {
+  site.socket = new StrongSocket('/team/' + opts.id, opts.socketVersion);
 
-  if (opts.chat) site.makeChat(opts.chat);
+  if (opts.chat) makeChat(opts.chat);
 
-  $('#team-subscribe').on('change', function (this: HTMLInputElement) {
+  $('#team-subscribe').on('change', function(this: HTMLInputElement) {
     $(this)
       .parents('form')
-      .each(function (this: HTMLFormElement) {
+      .each(function(this: HTMLFormElement) {
         xhr.formToXhr(this);
       });
   });
@@ -28,6 +30,6 @@ $('button.explain').on('click', e => {
   else return false;
 });
 
-$('.emoji-details').each(function (this: HTMLElement) {
-  flairPicker(this);
+$('.emoji-details').each(function(this: HTMLElement) {
+  flairPickerLoader(this);
 });

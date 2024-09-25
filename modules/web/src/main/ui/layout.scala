@@ -3,10 +3,11 @@ package ui
 
 import play.api.i18n.Lang
 
-import lila.ui.*
-import ScalatagsTemplate.{ *, given }
 import lila.core.i18n.Language
 import lila.core.report.ScoreThresholds
+import lila.ui.*
+
+import ScalatagsTemplate.{ *, given }
 
 final class layout(helpers: Helpers, assetHelper: lila.web.ui.AssetFullHelper)(
     jsQuantity: Lang => String,
@@ -35,7 +36,6 @@ final class layout(helpers: Helpers, assetHelper: lila.web.ui.AssetFullHelper)(
     )(nonce)
   def pieceSprite(name: String): Frag =
     link(id := "piece-sprite", href := assetUrl(s"piece-css/$name.css"), rel := "stylesheet")
-
   val noTranslate = raw("""<meta name="google" content="notranslate">""")
 
   def preload(href: String, as: String, crossorigin: Boolean, tpe: Option[String] = None) =
@@ -46,13 +46,13 @@ final class layout(helpers: Helpers, assetHelper: lila.web.ui.AssetFullHelper)(
   def fontPreload(using ctx: Context) = frag(
     preload(assetUrl("font/lichess.woff2"), "font", crossorigin = true, "font/woff2".some),
     preload(
-      assetUrl("font/noto-sans-v14-latin-regular.woff2"),
+      staticAssetUrl("font/noto-sans-v14-latin-regular.woff2"),
       "font",
       crossorigin = true,
       "font/woff2".some
     ),
     (!ctx.pref.pieceNotationIsLetter).option(
-      preload(assetUrl("font/lichess.chess.woff2"), "font", crossorigin = true, "font/woff2".some)
+      preload(staticAssetUrl("font/lichess.chess.woff2"), "font", crossorigin = true, "font/woff2".some)
     )
   )
 
@@ -93,7 +93,7 @@ final class layout(helpers: Helpers, assetHelper: lila.web.ui.AssetFullHelper)(
 
   def botImage =
     img(
-      src   := assetUrl("images/icons/bot.png"),
+      src   := staticAssetUrl("images/icons/bot.png"),
       title := "Robot chess",
       style := "display:inline;width:34px;height:34px;vertical-align:top;margin-right:5px;vertical-align:text-top"
     )
@@ -101,20 +101,14 @@ final class layout(helpers: Helpers, assetHelper: lila.web.ui.AssetFullHelper)(
   val manifests = raw:
     """<link rel="manifest" href="/manifest.json"><meta name="twitter:site" content="@lichess">"""
 
-  val jsLicense = raw("""<link rel="jslicense" href="/source">""")
-
   val favicons = raw:
     List(512, 256, 192, 128, 64)
       .map: px =>
-        s"""<link rel="icon" type="image/png" href="${assetUrl(
-            s"logo/lichess-favicon-$px.png"
-          )}" sizes="${px}x$px">"""
+        s"""<link rel="icon" type="image/png" href="$assetBaseUrl/assets/logo/lichess-favicon-$px.png" sizes="${px}x$px">"""
       .mkString(
         "",
         "",
-        s"""<link id="favicon" rel="icon" type="image/png" href="${assetUrl(
-            "logo/lichess-favicon-32.png"
-          )}" sizes="32x32">"""
+        s"""<link id="favicon" rel="icon" type="image/png" href="$assetBaseUrl/assets/logo/lichess-favicon-32.png" sizes="32x32">"""
       )
   def blindModeForm(using ctx: Context) = raw:
     s"""<form id="blind-mode" action="${routes.Main.toggleBlindMode}" method="POST"><input type="hidden" name="enable" value="${
@@ -161,8 +155,8 @@ final class layout(helpers: Helpers, assetHelper: lila.web.ui.AssetFullHelper)(
   private def jsTag(key: String): Frag =
     script(tpe := "module", src := staticAssetUrl(s"compiled/${jsName(key)}"))
 
-  def modulesInit(modules: EsmList)(using ctx: PageContext) =
-    modules.flatMap(_.map(_.init(ctx.nonce)))
+  def modulesInit(modules: EsmList, nonce: Optionce) =
+    modules.flatMap(_.map(_.init(nonce))) // in body
 
   private def hrefLang(langStr: String, path: String) =
     s"""<link rel="alternate" hreflang="$langStr" href="$netBaseUrl$path"/>"""
@@ -194,8 +188,7 @@ final class layout(helpers: Helpers, assetHelper: lila.web.ui.AssetFullHelper)(
   )
 
   val dataVapid         = attr("data-vapid")
-  val dataSocketDomains = attr("data-socket-domains") := netConfig.socketDomains.mkString(",")
-  val dataSocketAlts    = attr("data-socket-alts")    := netConfig.socketAlts.mkString(",")
+  def dataSocketDomains = attr("data-socket-domains") := netConfig.socketDomains.mkString(",")
   val dataNonce         = attr("data-nonce")
   val dataAnnounce      = attr("data-announce")
   val dataSoundSet      = attr("data-sound-set")
@@ -216,6 +209,15 @@ final class layout(helpers: Helpers, assetHelper: lila.web.ui.AssetFullHelper)(
 
   private val spaceRegex      = """\s{2,}+""".r
   def spaceless(html: String) = raw(spaceRegex.replaceAllIn(html.replace("\\n", ""), ""))
+
+  val lichessFontFaceCss = spaceless:
+    s"""<style>@font-face {
+        font-family: 'lichess';
+        font-display: block;
+        src:
+          url('${assetUrl("font/lichess.woff2")}') format('woff2'),
+          url('${assetUrl("font/lichess.woff")}') format('woff');
+      }</style>"""
 
   def bottomHtml(using ctx: Context) = frag(
     ctx.me
@@ -305,7 +307,7 @@ final class layout(helpers: Helpers, assetHelper: lila.web.ui.AssetFullHelper)(
               topnav,
               (ctx.kid.no && !ctx.me.exists(_.isPatron) && !zenable).option(
                 a(cls := "site-title-nav__donate")(
-                  href := routes.Plan.index
+                  href := routes.Plan.index()
                 )(trans.patron.donate())
               )
             )

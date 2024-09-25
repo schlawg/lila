@@ -3,14 +3,12 @@ package lila.setup
 import chess.format.Fen
 import chess.{ Clock, Mode, variant as V }
 import play.api.data.Forms.*
-import play.api.data.Mapping
 import play.api.data.format.Formats.doubleFormat
-
 import scalalib.model.Days
+
 import lila.common.Form.{ *, given }
-import lila.core.game.GameRule
-import lila.lobby.Color
 import lila.core.rating.RatingRange
+import lila.lobby.TriColor
 
 private object Mappings:
 
@@ -32,7 +30,7 @@ private object Mappings:
       .verifying(HookConfig.modes contains _)
       .verifying(_ == Mode.Casual.id || withRated)
   val ratingRange = text.verifying(RatingRange.isValid)
-  val color       = text.verifying(Color.names contains _)
+  val color       = text.verifying(TriColor.names contains _)
   val level       = number.verifying(AiConfig.levels contains _)
   val speed       = number.verifying(Config.speeds contains _)
   val fenField = optional:

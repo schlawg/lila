@@ -2,12 +2,16 @@ package lila.plan
 
 import play.api.i18n.Lang
 import reactivemongo.api.*
+import cats.syntax.all.*
 
-import lila.core.config.Secret
 import lila.common.Bus
+import lila.core.config.Secret
+import lila.core.net.IpAddress
 import lila.db.dsl.{ *, given }
 import lila.memo.CacheApi.*
-import lila.core.net.IpAddress
+import scalalib.paginator.Paginator
+import lila.core.LightUser
+import lila.db.paginator.Adapter
 
 final class PlanApi(
     stripeClient: StripeClient,
@@ -17,7 +21,6 @@ final class PlanApi(
     userApi: lila.core.user.UserApi,
     lightUserApi: lila.core.user.LightUserApi,
     cacheApi: lila.memo.CacheApi,
-    mongoCache: lila.memo.MongoCache.Api,
     payPalIpnKey: Secret,
     monthlyGoalApi: MonthlyGoalApi,
     currencyApi: CurrencyApi,
@@ -566,13 +569,19 @@ final class PlanApi(
     _.refreshAfterWrite(30 minutes).buildAsyncFuture: _ =>
       mongo.charge
         .primitive[UserId](
-          $empty,
+          $doc("date" -> $gt(nowInstant.minusWeeks(1))),
           sort = $doc("date" -> -1),
           nb = recentChargeUserIdsNb * 3 / 2,
           "userId"
         )
         .flatMap(filterUserIds)
         .dmap(_.take(recentChargeUserIdsNb))
+
+  private def filterUserIds(ids: List[UserId]): Fu[List[UserId]] =
+    val dedup = ids.distinct
+    userApi.filterByEnabledPatrons(dedup).map { enableds =>
+      dedup.filter(enableds.contains)
+    }
 
   def recentChargeUserIds: Fu[List[UserId]] = recentChargeUserIdsCache.getUnit
 
@@ -596,6 +605,21 @@ final class PlanApi(
       .list(200)
       .map(_.flatMap(_.toGift))
 
+  def paginator(page: Int): Fu[Paginator[LightUser]] =
+    Paginator(
+      adapter = new Adapter[Bdoc](
+        collection = mongo.patron,
+        selector = $empty,
+        projection = $id(true).some,
+        sort = $doc("score" -> -1),
+        _.sec
+      ).map(_.getAsOpt[UserId]("_id"))
+        .mapFutureList: ids =>
+          lightUserApi.asyncManyFallback(ids.flatten),
+      currentPage = page,
+      maxPerPage = MaxPerPage(120)
+    )
+
   private[plan] def onEmailChange(userId: UserId, email: EmailAddress): Funit =
     userApi.enabledById(userId).flatMapz { user =>
       stripe.userCustomer(user).flatMap {
@@ -603,35 +627,6 @@ final class PlanApi(
           stripeClient.setCustomerEmail(_, email)
         }
       }
-    }
-
-  private val topPatronUserIdsNb = 300
-  private val topPatronUserIdsCache = mongoCache.unit[List[UserId]](
-    "patron:top",
-    59 minutes
-  ): loader =>
-    _.refreshAfterWrite(60 minutes).buildAsyncFuture:
-      loader: _ =>
-        mongo.charge
-          .aggregateList(topPatronUserIdsNb * 2, _.sec): framework =>
-            import framework.*
-            Match($doc("userId".$exists(true))) -> List(
-              GroupField("userId")("total" -> SumField("usd")),
-              Sort(Descending("total")),
-              Limit(topPatronUserIdsNb * 3 / 2)
-            )
-          .dmap {
-            _.flatMap { _.getAsOpt[UserId]("_id") }
-          }
-          .flatMap(filterUserIds)
-          .dmap(_.take(topPatronUserIdsNb))
-
-  def topPatronUserIds: Fu[List[UserId]] = topPatronUserIdsCache.get {}
-
-  private def filterUserIds(ids: List[UserId]): Fu[List[UserId]] =
-    val dedup = ids.distinct
-    userApi.filterByEnabledPatrons(dedup).map { enableds =>
-      dedup.filter(enableds.contains)
     }
 
   private def addCharge(charge: Charge, country: Option[Country]): Funit = for
@@ -679,6 +674,8 @@ final class PlanApi(
     userApi.setPlan(user, user.plan.some).andDo(lightUserApi.invalidate(user.id))
 
   def userPatron(user: User): Fu[Option[Patron]] = mongo.patron.one[Patron]($id(user.id))
+
+  extension (u: User) def mapPlan(f: Update[lila.core.user.Plan]) = u.copy(plan = f(u.plan))
 
 object PlanApi:
 

@@ -1,14 +1,13 @@
 package views.team
 
 import play.api.libs.json.Json
-
-import lila.app.mashup.TeamInfo
-import lila.app.UiEnv.{ *, given }
-
-import lila.common.Json.given
 import scalalib.paginator.Paginator
-import lila.mod.Modlog
+
+import lila.app.UiEnv.{ *, given }
+import lila.app.mashup.TeamInfo
+import lila.common.Json.given
 import lila.core.socket.SocketVersion
+import lila.mod.Modlog
 import lila.team.Team
 
 object show:
@@ -82,7 +81,7 @@ object show:
                   info.ledByMe.option(
                     a(
                       dataIcon := Icon.InfoCircle,
-                      href     := routes.Cms.lonePage("team-etiquette"),
+                      href     := routes.Cms.lonePage(lila.core.id.CmsPageKey("team-etiquette")),
                       cls      := "text"
                     )("Team Etiquette")
                   )

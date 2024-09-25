@@ -1,5 +1,6 @@
 package lila.study
 
+import scala.collection.immutable.SeqMap
 import akka.stream.scaladsl.*
 import chess.Centis
 import chess.format.UciPath
@@ -57,13 +58,18 @@ final class ChapterRepo(val coll: AsyncColl)(using Executor, akka.stream.Materia
           .cursor[Chapter]()
           .documentSource()
 
+  def byStudiesSource(studyIds: Seq[StudyId]): Source[Chapter, ?] =
+    Source.futureSource:
+      coll.map:
+        _.find($doc("studyId".$in(studyIds))).cursor[Chapter]().documentSource()
+
   // loads all study chapters in memory!
   def orderedByStudyLoadingAllInMemory(studyId: StudyId): Fu[List[Chapter]] =
     coll:
       _.find($studyId(studyId))
         .sort($sortOrder)
         .cursor[Chapter]()
-        .list(300)
+        .list(256)
 
   def studyIdsByRelayFideId(fideId: chess.FideId): Fu[List[StudyId]] =
     coll(_.distinctEasy[StudyId, List]("studyId", $doc("relay.fideIds" -> fideId)))
@@ -73,11 +79,10 @@ final class ChapterRepo(val coll: AsyncColl)(using Executor, akka.stream.Materia
       ids
         .mapWithIndex: (id, index) =>
           c.updateField($studyId(study.id) ++ $id(id), "order", index + 1)
-        .parallel
-        .void
+        .parallelVoid
 
-  def nextOrderByStudy(studyId: StudyId): Fu[Int] =
-    coll(_.primitiveOne[Int]($studyId(studyId), $sort.desc("order"), "order")).dmap { ~_ + 1 }
+  def nextOrderByStudy(studyId: StudyId): Fu[Chapter.Order] =
+    coll(_.primitiveOne[Chapter.Order]($studyId(studyId), $sort.desc("order"), "order")).dmap { ~_ + 1 }
 
   def setConceal(chapterId: StudyChapterId, conceal: chess.Ply) =
     coll(_.updateField($id(chapterId), "conceal", conceal)).void
@@ -86,7 +91,7 @@ final class ChapterRepo(val coll: AsyncColl)(using Executor, akka.stream.Materia
     coll(_.unsetField($id(chapterId), "conceal")).void
 
   def setRelayPath(chapterId: StudyChapterId, path: UciPath) =
-    coll(_.updateField($id(chapterId), "relay.path", path)).void
+    coll(_.updateField($id(chapterId) ++ $doc("relay.lastMoveAt".$exists(true)), "relay.path", path)).void
 
   def setTagsFor(chapter: Chapter) =
     coll(_.updateField($id(chapter.id), "tags", chapter.tags)).void
@@ -219,8 +224,34 @@ final class ChapterRepo(val coll: AsyncColl)(using Executor, akka.stream.Materia
         .cursor[Chapter.IdName]()
         .list(Study.maxChapters.value)
 
-  def tagsByStudyIds(studyIds: Iterable[StudyId]): Fu[List[Tags]] =
-    studyIds.nonEmpty.so(coll { _.primitive[Tags]("studyId".$in(studyIds), "tags") })
+  // ordered like studyIds, then tags with the chapter order field
+  def tagsByStudyIds(studyIds: Iterable[StudyId]): Fu[SeqMap[StudyId, SeqMap[StudyChapterId, Tags]]] =
+    studyIds.nonEmpty.so:
+      coll:
+        _.find($doc("studyId".$in(studyIds)), $doc("studyId" -> true, "tags" -> true).some)
+          .sort($sortOrder)
+          .cursor[Bdoc]()
+          .listAll()
+          .map: docs =>
+            for
+              doc       <- docs
+              chapterId <- doc.getAsOpt[StudyChapterId]("_id")
+              studyId   <- doc.getAsOpt[StudyId]("studyId")
+              tags      <- doc.getAsOpt[Tags]("tags")
+            yield (studyId, chapterId, tags)
+          .map:
+            _.groupBy(_._1).view
+              .mapValues:
+                _.view
+                  .map: (_, chapterId, tags) =>
+                    chapterId -> tags
+                  .to(SeqMap)
+              .toMap
+          .map: hash =>
+            studyIds.view
+              .map: id =>
+                id -> ~hash.get(id)
+              .to(SeqMap)
 
   def startServerEval(chapter: Chapter) =
     coll:

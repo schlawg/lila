@@ -2,9 +2,10 @@ import { h, Hooks, VNode } from 'snabbdom';
 import * as licon from 'common/licon';
 import { dataIcon } from 'common/snabbdom';
 import SwissCtrl from '../ctrl';
+import { setClockWidget } from 'common/clock';
 
 const startClock = (time: number): Hooks => ({
-  insert: (vnode: VNode) => site.clockWidget(vnode.elm as HTMLElement, { time }),
+  insert: (vnode: VNode) => setClockWidget(vnode.elm as HTMLElement, { time }),
 });
 
 const oneDayInSeconds = 60 * 60 * 24;
@@ -39,7 +40,7 @@ function ongoing(ctrl: SwissCtrl): VNode | undefined {
     : undefined;
 }
 
-export default function (ctrl: SwissCtrl): VNode {
+export default function(ctrl: SwissCtrl): VNode {
   const greatPlayer = ctrl.data.greatPlayer;
   return h('div.swiss__main__header', [
     h('i.img', dataIcon(licon.Trophy)),
@@ -47,9 +48,9 @@ export default function (ctrl: SwissCtrl): VNode {
       'h1',
       greatPlayer
         ? [
-            h('a', { attrs: { href: greatPlayer.url, target: '_blank', rel: 'noopener' } }, greatPlayer.name),
-            ' Tournament',
-          ]
+          h('a', { attrs: { href: greatPlayer.url, target: '_blank', rel: 'noopener' } }, greatPlayer.name),
+          ' Tournament',
+        ]
         : [ctrl.data.name],
     ),
     ctrl.data.status == 'finished' ? undefined : clock(ctrl) || ongoing(ctrl),

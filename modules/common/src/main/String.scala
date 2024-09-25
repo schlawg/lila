@@ -1,13 +1,10 @@
 package lila.common
 
 import play.api.libs.json.*
+import scalalib.StringUtils.{ escapeHtmlRaw, safeJsonString }
 import scalatags.Text.all.*
 
-import java.text.Normalizer
-
-import lila.common.RawHtml
 import lila.core.config.NetDomain
-import scalalib.StringUtils.{ escapeHtmlRaw, safeJsonString }
 import lila.core.data.SafeJsonStr
 
 object String:
@@ -19,6 +16,10 @@ object String:
 
   def decodeUriPath(input: String): Option[String] =
     try play.utils.UriEncoding.decodePath(input, "UTF-8").some
+    catch case _: play.utils.InvalidUriEncodingException => None
+
+  def decodeUriPathSegment(input: String): Option[String] =
+    try play.utils.UriEncoding.decodePathSegment(input, "UTF-8").some
     catch case _: play.utils.InvalidUriEncodingException => None
 
   def isShouting(text: String) =
@@ -36,7 +37,6 @@ object String:
 
   val atUsernameRegex    = RawHtml.atUsernameRegex
   val forumPostPathRegex = """(?:(?<= )|^)\b([\w-]+/[\w-]+)\b(?:(?= )|$)""".r
-  val safeClassNameRegex = """[ .#:\[\]\{\},>+~*;!'"\\]""".r // probably only need . here but be safe
 
   object html:
 
@@ -81,9 +81,6 @@ object String:
             .map: (k, v) =>
               s"${safeJsonString(k)}:${safeJsonValue(v)}"
             .mkString("{", ",", "}")
-
-    def safeClassName(str: String): String =
-      safeClassNameRegex.replaceAllIn(str, "-") // ui/site/src/asset.ts
 
   object charset:
     import akka.util.ByteString

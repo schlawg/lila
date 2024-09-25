@@ -2,25 +2,27 @@ package lila.mod
 package ui
 
 import play.api.data.Form
-
-import lila.ui.*
-import ScalatagsTemplate.{ *, given }
-import lila.report.{ Report, Reason }
-import lila.core.perm.Permission
-import lila.mod.ModActivity.{ Period, Who }
-import lila.core.perf.UserWithPerfs
 import play.api.libs.json.Json
 
-final class ModUi(helpers: Helpers)(
-    isChatPanic: () => Boolean
-):
+import lila.core.perf.UserWithPerfs
+import lila.core.perm.Permission
+import lila.mod.ModActivity.{ Period, Who }
+import lila.ui.*
+
+import ScalatagsTemplate.{ *, given }
+
+case class PendingCounts(streamers: Int, appeals: Int, titles: Int)
+
+final class ModUi(helpers: Helpers)(isChatPanic: () => Boolean):
   import helpers.{ *, given }
 
   def impersonate(user: User)(using Translate) =
     div(id := "impersonate")(
       div(cls := "meat")("You are impersonating ", userLink(user, withOnline = false)),
       div(cls := "actions")(
-        postForm(action := routes.Mod.impersonate("-"))(submitButton(cls := "button button-empty")("Quit"))
+        postForm(action := routes.Mod.impersonate("-"))(
+          submitButton(cls := "button button-empty")("Quit")
+        )
       )
     )
 
@@ -37,7 +39,7 @@ final class ModUi(helpers: Helpers)(
     )("GDPR erasure")
 
   def myLogs(logs: List[lila.mod.Modlog])(using Context) =
-    Page("My logs").cssTag("mod.misc"):
+    Page("My logs").css("mod.misc"):
       main(cls := "page-menu")(
         menu("log"),
         div(id := "modlog_table", cls := "page-menu__content box")(
@@ -69,7 +71,7 @@ final class ModUi(helpers: Helpers)(
   def permissions(u: User, permissions: List[(String, List[Permission])])(using ctx: Context, me: Me) =
     def findGranterPackage(perms: Set[Permission], perm: Permission): Option[Permission] =
       (!perms(perm)).so(perms.find(_.grants(perm)))
-    Page(s"${u.username} permissions").cssTag("mod.permission", "form3"):
+    Page(s"${u.username} permissions").css("mod.permission", "bits.form3"):
       main(cls := "mod-permissions page-small box box-pad")(
         boxTop(h1(userLink(u), " permissions")),
         standardFlash,
@@ -113,7 +115,7 @@ final class ModUi(helpers: Helpers)(
       )
 
   def chatPanic(state: Option[Instant])(using Context) =
-    Page("Chat Panic").cssTag("mod.misc"):
+    Page("Chat Panic").css("mod.misc"):
       main(cls := "page-menu")(
         menu("panic"),
         div(id := "chat-panic", cls := "page-menu__content box box-pad")(
@@ -155,7 +157,7 @@ final class ModUi(helpers: Helpers)(
       )
 
   def presets(group: String, form: Form[?])(using Context) =
-    Page(s"$group presets").cssTag("mod.misc", "form3"):
+    Page(s"$group presets").css("mod.misc", "bits.form3"):
       main(cls := "page-menu")(
         menu("presets"),
         div(cls := "page-menu__content box box-pad mod-presets")(
@@ -186,18 +188,12 @@ final class ModUi(helpers: Helpers)(
         )
       )
 
-  val emailConfirmJs = """$('.mod-confirm form input').on('paste', function() {
-setTimeout(function() { $(this).parent().submit(); }.bind(this), 50);
-}).each(function() {
-this.setSelectionRange(this.value.length, this.value.length);
-});"""
-
   def emailConfirm(query: String, user: Option[UserWithPerfs], email: Option[EmailAddress])(using
       ctx: Context
   ) =
     Page("Email confirmation")
-      .cssTag("mod.misc")
-      .js(embedJsUnsafeLoadThen(emailConfirmJs)):
+      .css("mod.misc")
+      .js(Esm("mod.emailConfirmation")):
         main(cls := "page-menu")(
           menu("email"),
           div(cls := "mod-confirm page-menu__content box box-pad")(
@@ -248,7 +244,7 @@ this.setSelectionRange(this.value.length, this.value.length);
 
   def queueStats(p: ModQueueStats.Result)(using Context) =
     Page("Queues stats")
-      .cssTag("mod.activity")
+      .css("mod.activity")
       .js(PageModule("mod.activity", Json.obj("op" -> "queues", "data" -> p.json))):
         main(cls := "page-menu")(
           menu("queues"),
@@ -297,7 +293,7 @@ this.setSelectionRange(this.value.length, this.value.length);
       }
     )
     Page("Moderation activity")
-      .cssTag("mod.activity")
+      .css("mod.activity")
       .js(PageModule("mod.activity", Json.obj("op" -> "activity", "data" -> ModActivity.json(p)))):
         main(cls := "page-menu")(
           menu("activity"),

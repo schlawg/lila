@@ -28,15 +28,16 @@ import {
 import division from './division';
 import { AcplChart, AnalyseData, Player } from './interface';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
+import { pubsub } from 'common/pubsub';
 
 resizePolyfill();
 Chart.register(LineController, LinearScale, PointElement, LineElement, Tooltip, Filler, ChartDataLabels);
-export default async function (
+export default async function(
   el: HTMLCanvasElement,
   data: AnalyseData,
   mainline: Tree.Node[],
   trans: Trans,
-) {
+): Promise<AcplChart> {
   const possibleChart = maybeChart(el);
   if (possibleChart) return possibleChart as AcplChart;
   const blurBackgroundColorWhite = 'white';
@@ -170,7 +171,7 @@ export default async function (
       },
       onClick(_event, elements, _chart) {
         const data = elements[elements.findIndex(element => element.datasetIndex == 0)];
-        if (data) site.pubsub.emit('analysis.chart.click', data.index);
+        if (data) pubsub.emit('analysis.chart.click', data.index);
       },
     },
   };
@@ -184,8 +185,8 @@ export default async function (
     if (!isPartial(data)) christmasTree(acplChart, mainline, adviceHoverColors);
     acplChart.update('none');
   };
-  site.pubsub.on('ply', acplChart.selectPly);
-  site.pubsub.emit('ply.trigger');
+  pubsub.on('ply', acplChart.selectPly);
+  pubsub.emit('ply.trigger');
   if (!isPartial(data)) christmasTree(acplChart, mainline, adviceHoverColors);
   return acplChart;
 }
@@ -201,7 +202,7 @@ const glyphProperties = (node: Tree.Node): { advice?: Advice; color?: string } =
 const toBlurArray = (player: Player) => player.blurs?.bits?.split('') ?? [];
 
 function christmasTree(chart: AcplChart, mainline: Tree.Node[], hoverColors: string[]) {
-  $('div.advice-summary').on('mouseenter', 'div.symbol', function (this: HTMLElement) {
+  $('div.advice-summary').on('mouseenter', 'div.symbol', function(this: HTMLElement) {
     const symbol = this.getAttribute('data-symbol');
     const playerColorBit = this.getAttribute('data-color') == 'white' ? 1 : 0;
     const acplDataset = chart.data.datasets[0];
@@ -217,7 +218,7 @@ function christmasTree(chart: AcplChart, mainline: Tree.Node[], hoverColors: str
       chart.update('none');
     }
   });
-  $('div.advice-summary').on('mouseleave', 'div.symbol', function (this: HTMLElement) {
+  $('div.advice-summary').on('mouseleave', 'div.symbol', function(this: HTMLElement) {
     chart.setActiveElements([]);
     chart.data.datasets[0].pointHoverBackgroundColor = orangeAccent;
     chart.data.datasets[0].pointBorderColor = orangeAccent;

@@ -1,7 +1,8 @@
 import { parseFen } from 'chessops/fen';
 import { defined, prop, Prop, toggle } from 'common';
+import { snabDialog } from 'common/dialog';
 import * as licon from 'common/licon';
-import { bind, bindSubmit, onInsert, looseH as h } from 'common/snabbdom';
+import { bind, bindSubmit, onInsert, looseH as h, dataIcon } from 'common/snabbdom';
 import { storedProp } from 'common/storage';
 import * as xhr from 'common/xhr';
 import { VNode } from 'snabbdom';
@@ -13,6 +14,8 @@ import { ChapterData, ChapterMode, ChapterTab, Orientation, StudyTour } from './
 import { importPgn, variants as xhrVariants } from './studyXhr';
 import { StudyChapters } from './studyChapters';
 import { FEN } from 'chessground/types';
+import type { LichessEditor } from 'editor';
+import { pubsub } from 'common/pubsub';
 
 export const modeChoices = [
   ['normal', 'normalAnalysis'],
@@ -45,11 +48,11 @@ export class StudyChapterNewForm {
     readonly setTab: () => void,
     readonly root: AnalyseCtrl,
   ) {
-    site.pubsub.on('analyse.close-all', () => this.isOpen(false));
+    pubsub.on('analyse.close-all', () => this.isOpen(false));
   }
 
   open = () => {
-    site.pubsub.emit('analyse.close-all');
+    pubsub.emit('analyse.close-all');
     this.isOpen(true);
     this.loadVariants();
     this.initial(false);
@@ -77,10 +80,10 @@ export class StudyChapterNewForm {
     this.isOpen(false);
     this.setTab();
   };
-  startTour = async () => {
+  startTour = async() => {
     const [tour] = await Promise.all([
       site.asset.loadEsm<StudyTour>('analyse.study.tour'),
-      site.asset.loadCssPath('shepherd'),
+      site.asset.loadCssPath('bits.shepherd'),
     ]);
 
     tour.chapter(tab => {
@@ -120,13 +123,13 @@ export function view(ctrl: StudyChapterNewForm): VNode {
   const mode = currentChapter.practice
     ? 'practice'
     : defined(currentChapter.conceal)
-    ? 'conceal'
-    : currentChapter.gamebook
-    ? 'gamebook'
-    : 'normal';
+      ? 'conceal'
+      : currentChapter.gamebook
+        ? 'gamebook'
+        : 'normal';
   const noarg = trans.noarg;
 
-  return site.dialog.snab({
+  return snabDialog({
     class: 'chapter-new',
     onClose() {
       ctrl.isOpen(false);
@@ -168,8 +171,10 @@ export function view(ctrl: StudyChapterNewForm): VNode {
                   el.value = trans('chapterX', ctrl.initial() ? 1 : ctrl.chapters.size() + 1);
                   el.onchange = () => ctrl.isDefaultName(false);
                   el.select();
-                  el.focus();
                 }
+                el.addEventListener('focus', () => el.select());
+                // set initial modal focus
+                setTimeout(() => el.focus());
               }),
             }),
           ]),
@@ -237,14 +242,28 @@ export function view(ctrl: StudyChapterNewForm): VNode {
           activeTab === 'fen' &&
             h('div.form-group', [
               h('input#chapter-fen.form-control', {
-                attrs: { value: ctrl.root.node.fen, placeholder: noarg('loadAPositionFromFen') },
+                attrs: {
+                  value: ctrl.root.node.fen,
+                  placeholder: noarg('loadAPositionFromFen'),
+                  spellcheck: 'false',
+                },
                 hook: onInsert((el: HTMLInputElement) => {
                   el.addEventListener('change', () => el.reportValidity());
-                  el.addEventListener('input', _ =>
-                    el.setCustomValidity(parseFen(el.value.trim()).isOk ? '' : 'Invalid FEN'),
-                  );
+                  el.addEventListener('input', _ => {
+                    if (parseFen(el.value.trim()).isOk) {
+                      el.setCustomValidity('');
+                      ctrl.root.node.fen = el.value;
+                    } else el.setCustomValidity('Invalid FEN');
+                  });
                 }),
               }),
+              h(
+                'a.preview-in-editor',
+                {
+                  hook: bind('click', () => ctrl.tab('edit'), ctrl.root.redraw),
+                },
+                [h('i.text', { attrs: dataIcon(licon.Eye) }), noarg('editor')],
+              ),
             ]),
           activeTab === 'pgn' &&
             h('div.form-group', [
@@ -256,11 +275,12 @@ export function view(ctrl: StudyChapterNewForm): VNode {
               h(
                 'button.button.button-empty.import-from__chapter',
                 {
+                  attrs: { type: 'button' },
                   hook: bind(
                     'click',
                     () => {
                       xhr
-                        .text(`/study/${study.data.id}/${currentChapter.id}.pgn`)
+                        .text(`/study/${study.data.id}/${study.vm.chapterId}.pgn`)
                         .then(pgnData => $('#chapter-pgn').val(pgnData));
                       return false;
                     },
@@ -277,7 +297,7 @@ export function view(ctrl: StudyChapterNewForm): VNode {
                     const file = (e.target as HTMLInputElement).files![0];
                     if (!file) return;
                     const reader = new FileReader();
-                    reader.onload = function () {
+                    reader.onload = function() {
                       (document.getElementById('chapter-pgn') as HTMLTextAreaElement).value =
                         reader.result as string;
                     };
@@ -301,9 +321,8 @@ export function view(ctrl: StudyChapterNewForm): VNode {
               h(
                 'select#chapter-orientation.form-control',
                 {
-                  hook: bind(
-                    'change',
-                    e => ctrl.editor?.setOrientation((e.target as HTMLInputElement).value as Color),
+                  hook: bind('change', e =>
+                    ctrl.editor?.setOrientation((e.target as HTMLInputElement).value as Color),
                   ),
                 },
                 [...(activeTab === 'pgn' ? ['automatic'] : []), 'white', 'black'].map(c =>

@@ -1,7 +1,8 @@
 package lila.ui
 
-import lila.ui.ScalatagsTemplate.{ *, given }
+import lila.core.id.ForumCategId
 import lila.core.team.LightTeam
+import lila.ui.ScalatagsTemplate.{ *, given }
 
 trait TeamHelper:
   self: AssetHelper =>
@@ -30,4 +31,4 @@ trait TeamHelper:
   def teamFlair(flair: Flair): Tag =
     img(cls := "uflair", src := flairSrc(flair))
 
-  def teamForumUrl(id: TeamId) = routes.ForumCateg.show("team-" + id)
+  def teamForumUrl(id: TeamId) = routes.ForumCateg.show(ForumCategId("team-" + id))

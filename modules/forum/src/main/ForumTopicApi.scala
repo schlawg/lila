@@ -1,16 +1,16 @@
 package lila.forum
 
+import scalalib.paginator.*
+
 import lila.common.Bus
 import lila.common.String.noShouting
 import lila.core.config.NetDomain
-import scalalib.paginator.*
-import lila.db.dsl.{ *, given }
-import lila.core.shutup.{ ShutupApi, PublicSource }
-import lila.core.timeline.{ ForumPost as TimelinePost, Propagate }
 import lila.core.forum.BusForum.CreatePost
-import lila.memo.CacheApi
-import lila.mon.forum.topic
 import lila.core.perm.Granter as MasterGranter
+import lila.core.shutup.{ PublicSource, ShutupApi }
+import lila.core.timeline.{ ForumPost as TimelinePost, Propagate }
+import lila.db.dsl.{ *, given }
+import lila.memo.CacheApi
 
 final private class ForumTopicApi(
     postRepo: ForumPostRepo,
@@ -40,11 +40,7 @@ final private class ForumTopicApi(
       .flatMapz: topic =>
         show(categId, slug, topic.lastPage(config.postMaxPerPage))
 
-  def show(
-      categId: ForumCategId,
-      slug: String,
-      page: Int
-  )(using
+  def show(categId: ForumCategId, slug: String, page: Int)(using
       NetDomain
   )(using me: Option[Me]): Fu[Option[(ForumCateg, ForumTopic, Paginator[ForumPost.WithFrag])]] =
     for
@@ -89,7 +85,7 @@ final private class ForumTopicApi(
     topicRepo.nextSlug(categ, data.name).zip(detectLanguage(data.post.text)).flatMap { (slug, lang) =>
       val frozen = askEmbed.freeze(spam.replace(data.post.text), me)
       val topic = ForumTopic.make(
-        categId = categ.slug,
+        categId = categ.id,
         slug = slug,
         name = noShouting(data.name),
         userId = me,
@@ -109,7 +105,6 @@ final private class ForumTopicApi(
         case Some(dup) => fuccess(dup)
         case None =>
           for
-            _ <- postRepo.coll.insert.one(post)
             _ <- topicRepo.coll.insert.one(topic.withPost(post))
             _ <- categRepo.coll.update.one($id(categ.id), categ.withPost(topic, post))
             _ <- askEmbed.commit(frozen, s"/forum/redirect/post/${post.id}".some)
@@ -119,11 +114,10 @@ final private class ForumTopicApi(
             if post.isTeam then shutupApi.teamForumMessage(me, text)
             else shutupApi.publicText(me, text, PublicSource.Forum(post.id))
             if !post.troll && !categ.quiet then
-              lila.common.Bus.named.timeline(
+              lila.common.Bus.pub:
                 Propagate(TimelinePost(me, topic.id, topic.name, post.id))
                   .toFollowersOf(me)
                   .withTeam(categ.team)
-              )
             lila.mon.forum.post.create.increment()
             mentionNotifier.notifyMentionedUsers(post, topic)
             Bus.pub(CreatePost(post.mini))
@@ -135,12 +129,12 @@ final private class ForumTopicApi(
       slug: String,
       name: String,
       url: String,
-      ublogId: String,
+      ublogId: UblogPostId,
       authorId: UserId
   ): Funit =
     categRepo.byId(ForumCateg.ublogId).flatMapz { categ =>
       val topic = ForumTopic.make(
-        categId = categ.slug,
+        categId = categ.id,
         slug = slug,
         name = name,
         userId = authorId,
@@ -159,14 +153,14 @@ final private class ForumTopicApi(
     }
 
   private def makeNewTopic(categ: ForumCateg, topic: ForumTopic, post: ForumPost) = for
-    _ <- postRepo.coll.insert.one(post)
     _ <- topicRepo.coll.insert.one(topic.withPost(post))
     _ <- categRepo.coll.update.one($id(categ.id), categ.withPost(topic, post))
+    _ <- postRepo.coll.insert.one(post)
   yield Bus.pub(CreatePost(post.mini))
 
   def getSticky(categ: ForumCateg, forUser: Option[User]): Fu[List[TopicView]] =
     topicRepo.stickyByCateg(categ).flatMap { topics =>
-      topics.traverse: topic =>
+      topics.sequentially: topic =>
         postRepo.coll.byId[ForumPost](topic.lastPostId(forUser)).map { post =>
           TopicView(categ, topic, post, topic.lastPage(config.postMaxPerPage), forUser)
         }
@@ -223,3 +217,12 @@ final private class ForumTopicApi(
               _ <- categRepo.coll.update
                 .one($id(cat.id), cat.withoutTopic(topic, lastPostId, lastPostIdTroll))
             yield ()
+
+  def relocate(fromTopic: ForumTopic, to: ForumCategId)(using Me): Fu[ForumTopic] =
+    val topic = fromTopic.copy(
+      slug = s"${fromTopic.slug}-${scalalib.ThreadLocalRandom.nextString(4)}"
+    )
+    for
+      _ <- topicRepo.coll.update.one($id(topic.id), $set("categId" -> to, "slug" -> topic.slug))
+      _ <- postRepo.coll.update.one($doc("topicId" -> topic.id), $set("categId" -> to))
+    yield topic

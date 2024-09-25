@@ -10,11 +10,12 @@ import playerInfo from './playerInfo';
 import teamInfo from './teamInfo';
 import { numberRow } from './util';
 import { MaybeVNodes } from 'common/snabbdom';
+import { once } from 'common/storage';
 
 function confetti(data: TournamentData): VNode | undefined {
-  if (data.me && data.isRecentlyFinished && site.once('tournament.end.canvas.' + data.id))
+  if (data.me && data.isRecentlyFinished && once('tournament.end.canvas.' + data.id))
     return h('canvas#confetti', {
-      hook: { insert: _ => site.asset.loadIife('javascripts/confetti.js') },
+      hook: { insert: _ => site.asset.loadEsm('bits.confetti') },
     });
   return undefined;
 }
@@ -43,13 +44,13 @@ function stats(ctrl: TournamentController): VNode | undefined {
     h('div.tour__stats__links.force-ltr', [
       ...(data.teamBattle
         ? [
-            h(
-              'a',
-              { attrs: { href: `/tournament/${data.id}/teams` } },
-              trans('viewAllXTeams', Object.keys(data.teamBattle.teams).length),
-            ),
-            h('br'),
-          ]
+          h(
+            'a',
+            { attrs: { href: `/tournament/${data.id}/teams` } },
+            trans('viewAllXTeams', Object.keys(data.teamBattle.teams).length),
+          ),
+          h('br'),
+        ]
         : []),
       h(
         'a.text',

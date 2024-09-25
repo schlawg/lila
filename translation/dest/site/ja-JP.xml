@@ -69,6 +69,8 @@
   <string name="promoteVariation">変化を主手順にする</string>
   <string name="makeMainLine">主手順にする</string>
   <string name="deleteFromHere">これ以降を削除</string>
+  <string name="collapseVariations">変化手順をかくす</string>
+  <string name="expandVariations">変化手順を表示する</string>
   <string name="forceVariation">変化として表示</string>
   <string name="copyVariationPgn">手順の PGN をコピー</string>
   <string name="move">手</string>
@@ -169,6 +171,7 @@
   <string name="latestForumPosts">最新のフォーラム記事</string>
   <string name="players">プレイヤー</string>
   <string name="friends">友達</string>
+  <string name="otherPlayers">その他のプレイヤー</string>
   <string name="discussions">トピック</string>
   <string name="today">今日</string>
   <string name="yesterday">昨日</string>
@@ -433,9 +436,6 @@
   <string name="safeTournamentName">トーナメントの名前は無難なものにしてください。</string>
   <string name="inappropriateNameWarning">少しでも不適切な名前の場合、あなたのアカウントを停止することがあります。</string>
   <string name="emptyTournamentName">空白のままにしておくと、自動でランダムな有名選手の名前がつきます。</string>
-  <string name="recommendNotTouching">ここは触らないことを推奨します。</string>
-  <string name="fewerPlayers">参加条件を決めると、当然参加者は少なくなります。</string>
-  <string name="showAdvancedSettings">「高度な設定」を表示</string>
   <string name="makePrivateTournament">トーナメントを「非公開」にすると参加にパスワードが必要になります</string>
   <string name="join">参加する</string>
   <string name="withdraw">参加をやめる</string>
@@ -475,8 +475,7 @@
   <string name="ifNoneLeaveEmpty">ない場合は空白で</string>
   <string name="profile">プロフィール</string>
   <string name="editProfile">プロフィールの編集</string>
-  <string name="firstName">名</string>
-  <string name="lastName">姓</string>
+  <string name="realName">実名</string>
   <string name="setFlair">フレアを設定</string>
   <string name="flair">フレア</string>
   <string name="youCanHideFlair">サイト全体でフレアを非表示にする設定があります。</string>
@@ -506,6 +505,8 @@
   <string name="descPrivateHelp">チームメンバーだけに見える文章です。設定すると、チームメンバーには一般向けの説明文に代えて表示されます。</string>
   <string name="no">いいえ</string>
   <string name="yes">はい</string>
+  <string name="website">ウェブサイト</string>
+  <string name="mobile">モバイル</string>
   <string name="help">ヘルプ：</string>
   <string name="createANewTopic">新しいトピックを作成</string>
   <string name="topics">トピック</string>
@@ -522,11 +523,11 @@
   <string name="reason">理由</string>
   <string name="whatIsIheMatter">どうされましたか？</string>
   <string name="cheat">ソフト使用</string>
-  <string name="insult">侮辱</string>
   <string name="troll">荒らし</string>
-  <string name="ratingManipulation">レーティング不正操作</string>
   <string name="other">その他</string>
-  <string name="reportDescriptionHelp">問題のゲームへのリンクを貼って、相手ユーザーの問題点を説明してください。ただ「イカサマだ」と言うのではなく、なぜそう思うか理由を書いてください。英語で書くと対応が早くできます。</string>
+  <string name="reportCheatBoostHelp">ゲームへのリンクを張って、このユーザーの行動のどこが問題かを説明してください。ただ「チート」と言うのではなく、あなたがなぜそう思ったのか教えてください。</string>
+  <string name="reportUsernameHelp">このユーザー名のどこが攻撃的かを説明してください。ただ「攻撃的」「不適切」と言うのではなく、あなたがなぜそう思ったのか教えてください。中でも綴りの変更、英語以外の言語、俗語、歴史・文化的要因に関係した場合は特に説明が必要です。</string>
+  <string name="reportProcessedFasterInEnglish">英語で書いていただくと通報への対応が早くなります。</string>
   <string name="error.provideOneCheatedGameLink">不正のあった対局 1 局以上へのリンクを添えてください。</string>
   <string name="by">%s によって</string>
   <string name="importedByX">%s がインポート</string>
@@ -559,6 +560,7 @@
   <string name="slow">遅い</string>
   <string name="insideTheBoard">盤の内</string>
   <string name="outsideTheBoard">盤の外</string>
+  <string name="allSquaresOfTheBoard">すべてのマスに</string>
   <string name="onSlowGames">長時間の対局のみ</string>
   <string name="always">常に有効</string>
   <string name="never">無効</string>
@@ -752,9 +754,12 @@
   <string name="transparent">透明</string>
   <string name="deviceTheme">デバイスの設定に従う</string>
   <string name="backgroundImageUrl">背景画像URL:</string>
-  <string name="boardGeometry">盤の表示形式</string>
-  <string name="boardTheme">盤のデザイン</string>
-  <string name="boardSize">盤のサイズ</string>
+  <string name="board">盤のデザイン</string>
+  <string name="size">サイズ</string>
+  <string name="opacity">透明度</string>
+  <string name="brightness">明るさ</string>
+  <string name="hue">色</string>
+  <string name="boardReset">色をデフォルトに戻す</string>
   <string name="pieceSet">駒のデザイン</string>
   <string name="embedInYourWebsite">自分のウェブサイトに埋め込む</string>
   <string name="usernameAlreadyUsed">このユーザー名は既に使用されています。別の名前にしてください。</string>

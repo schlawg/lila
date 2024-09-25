@@ -1,13 +1,14 @@
 package lila.simul
 package ui
 
-import play.api.data.{ Form, Field }
+import play.api.data.{ Field, Form }
 
-import lila.ui.*
-import ScalatagsTemplate.{ *, given }
-import lila.core.team.LightTeam
 import lila.core.i18n.Translate
-import lila.gathering.ConditionForm
+import lila.core.team.LightTeam
+import lila.gathering.ui.GatheringFormUi
+import lila.ui.*
+
+import ScalatagsTemplate.{ *, given }
 
 final class SimulFormUi(helpers: Helpers)(
     setupCheckboxes: (Field, Seq[(Any, String, Option[String])], Set[String]) => Frag,
@@ -17,8 +18,8 @@ final class SimulFormUi(helpers: Helpers)(
 
   def create(form: Form[SimulForm.Setup], teams: List[LightTeam])(using Context) =
     Page(trans.site.hostANewSimul.txt())
-      .cssTag("simul.form")
-      .js(EsmInit("bits.flatpickr")):
+      .css("simul.form")
+      .js(Esm("bits.flatpickr")):
         main(cls := "box box-pad page-small simul-form")(
           h1(cls := "box__top")(trans.site.hostANewSimul()),
           postForm(cls := "form3", action := routes.Simul.create)(
@@ -36,8 +37,8 @@ final class SimulFormUi(helpers: Helpers)(
 
   def edit(form: Form[SimulForm.Setup], teams: List[LightTeam], simul: Simul)(using Context) =
     Page(s"Edit ${simul.fullName}")
-      .cssTag("simul.form")
-      .js(EsmInit("bits.flatpickr")):
+      .css("simul.form")
+      .js(Esm("bits.flatpickr")):
         main(cls := "box box-pad page-small simul-form")(
           h1(cls := "box__top")("Edit ", simul.fullName),
           postForm(cls := "form3", action := routes.Simul.update(simul.id))(
@@ -53,6 +54,8 @@ final class SimulFormUi(helpers: Helpers)(
             )
           )
         )
+
+  private val gatheringFormUi = GatheringFormUi(helpers)
 
   private def formContent(form: Form[SimulForm.Setup], teams: List[LightTeam], simul: Option[Simul])(using
       ctx: Context
@@ -136,22 +139,21 @@ final class SimulFormUi(helpers: Helpers)(
             form3.group(form("conditions.team.teamId"), trans.site.onlyMembersOfTeam(), half = true)(
               form3.select(_, List(("", trans.site.noRestriction.txt())) ::: teams.map(_.pair))
             )
-          )
+          ),
+          gatheringFormUi.accountAge(form("conditions.accountAge"))
         ),
         form3.split(
-          form3.group(form("conditions.minRating.rating"), trans.site.minimumRating(), half = true)(
-            form3.select(_, ConditionForm.minRatingChoices)
-          ),
-          form3.group(form("conditions.maxRating.rating"), trans.site.maximumWeeklyRating(), half = true)(
-            form3.select(_, ConditionForm.maxRatingChoices)
-          )
+          gatheringFormUi.minRating(form("conditions.minRating.rating")),
+          gatheringFormUi.maxRating(form("conditions.maxRating.rating"))
         )
       ),
-      form3.group(
-        form("estimatedStartAt"),
-        trans.site.estimatedStart(),
-        half = true
-      )(form3.flatpickr(_)),
+      form3.split(
+        form3.group(
+          form("estimatedStartAt"),
+          trans.site.estimatedStart(),
+          half = true
+        )(form3.flatpickr(_))
+      ),
       form3.group(
         form("text"),
         trans.site.simulDescription(),

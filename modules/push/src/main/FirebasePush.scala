@@ -5,9 +5,9 @@ import play.api.ConfigLoader
 import play.api.libs.json.*
 import play.api.libs.ws.JsonBodyWritables.*
 import play.api.libs.ws.StandaloneWSClient
+import scalalib.cache.FrequencyThreshold
 
 import lila.common.Chronometer
-import scalalib.cache.FrequencyThreshold
 import lila.core.data.LazyFu
 
 final private class FirebasePush(
@@ -33,7 +33,7 @@ final private class FirebasePush(
     deviceApi
       .findLastManyByUserId("firebase", 3)(userId)
       .flatMap:
-        _.traverse_ { device =>
+        _.sequentiallyVoid { device =>
           val config = if device.isMobile then configs.mobile else configs.lichobile
           config.googleCredentials.so: creds =>
             for
@@ -83,7 +83,7 @@ final private class FirebasePush(
                   case Some(PushApi.Data.FirebaseMod.NotifOnly(mod)) => mod(data.payload.userData)
                   case _ =>
                     data.payload.userData ++ (data.iosBadge.map: number =>
-                      "iosBadge" -> number.toString),
+                      "iosBadge" -> number.toString)
             )
             .add:
               "notification" -> data.firebaseMod.match

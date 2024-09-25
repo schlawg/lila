@@ -1,15 +1,12 @@
 package lila.lobby
 
 import com.softwaremill.macwire.*
-import play.api.Configuration
 
 import lila.core.config.*
 import lila.core.pool.IsClockCompatible
-import scalalib.cache.ExpireSetMemo
 
 @Module
 final class Env(
-    appConfig: Configuration,
     db: lila.db.Db,
     onStart: lila.core.game.OnStart,
     relationApi: lila.core.relation.RelationApi,
@@ -21,7 +18,14 @@ final class Env(
     poolApi: lila.core.pool.PoolApi,
     cacheApi: lila.memo.CacheApi,
     socketKit: lila.core.socket.SocketKit
-)(using Executor, akka.actor.ActorSystem, Scheduler, lila.core.game.IdGenerator, IsClockCompatible):
+)(using
+    Executor,
+    akka.actor.ActorSystem,
+    Scheduler,
+    lila.core.game.IdGenerator,
+    IsClockCompatible,
+    lila.core.config.RateLimit
+):
 
   private lazy val seekApiConfig = new SeekApi.Config(
     coll = db(CollName("seek")),
@@ -29,8 +33,6 @@ final class Env(
     maxPerPage = MaxPerPage(13),
     maxPerUser = Max(5)
   )
-
-  private val fixedColorLobbyCache: ExpireSetMemo[GameId] = ExpireSetMemo[GameId](2 hours)
 
   lazy val seekApi = wire[SeekApi]
 
@@ -42,11 +44,9 @@ final class Env(
   ): () =>
     wire[LobbySyncActor]
 
-  private lazy val abortListener = wire[AbortListener]
+  // eager initialization for Bus subscription
+  private val abortListener = wire[AbortListener]
 
   private lazy val biter = wire[Biter]
 
   val socket = wire[LobbySocket]
-
-  lila.common.Bus.subscribeFun("abortGame"):
-    case lila.core.game.AbortedBy(pov) => abortListener(pov)

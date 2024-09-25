@@ -7,7 +7,7 @@ interface Opts {
   cookie: Cookie;
 }
 
-export const redirect = async (opts: string | Opts, beep?: boolean) => {
+export const redirect = async(opts: string | Opts, beep?: boolean) => {
   try {
     if (beep) await promiseTimeout(site.sound.play('genericNotify'), 1000);
   } catch (e) {
@@ -40,7 +40,7 @@ export const reload = (err?: any) => {
   if (err) console.warn(err);
   if (redirectInProgress) return;
   unload.expected = true;
-  site.socket.disconnect();
+  site.socket.destroy();
   if (location.hash) location.reload();
   else location.assign(location.href);
 };

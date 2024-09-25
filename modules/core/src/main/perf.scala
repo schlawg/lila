@@ -1,14 +1,11 @@
 package lila.core
 
-import scalalib.Render
-import _root_.chess.{ variant as ChessVariant }
 import _root_.chess.variant.Variant
-import _root_.chess.Speed
+import _root_.chess.{ Speed, variant as ChessVariant }
 
-import lila.core.userId.UserId
-import lila.core.rating.data.{ IntRating, IntRatingDiff }
 import lila.core.rating.Glicko
-import lila.core.userId.UserIdOf
+import lila.core.rating.data.{ IntRating, IntRatingDiff }
+import lila.core.userId.{ UserId, UserIdOf }
 
 object perf:
 
@@ -30,7 +27,7 @@ object perf:
     val racingKings: PerfKey    = "racingKings"
     val crazyhouse: PerfKey     = "crazyhouse"
     val puzzle: PerfKey         = "puzzle"
-    val all: Set[PerfKey] = Set(
+    val list: List[PerfKey] = List(
       bullet,
       blitz,
       rapid,
@@ -48,6 +45,7 @@ object perf:
       crazyhouse,
       puzzle
     )
+    val all: Set[PerfKey] = list.toSet
     def keyIdMap: Map[PerfKey, PerfId] = Map(
       ultraBullet    -> 0,
       bullet         -> 1,
@@ -71,11 +69,11 @@ object perf:
       def value: String = key
       def id: PerfId    = keyIdMap(key)
 
-    given Render[PerfKey] = _.value
+    given Show[PerfKey]                = _.value
+    given SameRuntime[PerfKey, String] = _.value
 
     def apply(key: String): Option[PerfKey]            = Option.when(all.contains(key))(key)
     def apply(variant: Variant, speed: Speed): PerfKey = byVariant(variant) | standardBySpeed(speed)
-    def read(key: PerfKeyStr): Option[PerfKey]         = apply(key.value)
 
     def keyToId(key: PerfKey): PerfId = keyIdMap(key)
 
@@ -98,9 +96,6 @@ object perf:
       case Speed.Classical      => classical
       case Speed.Correspondence => correspondence
       case Speed.UltraBullet    => ultraBullet
-
-  opaque type PerfKeyStr = String
-  object PerfKeyStr extends OpaqueString[PerfKeyStr]
 
   opaque type PerfId = Int
   object PerfId extends OpaqueInt[PerfId]

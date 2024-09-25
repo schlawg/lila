@@ -1,7 +1,9 @@
 import * as control from './control';
 import AnalyseCtrl from './ctrl';
 import * as xhr from 'common/xhr';
+import { snabDialog } from 'common/dialog';
 import { VNode } from 'snabbdom';
+import { pubsub } from 'common/pubsub';
 
 export const bind = (ctrl: AnalyseCtrl) => {
   let shiftAlone = 0;
@@ -68,7 +70,7 @@ export const bind = (ctrl: AnalyseCtrl) => {
     .bind('f', ctrl.flip)
     .bind('?', () => {
       ctrl.keyboardHelp = !ctrl.keyboardHelp;
-      if (ctrl.keyboardHelp) site.pubsub.emit('analyse.close-all');
+      if (ctrl.keyboardHelp) pubsub.emit('analyse.close-all');
       ctrl.redraw();
     })
     .bind('l', ctrl.toggleCeval)
@@ -92,7 +94,7 @@ export const bind = (ctrl: AnalyseCtrl) => {
 
   const keyToMouseEvent = (key: string, eventName: string, selector: string) =>
     kbd.bind(key, () =>
-      $(selector).each(function (this: HTMLElement) {
+      $(selector).each(function(this: HTMLElement) {
         this.dispatchEvent(new MouseEvent(eventName));
       }),
     );
@@ -136,7 +138,7 @@ export const bind = (ctrl: AnalyseCtrl) => {
 };
 
 export function view(ctrl: AnalyseCtrl): VNode {
-  return site.dialog.snab({
+  return snabDialog({
     class: 'help.keyboard-help',
     htmlUrl: xhr.url('/analysis/help', { study: !!ctrl.study }),
     onClose() {

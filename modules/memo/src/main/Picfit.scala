@@ -1,18 +1,18 @@
 package lila.memo
 
-import reactivemongo.api.bson.Macros.Annotations.Key
-import reactivemongo.api.bson.{ BSONDocumentHandler, Macros }
 import akka.stream.scaladsl.{ FileIO, Source }
 import akka.util.ByteString
 import com.github.blemale.scaffeine.LoadingCache
-import play.api.libs.ws.StandaloneWSClient
 import play.api.libs.ws.DefaultBodyReadables.*
+import play.api.libs.ws.StandaloneWSClient
 import play.api.mvc.MultipartFormData
+import reactivemongo.api.bson.Macros.Annotations.Key
+import reactivemongo.api.bson.{ BSONDocumentHandler, Macros }
 import scalalib.ThreadLocalRandom
 
-import lila.db.dsl.{ *, given }
-import lila.core.net.IpAddress
 import lila.core.id.ImageId
+import lila.core.net.IpAddress
+import lila.db.dsl.{ *, given }
 
 case class PicfitImage(
     @Key("_id") id: ImageId,
@@ -30,7 +30,8 @@ object PicfitImage:
   given BSONDocumentHandler[PicfitImage] = Macros.handler
 
 final class PicfitApi(coll: Coll, val url: PicfitUrl, ws: StandaloneWSClient, config: PicfitConfig)(using
-    Executor
+    Executor,
+    lila.core.config.RateLimit
 ):
 
   import PicfitApi.*
@@ -66,12 +67,10 @@ final class PicfitApi(coll: Coll, val url: PicfitUrl, ws: StandaloneWSClient, co
               coll.insert.one(image).inject(image)
 
   def deleteByIdsAndUser(ids: Seq[ImageId], user: UserId): Funit =
-    ids.nonEmpty.so(ids.traverse_ { id =>
+    ids.toList.sequentiallyVoid: id =>
       coll
         .findAndRemove($id(id) ++ $doc("user" -> user))
         .flatMap { _.result[PicfitImage].so(picfitServer.delete) }
-        .void
-    })
 
   def deleteByRel(rel: String): Funit =
     coll
@@ -163,6 +162,10 @@ final class PicfitUrl(config: PicfitConfig)(using Executor) extends lila.core.mi
       width: Int,
       height: Int
   ): String = display(id, "thumbnail")(width, height)
+
+  def raw(id: ImageId): String =
+    val queryString = s"op=noop&path=$id"
+    s"${config.endpointGet}/display?${signQueryString(queryString)}"
 
   private def display(id: ImageId, operation: String)(
       width: Int,

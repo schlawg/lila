@@ -202,6 +202,10 @@ db.relay.createIndex({ startsAt: 1 }, { partialFilterExpression: { startsAt: { $
 db.relay.createIndex({ startedAt: 1 }, { partialFilterExpression: { startedAt: { $exists: 1 } } });
 db.relay.createIndex({ 'sync.until': 1 }, { partialFilterExpression: { 'sync.until': { $exists: 1 } } });
 db.relay.createIndex({ tourId: 1 });
+db.relay.createIndex(
+  { 'sync.upstream.roundIds': 1 },
+  { partialFilterExpression: { 'sync.upstream.roundIds': { $exists: 1 } } },
+);
 db.oauth2_access_token.createIndex({ userId: 1 });
 db.oauth2_access_token.createIndex({ expires: 1 }, { expireAfterSeconds: 0 });
 db.cache.createIndex({ e: 1 }, { expireAfterSeconds: 0 });
@@ -273,3 +277,39 @@ db.game5.createIndex({ 'pgni.h': 1 }, { sparse: true, background: true });
 db.security.createIndex({ user: 1 });
 db.security.createIndex({ ip: 1 });
 db.security.createIndex({ fp: 1 }, { sparse: 1, background: 1 });
+db.study.createIndex({ ownerId: 1, createdAt: -1 });
+db.study.createIndex({ likes: 1, createdAt: -1 });
+db.study.createIndex({ ownerId: 1, updatedAt: -1 });
+db.study.createIndex({ likes: 1, updatedAt: -1 });
+db.study.createIndex({ rank: -1 });
+db.study.createIndex({ createdAt: -1 });
+db.study.createIndex({ updatedAt: -1 });
+db.study.createIndex({ likers: 1 });
+db.study.createIndex({ uids: 1 }, { background: true });
+db.study.createIndex(
+  { topics: 1, rank: -1 },
+  { partialFilterExpression: { topics: { $exists: 1 } }, background: 1 },
+);
+db.study.createIndex(
+  { topics: 1, createdAt: -1 },
+  { partialFilterExpression: { topics: { $exists: 1 } }, background: 1 },
+);
+db.study.createIndex(
+  { topics: 1, updatedAt: -1 },
+  { partialFilterExpression: { topics: { $exists: 1 } }, background: 1 },
+);
+db.study.createIndex(
+  { topics: 1, likes: -1 },
+  { partialFilterExpression: { topics: { $exists: 1 } }, background: 1 },
+);
+db.study.createIndex(
+  { uids: 1, rank: -1 },
+  { partialFilterExpression: { topics: { $exists: 1 } }, background: 1 },
+);
+db.study_chapter_flat.createIndex({ studyId: 1, order: 1 });
+db.study_chapter_flat.createIndex(
+  { 'relay.fideIds': 1 },
+  { partialFilterExpression: { 'relay.fideIds': { $exists: true } } },
+);
+db.title_request.createIndex({ userId: 1 });
+db.title_request.createIndex({ 'history.0.status.n': 1, 'history.0.at': 1 });

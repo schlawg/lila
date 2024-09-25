@@ -4,6 +4,7 @@ package ui
 import chess.opening.Opening
 
 import lila.ui.*
+
 import ScalatagsTemplate.{ *, given }
 
 final class WikiUi(helpers: Helpers, bits: OpeningBits):
@@ -26,7 +27,7 @@ final class WikiUi(helpers: Helpers, bits: OpeningBits):
           page.query.exactOpening match
             case Some(op) =>
               frag(
-                postForm(action := routes.Opening.wikiWrite(op.key, page.query.pgnUnderscored))(
+                postForm(action := routes.Opening.wikiWrite(op.key.value, page.query.pgnUnderscored))(
                   form3.textarea(
                     OpeningWiki.form
                       .fill(~page.wiki.flatMap(_.revisions.headOption).map(_.text.value))("text")

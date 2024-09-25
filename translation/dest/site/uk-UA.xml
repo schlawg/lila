@@ -72,6 +72,8 @@
   <string name="promoteVariation">Підвищити пріоритет варіанта</string>
   <string name="makeMainLine">Зробити варіант основним</string>
   <string name="deleteFromHere">Видалити з цього місця</string>
+  <string name="collapseVariations">Згорнути варіанти</string>
+  <string name="expandVariations">Розгорнути варіанти</string>
   <string name="forceVariation">Зробити варіантом</string>
   <string name="copyVariationPgn">Скопіювати PGN варіанту</string>
   <string name="move">Хід</string>
@@ -196,6 +198,7 @@
   <string name="latestForumPosts">Останні дописи форуму</string>
   <string name="players">Гравці</string>
   <string name="friends">Друзі</string>
+  <string name="otherPlayers">інші гравці</string>
   <string name="discussions">Обговорення</string>
   <string name="today">Сьогодні</string>
   <string name="yesterday">Вчора</string>
@@ -531,9 +534,6 @@
   <string name="safeTournamentName">Оберіть пристойну назву для турніру.</string>
   <string name="inappropriateNameWarning">Все, що навіть трохи виявиться недоречним, може призвести до блокування.</string>
   <string name="emptyTournamentName">Залиште пустим, щоб назвати турнір на честь випадкового гросмейстера.</string>
-  <string name="recommendNotTouching">Ми радимо не змінювати їх.</string>
-  <string name="fewerPlayers">Якщо ви встановите умови вступу, у вашому турнірі буде менше гравців.</string>
-  <string name="showAdvancedSettings">Показати додаткові налаштування</string>
   <string name="makePrivateTournament">Зробити турнір приватним та обмежити доступ паролем</string>
   <string name="join">Приєднатись</string>
   <string name="withdraw">Відступити</string>
@@ -573,8 +573,7 @@
   <string name="ifNoneLeaveEmpty">Якщо немає, то залиште порожнім</string>
   <string name="profile">Профіль</string>
   <string name="editProfile">Редагувати профіль</string>
-  <string name="firstName">Ім\'я</string>
-  <string name="lastName">Прізвище</string>
+  <string name="realName">Справжнє ім\'я</string>
   <string name="setFlair">Оберіть свій символ</string>
   <string name="flair">Символ</string>
   <string name="youCanHideFlair">Це налаштування вимикає символи всіх користувачів сайту.</string>
@@ -607,6 +606,8 @@
   <string name="descPrivateHelp">Текст, який побачать лише учасники команди. Якщо встановити, замінить публічний опис для учасників команди.</string>
   <string name="no">Ні</string>
   <string name="yes">Так</string>
+  <string name="website">Вебсайт</string>
+  <string name="mobile">Застосунок</string>
   <string name="help">Допомога:</string>
   <string name="createANewTopic">Створити нову тему</string>
   <string name="topics">Теми</string>
@@ -623,11 +624,11 @@
   <string name="reason">Причина</string>
   <string name="whatIsIheMatter">Що трапилося?</string>
   <string name="cheat">Нечесна гра</string>
-  <string name="insult">Образа</string>
   <string name="troll">Тролінг</string>
-  <string name="ratingManipulation">Маніпуляції з рейтингом</string>
   <string name="other">Інше</string>
-  <string name="reportDescriptionHelp">Вставте посилання на гру (ігри) та поясніть, що не так із поведінкою цього користувача. Не пишіть просто \"він шахраює\", а розкажіть, як ви дійшли до такого висновку. Вашу скаргу розглянуть швидше, якщо ви напишете її англійською.</string>
+  <string name="reportCheatBoostHelp" comment="This is a generic message and not specific to cheating reports. It attempts to educate the player on how to write a useful report for the Lichess team. It also requests evidence.&#10;&#10;Appears on the &quot;Report a user&quot; page https://lichess.org/report.">Уставте посилання на гру або ігри та поясніть, що не так з поведінкою цього користувача. Не кажіть «він зчитерив», а поясніть, чому ви так уважаєте.</string>
+  <string name="reportUsernameHelp" comment="This is a generic message, which attempts to educate the player on how to write a useful report for the Lichess team.&#10;&#10;Appears on the &quot;Report a user&quot; page https://lichess.org/report, when selecting the 'User name' option.">Поясніть, що саме в цьому імені користувача є образливе. Не кажіть «воно образливе/неприйнятне», а поясніть, чому ви так уважаєте, особливо коли образа заплутана, не англійською, на сленгу, чи є посиланням на щось історичне/культурне.</string>
+  <string name="reportProcessedFasterInEnglish" comment="Appears on the &quot;Report a user&quot; page https://lichess.org/report, to encourage users to write in English, so any Lichess moderator can process it.">Ваша скарга оброблятиметься швидше, якщо буде написана англійською.</string>
   <string name="error.provideOneCheatedGameLink">Будь ласка, додайте посилання на хоча б одну нечесну гру.</string>
   <string name="by">від %s</string>
   <string name="importedByX">Завантажено гравцем - %s</string>
@@ -660,6 +661,7 @@
   <string name="slow">Повільна</string>
   <string name="insideTheBoard">Усередині шахівниці</string>
   <string name="outsideTheBoard">Поза шахівницею</string>
+  <string name="allSquaresOfTheBoard">Усі поля дошки</string>
   <string name="onSlowGames">У повільних іграх</string>
   <string name="always">Завжди</string>
   <string name="never">Ніколи</string>
@@ -845,7 +847,7 @@
   <string name="phoneAndTablet">Для смартфонів та планшетів</string>
   <string name="bulletBlitzClassical">Куля, бліц, класичні шахи</string>
   <string name="correspondenceChess">Заочні</string>
-  <string name="onlineAndOfflinePlay">Гра онлайн та оффлайн</string>
+  <string name="onlineAndOfflinePlay">Гра онлайн та офлайн</string>
   <string name="viewTheSolution">Дивитись рішення</string>
   <string name="followAndChallengeFriends">Спостерігайте і кидайте виклик друзям</string>
   <plurals name="availableInNbLanguages">
@@ -869,9 +871,12 @@
   <string name="transparent">Прозорий</string>
   <string name="deviceTheme">Тема пристрою</string>
   <string name="backgroundImageUrl">Посилання фонового зображення:</string>
-  <string name="boardGeometry">Вигляд шахівниці</string>
-  <string name="boardTheme">Оформлення шахівниці</string>
-  <string name="boardSize">Розмір дошки</string>
+  <string name="board">Дошка</string>
+  <string name="size">Розмір</string>
+  <string name="opacity">Прозорість</string>
+  <string name="brightness">Яскравість</string>
+  <string name="hue">Відтінок</string>
+  <string name="boardReset">Застосувати кольори за замовчуванням</string>
   <string name="pieceSet">Набір фігур</string>
   <string name="embedInYourWebsite">Вставити на свій сайт</string>
   <string name="usernameAlreadyUsed">Таке ім\'я користувача вже використовується, будь ласка, спробуйте інше.</string>

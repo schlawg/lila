@@ -1,12 +1,12 @@
 import { h, VNode } from 'snabbdom';
 import { elementScrollBarWidthSlowGuess, header } from './util';
-import debounce from 'common/debounce';
+import { debounce, throttlePromiseDelay } from 'common/timing';
 import { prefersLight } from 'common/theme';
 import * as licon from 'common/licon';
 import { bind, onInsert } from 'common/snabbdom';
 import * as xhr from 'common/xhr';
-import { throttlePromiseDelay } from 'common/throttle';
 import { DasherCtrl, PaneCtrl } from './interfaces';
+import { pubsub } from 'common/pubsub';
 
 export interface BackgroundData {
   current: string;
@@ -59,7 +59,7 @@ export class BackgroundCtrl extends PaneCtrl {
     ]);
   }
 
-  set = throttlePromiseDelay(
+  set: (c: string) => Promise<void> = throttlePromiseDelay(
     () => 700,
     (c: string) => {
       this.data.current = c;
@@ -104,9 +104,10 @@ export class BackgroundCtrl extends PaneCtrl {
       bgData
         ? (bgData.innerHTML = 'html.transp::before{background-image:url(' + this.data.image + ');}')
         : $('head').append(
-            '<style id="bg-data">html.transp::before{background-image:url(' + this.data.image + ');}</style>',
-          );
+          '<style id="bg-data">html.transp::before{background-image:url(' + this.data.image + ');}</style>',
+        );
     }
+    pubsub.emit('theme', key);
   };
 
   private imageInput = () =>
@@ -144,7 +145,7 @@ export class BackgroundCtrl extends PaneCtrl {
 
     const gallery = this.data.gallery!;
     const cols = window.matchMedia('(min-width: 650px)').matches ? 4 : 2;
-    const montageUrl = site.asset.url(gallery[`montage${cols}`], { noVersion: true });
+    const montageUrl = site.asset.url(gallery[`montage${cols}`]);
     const width =
       cols * (160 + 2) + (gallery.images.length > cols * 4 ? elementScrollBarWidthSlowGuess() : 0);
 
@@ -154,7 +155,7 @@ export class BackgroundCtrl extends PaneCtrl {
           'div#images-grid',
           { attrs: { style: `background-image: url(${montageUrl});` } },
           gallery.images.map(img => {
-            const assetUrl = site.asset.url(img, { noVersion: true });
+            const assetUrl = site.asset.url(img, { version: false });
             const divClass = this.data.image.endsWith(assetUrl) ? '.selected' : '';
             return h(`div#${urlId(assetUrl)}${divClass}`, { hook: bind('click', () => setImg(assetUrl)) });
           }),

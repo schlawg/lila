@@ -1,9 +1,8 @@
 package lila.setup
 
 import lila.common.Bus
-import lila.lobby.Seek
-import lila.lobby.{ AddHook, AddSeek }
 import lila.core.perf.UserWithPerfs
+import lila.lobby.{ AddHook, AddSeek, Seek }
 
 final private[setup] class Processor(
     gameApi: lila.core.game.GameApi,
@@ -27,13 +26,12 @@ final private[setup] class Processor(
   yield pov
 
   def hook(
-      configBase: HookConfig,
+      config: HookConfig,
       sri: lila.core.socket.Sri,
       sid: Option[String],
       blocking: lila.core.pool.Blocking
   )(using me: Option[UserWithPerfs]): Fu[Processor.HookResult] =
     import Processor.HookResult.*
-    val config = configBase.fixColor
     config.hook(sri, me, sid, blocking) match
       case Left(hook) =>
         fuccess:

@@ -4,8 +4,6 @@ import chess.format.Fen
 import chess.variant.Variant
 import chess.{ ByColor, Mode, Situation }
 
-import scala.util.chaining.*
-
 import lila.core.user.GameUser
 
 final private class ChallengeJoiner(
@@ -15,7 +13,7 @@ final private class ChallengeJoiner(
 )(using Executor):
 
   def apply(c: Challenge, destUser: GameUser): Fu[Either[String, Pov]] =
-    gameRepo.exists(c.id.into(GameId)).flatMap {
+    gameRepo.exists(c.gameId).flatMap {
       if _ then fuccess(Left("The challenge has already been accepted"))
       else
         c.challengerUserId
@@ -48,7 +46,7 @@ private object ChallengeJoiner:
         pgnImport = None,
         rules = c.rules
       )
-      .withId(c.id.into(GameId))
+      .withId(c.gameId)
       .pipe(addGameHistory(state))
       .start
 

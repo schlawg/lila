@@ -4,8 +4,8 @@ import play.api.mvc.*
 
 import lila.app.{ *, given }
 import lila.common.HTTPRequest
-import lila.opening.OpeningQuery.queryFromUrl
 import lila.core.net.Crawler
+import lila.opening.OpeningQuery.queryFromUrl
 
 final class Opening(env: Env) extends LilaController(env):
 
@@ -22,26 +22,33 @@ final class Opening(env: Env) extends LilaController(env):
           views.opening.ui.index(page, _)
         }
 
+  private val openingRateLimit =
+    env.security.ipTrust.rateLimit(50, 10.minutes, "opening.byKeyAndMoves", _.proxyMultiplier(3))
+
   def byKeyAndMoves(key: String, moves: String) = Open:
-    val crawler = HTTPRequest.isCrawler(ctx.req)
-    if moves.sizeIs > 40 && crawler.yes then Forbidden
-    else
-      env.opening.api.lookup(queryFromUrl(key, moves.some), isGrantedOpt(_.OpeningWiki), crawler).flatMap {
-        case None => Redirect(routes.Opening.index(key.some))
-        case Some(page) =>
-          val query = page.query.query
-          if query.key.isEmpty then Redirect(routes.Opening.index(key.some))
-          else if query.key != key then Redirect(routes.Opening.byKeyAndMoves(query.key, moves))
-          else if moves.nonEmpty && page.query.pgnUnderscored != moves && !getBool("r") then
-            Redirect:
-              s"${routes.Opening.byKeyAndMoves(query.key, page.query.pgnUnderscored)}?r=1"
-          else
-            Ok.async:
-              page.query.exactOpening.so(env.puzzle.opening.getClosestTo).map { puzzle =>
-                val puzzleKey = puzzle.map(_.fold(_.family.key.value, _.opening.key.value))
-                views.opening.ui.show(page, puzzleKey)
-              }
-      }
+    Firewall:
+      val crawler = HTTPRequest.isCrawler(ctx.req)
+      if moves.sizeIs > 10 && crawler.yes then Forbidden
+      else
+        openingRateLimit(rateLimited):
+          env.opening.api
+            .lookup(queryFromUrl(key, moves.some), isGrantedOpt(_.OpeningWiki), crawler)
+            .flatMap {
+              case None => Redirect(routes.Opening.index(key.some))
+              case Some(page) =>
+                val query = page.query.query
+                if query.key.isEmpty then Redirect(routes.Opening.index(key.some))
+                else if query.key != key then Redirect(routes.Opening.byKeyAndMoves(query.key, moves))
+                else if moves.nonEmpty && page.query.pgnUnderscored != moves && !getBool("r") then
+                  Redirect:
+                    s"${routes.Opening.byKeyAndMoves(query.key, page.query.pgnUnderscored)}?r=1"
+                else
+                  Ok.async:
+                    page.query.exactOpening.so(env.puzzle.opening.getClosestTo).map { puzzle =>
+                      val puzzleKey = puzzle.map(_.fold(_.family.key.value, _.opening.key.value))
+                      views.opening.ui.show(page, puzzleKey)
+                    }
+            }
 
   def config(thenTo: String) = OpenBody:
     NoCrawlers:
@@ -51,9 +58,10 @@ final class Opening(env: Env) extends LilaController(env):
           else if thenTo.startsWith("q:") then routes.Opening.index(thenTo.drop(2).some).url
           else routes.Opening.byKeyAndMoves(thenTo, "").url
         }
-      lila.opening.OpeningConfig.form
-        .bindFromRequest()
-        .fold(_ => redir, cfg => redir.withCookies(env.opening.config.write(cfg)))
+      bindForm(lila.opening.OpeningConfig.form)(
+        _ => redir,
+        cfg => redir.withCookies(env.opening.config.write(cfg))
+      )
 
   def wikiWrite(key: String, moves: String) = SecureBody(_.OpeningWiki) { ctx ?=> me ?=>
     env.opening.api
@@ -61,12 +69,14 @@ final class Opening(env: Env) extends LilaController(env):
       .map(_.flatMap(_.query.exactOpening))
       .orNotFound: op =>
         val redirect = Redirect(routes.Opening.byKeyAndMoves(key, moves))
-        lila.opening.OpeningWiki.form
-          .bindFromRequest()
-          .fold(
-            _ => redirect,
-            text => env.opening.wiki.write(op, text, me.userId).inject(redirect)
-          )
+        bindForm(lila.opening.OpeningWiki.form)(
+          _ => redirect,
+          text =>
+            env.opening.wiki
+              .write(op, text, me.userId)
+              .andDo(env.irc.api.openingEdit(me.light, key, moves))
+              .inject(redirect)
+        )
   }
 
   def tree = Open:

@@ -4,12 +4,8 @@ import chess.format.pgn.SanStr
 import chess.opening.OpeningDb
 import chess.{ Centis, Clock, Ply, Role, Situation, Stats }
 
-import scala.util.chaining.*
-
 import lila.analyse.{ AccuracyCP, AccuracyPercent, Advice, Analysis, WinPercent }
 import lila.common.SimpleOpening
-import lila.game.GameExt.analysable
-import lila.game.GameExt.computeMoveTimes
 import lila.game.Blurs.booleans
 
 case class RichPov(
@@ -36,7 +32,7 @@ final private class PovToEntry(
   private def removeWrongAnalysis(game: Game): Boolean =
     if game.metadata.analysed && !gameApi.analysable(game) then
       gameRepo.setAnalysed(game.id, false)
-      analysisRepo.remove(game.id.value)
+      analysisRepo.remove(game.id)
       true
     else false
 
@@ -172,7 +168,7 @@ final private class PovToEntry(
   private def queenTrade(from: RichPov) = QueenTrade:
     from.division.end.map(_.value).fold(from.situations.last.some)(from.situations.toList.lift) match
       case Some(situation) =>
-        chess.Color.all.forall { color =>
+        Color.all.forall { color =>
           !situation.board.isOccupied(chess.Piece(color, chess.Queen))
         }
       case _ =>

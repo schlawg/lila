@@ -1,5 +1,6 @@
 @import 'cmn-toggle';
 @import '../component/flash';
+@import '../component/toggle-box';
 
 .form-group {
   margin-bottom: 3rem;
@@ -39,15 +40,6 @@
   width: 100%;
   height: calc(2.7em + 2px);
   background-clip: padding-box;
-}
-
-.form-control-with-clipboard {
-  display: inline-flex;
-  width: 100%;
-}
-
-.form-control-with-clipboard > .form-control {
-  width: 95%;
 }
 
 .clipboard {
@@ -121,33 +113,4 @@ textarea.form-control {
   margin-bottom: 1rem;
   border: 0;
   border-top: $border;
-}
-
-.password-complexity {
-  margin-top: -2rem;
-  margin-bottom: 3rem;
-}
-
-.password-complexity-meter {
-  display: flex;
-  grid-gap: 0.25rem;
-  height: 0.4rem;
-  margin-top: 1rem;
-
-  > * {
-    background-color: gray;
-    width: 25%;
-  }
-}
-
-.form-fieldset {
-  @extend %box-radius;
-  margin: 1.5em 0;
-  border-color: rgba(128, 128, 128, 0.3);
-
-  legend {
-    text-align: center;
-    font-style: italic;
-    font-size: 1.2em;
-  }
 }

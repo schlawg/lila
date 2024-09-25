@@ -13,35 +13,36 @@ object Dependencies {
   val lilaMaven = "lila-maven".at("https://raw.githubusercontent.com/lichess-org/lila-maven/master")
   val sonashots = "sonashots".at("https://oss.sonatype.org/content/repositories/snapshots")
 
-  val cats        = "org.typelevel"                %% "cats-core"                       % "2.10.0"
-  val alleycats   = "org.typelevel"                %% "alleycats-core"                  % "2.10.0"
+  val cats        = "org.typelevel"                %% "cats-core"                       % "2.12.0"
+  val alleycats   = "org.typelevel"                %% "alleycats-core"                  % "2.12.0"
   val hasher      = "com.roundeights"              %% "hasher"                          % "1.3.1"
   val compression = "org.lichess"                  %% "compression"                     % "1.10"
   val maxmind     = "com.maxmind.geoip2"            % "geoip2"                          % "4.0.1"
   val caffeine    = "com.github.ben-manes.caffeine" % "caffeine"                        % "3.1.8" % "compile"
-  val scaffeine   = "com.github.blemale"           %% "scaffeine"                       % "5.2.1" % "compile"
-  val googleOAuth = "com.google.auth"               % "google-auth-library-oauth2-http" % "1.23.0"
+  val scaffeine   = "com.github.blemale"           %% "scaffeine"                       % "5.3.0" % "compile"
+  val googleOAuth = "com.google.auth"               % "google-auth-library-oauth2-http" % "1.27.0"
   val galimatias  = "io.mola.galimatias"            % "galimatias"                      % "0.2.2-NF"
   val scalatags   = "com.lihaoyi"                  %% "scalatags"                       % "0.13.1"
-  val lettuce     = "io.lettuce"                    % "lettuce-core"                    % "6.3.2.RELEASE"
+  val lettuce     = "io.lettuce"                    % "lettuce-core"                    % "6.4.0.RELEASE"
   val nettyTransport =
-    ("io.netty" % s"netty-transport-native-$notifier" % "4.1.109.Final").classifier(s"$os-$arch")
-  val munit       = "org.scalameta"              %% "munit"         % "1.0.0-RC1" % Test
-  val uaparser    = "org.uaparser"               %% "uap-scala"     % "0.16.0"
+    ("io.netty" % s"netty-transport-native-$notifier" % "4.1.113.Final").classifier(s"$os-$arch")
+  val lilaSearch  = "org.lichess.search"         %% "client"        % "3.0.1"
+  val munit       = "org.scalameta"              %% "munit"         % "1.0.2" % Test
+  val uaparser    = "org.uaparser"               %% "uap-scala"     % "0.18.0"
   val apacheText  = "org.apache.commons"          % "commons-text"  % "1.12.0"
   val apacheMath  = "org.apache.commons"          % "commons-math3" % "3.6.1"
   val bloomFilter = "com.github.alexandrnikitin" %% "bloom-filter"  % "0.13.1_lila-1"
-  val kittens     = "org.typelevel"              %% "kittens"       % "3.3.0"
+  val kittens     = "org.typelevel"              %% "kittens"       % "3.4.0"
 
-  val scalacheck = "org.scalacheck" %% "scalacheck"       % "1.18.0"    % Test
-  val munitCheck = "org.scalameta"  %% "munit-scalacheck" % "1.0.0-RC1" % Test
+  val scalacheck = "org.scalacheck" %% "scalacheck"       % "1.18.1" % Test
+  val munitCheck = "org.scalameta"  %% "munit-scalacheck" % "1.0.0"  % Test
 
   object tests {
     val bundle = Seq(munit)
   }
 
   object chess {
-    val version  = "16.0.6"
+    val version  = "16.3.0"
     val core     = "org.lichess" %% "scalachess"           % version
     val testKit  = "org.lichess" %% "scalachess-test-kit"  % version % Test
     val playJson = "org.lichess" %% "scalachess-play-json" % version
@@ -49,7 +50,7 @@ object Dependencies {
   }
 
   object scalalib {
-    val version  = "11.1.7"
+    val version  = "11.2.9"
     val core     = "org.lichess" %% "scalalib-core"      % version
     val model    = "org.lichess" %% "scalalib-model"     % version
     val playJson = "org.lichess" %% "scalalib-play-json" % version
@@ -61,13 +62,14 @@ object Dependencies {
     val version = "0.64.8"
     val bundle =
       ("com.vladsch.flexmark" % "flexmark" % version) ::
-        List("ext-tables", "ext-autolink", "ext-gfm-strikethrough", "html2md-converter").map { ext =>
-          "com.vladsch.flexmark" % s"flexmark-$ext" % version
-        }
+        List("ext-tables", "ext-anchorlink", "ext-autolink", "ext-gfm-strikethrough", "html2md-converter")
+          .map { ext =>
+            "com.vladsch.flexmark" % s"flexmark-$ext" % version
+          }
   }
 
   object macwire {
-    val version = "2.5.9"
+    val version = "2.6.1"
     val macros  = "com.softwaremill.macwire" %% "macros"  % version % "provided"
     val util    = "com.softwaremill.macwire" %% "util"    % version % "provided"
     val tagging = "com.softwaremill.common"  %% "tagging" % "2.3.5"
@@ -75,16 +77,16 @@ object Dependencies {
   }
 
   object reactivemongo {
-    val driver = "org.reactivemongo" %% "reactivemongo"                              % "1.1.0-RC12"
-    val stream = "org.reactivemongo" %% "reactivemongo-akkastream"                   % "1.1.0-RC12"
-    val shaded = "org.reactivemongo"  % s"reactivemongo-shaded-native-$os-$dashArch" % "1.1.0-RC12"
+    val driver = "org.reactivemongo" %% "reactivemongo"                              % "1.1.0-RC13"
+    val stream = "org.reactivemongo" %% "reactivemongo-akkastream"                   % "1.1.0-RC13"
+    val shaded = "org.reactivemongo"  % s"reactivemongo-shaded-native-$os-$dashArch" % "1.1.0-RC13"
     // val kamon  = "org.reactivemongo" %% "reactivemongo-kamon"         % "1.0.8"
     def bundle = Seq(driver, stream)
   }
 
   object play {
     val playVersion = "2.8.18-lila_3.18"
-    val json        = "org.playframework" %% "play-json"         % "3.0.2"
+    val json        = "org.playframework" %% "play-json"         % "3.0.4"
     val api         = "com.typesafe.play" %% "play"              % playVersion
     val server      = "com.typesafe.play" %% "play-server"       % playVersion
     val netty       = "com.typesafe.play" %% "play-netty-server" % playVersion
@@ -93,14 +95,14 @@ object Dependencies {
   }
 
   object playWs {
-    val version = "2.2.6"
+    val version = "2.2.9"
     val ahc     = "com.typesafe.play" %% "play-ahc-ws-standalone"  % version
     val json    = "com.typesafe.play" %% "play-ws-standalone-json" % version
     val bundle  = Seq(ahc, json)
   }
 
   object kamon {
-    val version    = "2.7.1"
+    val version    = "2.7.3"
     val core       = "io.kamon" %% "kamon-core"           % version
     val influxdb   = "io.kamon" %% "kamon-influxdb"       % version
     val metrics    = "io.kamon" %% "kamon-system-metrics" % version

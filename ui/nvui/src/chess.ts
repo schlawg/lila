@@ -9,6 +9,7 @@ import { SquareName, RULES, Rules } from 'chessops/types';
 import { setupPosition } from 'chessops/variant';
 import { parseUci } from 'chessops/util';
 import { SanToUci, sanWriter } from 'chess';
+import { storage } from 'common/storage';
 
 export type Style = 'uci' | 'san' | 'literate' | 'nato' | 'anna';
 export type PieceStyle = 'letter' | 'white uppercase letter' | 'name' | 'white uppercase name';
@@ -117,11 +118,11 @@ const skipToFile: { [letter: string]: string } = {
   '*': 'h',
 };
 
-export function symbolToFile(char: string) {
+export function symbolToFile(char: string): string {
   return skipToFile[char] ?? '';
 }
 
-export function supportedVariant(key: string) {
+export function supportedVariant(key: string): boolean {
   return ['standard', 'chess960', 'kingOfTheHill', 'threeCheck', 'fromPosition', 'atomic', 'horde'].includes(
     key,
   );
@@ -134,7 +135,7 @@ export function boardSetting(): Setting<BoardStyle> {
       ['table', 'table: layout using a table with rank and file columns and row headers'],
     ],
     default: 'plain',
-    storage: site.storage.make('nvui.boardLayout'),
+    storage: storage.make('nvui.boardLayout'),
   });
 }
 
@@ -148,7 +149,7 @@ export function styleSetting(): Setting<Style> {
       ['nato', 'Nato: knight takes foxtrot 3'],
     ],
     default: 'anna', // all the rage in OTB blind chess tournaments
-    storage: site.storage.make('nvui.moveNotation'),
+    storage: storage.make('nvui.moveNotation'),
   });
 }
 
@@ -161,7 +162,7 @@ export function pieceSetting(): Setting<PieceStyle> {
       ['white uppercase name', 'White uppercase name: Pawn, pawn'],
     ],
     default: 'letter',
-    storage: site.storage.make('nvui.pieceStyle'),
+    storage: storage.make('nvui.pieceStyle'),
   });
 }
 
@@ -173,7 +174,7 @@ export function prefixSetting(): Setting<PrefixStyle> {
       ['none', 'None'],
     ],
     default: 'letter',
-    storage: site.storage.make('nvui.prefixStyle'),
+    storage: storage.make('nvui.prefixStyle'),
   });
 }
 
@@ -185,7 +186,7 @@ export function positionSetting(): Setting<PositionStyle> {
       ['none', 'none'],
     ],
     default: 'before',
-    storage: site.storage.make('nvui.positionStyle'),
+    storage: storage.make('nvui.positionStyle'),
   });
 }
 const renderPieceStyle = (piece: string, pieceStyle: PieceStyle) => {
@@ -236,7 +237,7 @@ export function lastCaptured(
   return 'none';
 }
 
-export function renderSan(san: San, uci: Uci | undefined, style: Style) {
+export function renderSan(san: San, uci: Uci | undefined, style: Style): string {
   if (!san) return '';
   let move: string;
   if (san.includes('O-O-O')) move = 'long castling';
@@ -405,7 +406,7 @@ export function castlingFlavours(input: string): string {
 
 /* Listen to interactions on the chessboard */
 export function positionJumpHandler() {
-  return (ev: KeyboardEvent) => {
+  return (ev: KeyboardEvent): boolean => {
     const $btn = $(ev.target as HTMLElement);
     const $file = $btn.attr('file') ?? '';
     const $rank = $btn.attr('rank') ?? '';
@@ -433,7 +434,7 @@ export function positionJumpHandler() {
 }
 
 export function pieceJumpingHandler(wrapSound: () => void, errorSound: () => void) {
-  return (ev: KeyboardEvent) => {
+  return (ev: KeyboardEvent): boolean => {
     if (!ev.key.match(/^[kqrbnp]$/i)) return true;
     const $currBtn = $(ev.target as HTMLElement);
 
@@ -479,7 +480,7 @@ export function pieceJumpingHandler(wrapSound: () => void, errorSound: () => voi
 }
 
 export function arrowKeyHandler(pov: Color, borderSound: () => void) {
-  return (ev: KeyboardEvent) => {
+  return (ev: KeyboardEvent): boolean => {
     const $currBtn = $(ev.target as HTMLElement);
     const $isWhite = pov === 'white';
     let $file = $currBtn.attr('file') ?? ' ';
@@ -509,7 +510,7 @@ export function arrowKeyHandler(pov: Color, borderSound: () => void) {
 }
 
 export function selectionHandler(getOpponentColor: () => Color, selectSound: () => void) {
-  return (ev: MouseEvent) => {
+  return (ev: MouseEvent): boolean => {
     const opponentColor = getOpponentColor();
     // this depends on the current document structure. This may not be advisable in case the structure wil change.
     const $evBtn = $(ev.target as HTMLElement);
@@ -556,7 +557,7 @@ export function selectionHandler(getOpponentColor: () => Color, selectSound: () 
 }
 
 export function boardCommandsHandler() {
-  return (ev: KeyboardEvent) => {
+  return (ev: KeyboardEvent): boolean => {
     const $currBtn = $(ev.target as HTMLElement);
     const $boardLive = $('.boardstatus');
     const $position = ($currBtn.attr('file') ?? '') + ($currBtn.attr('rank') ?? '');
@@ -582,7 +583,7 @@ export function lastCapturedCommandHandler(
   pieceStyle: PieceStyle,
   prefixStyle: PrefixStyle,
 ) {
-  return (ev: KeyboardEvent) => {
+  return (ev: KeyboardEvent): boolean => {
     const $boardLive = $('.boardstatus');
     if (ev.key === 'c') {
       $boardLive.text();
@@ -602,7 +603,7 @@ export function possibleMovesHandler(
   moveable: () => Map<string, Array<string>> | undefined,
   steps: () => RoundStep[],
 ) {
-  return (ev: KeyboardEvent) => {
+  return (ev: KeyboardEvent): boolean => {
     if (ev.key !== 'm' && ev.key !== 'M') return true;
     const $boardLive = $('.boardstatus');
     const pieces: Pieces = piecesFunc();
@@ -667,7 +668,7 @@ function destsToUcis(dests: Dests) {
   const ucis: string[] = [];
   for (const [orig, d] of dests) {
     if (d)
-      d.forEach(function (dest) {
+      d.forEach(function(dest) {
         ucis.push(orig + dest);
       });
   }
@@ -700,7 +701,11 @@ export function inputToLegalUci(input: string, fen: string, chessground: Api): s
   else return;
 }
 
-export function renderMainline(nodes: Tree.Node[], currentPath: Tree.Path, style: Style) {
+export function renderMainline(
+  nodes: Tree.Node[],
+  currentPath: Tree.Path,
+  style: Style,
+): Array<string | VNode> {
   const res: Array<string | VNode> = [];
   let path: Tree.Path = '';
   nodes.forEach(node => {
@@ -728,8 +733,8 @@ export function renderComments(node: Tree.Node, style: Style): string {
 function renderComment(comment: Tree.Comment, style: Style): string {
   return comment.by === 'lichess'
     ? comment.text.replace(
-        /Best move was (.+)\./,
-        (_, san) => 'Best move was ' + renderSan(san, undefined, style),
-      )
+      /Best move was (.+)\./,
+      (_, san) => 'Best move was ' + renderSan(san, undefined, style),
+    )
     : comment.text;
 }

@@ -18,6 +18,7 @@ final class Env(
     gameRepo: lila.core.game.GameRepo,
     newPlayer: lila.core.game.NewPlayer,
     userApi: lila.core.user.UserApi,
+    userRepo: lila.core.user.UserRepo,
     gameProxy: lila.core.game.GameProxy,
     chatApi: lila.core.chat.ChatApi,
     roundApi: lila.core.round.RoundApi,
@@ -56,6 +57,8 @@ final class Env(
   lazy val shieldApi: TournamentShieldApi = wire[TournamentShieldApi]
 
   lazy val revolutionApi: RevolutionApi = wire[RevolutionApi]
+
+  lazy val moderation = wire[TournamentModeration]
 
   private lazy val duelStore = wire[DuelStore]
 
@@ -144,6 +147,4 @@ final class Env(
         case "tournament" :: "recompute" :: id :: Nil =>
           api.recomputeEntireTournament(TourId(id)).inject("Done!")
 
-trait TournamentReloadDelay
 trait TournamentReloadEndpoint
-trait LilaHttpTourId

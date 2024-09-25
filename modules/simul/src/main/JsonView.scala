@@ -5,7 +5,6 @@ import play.api.libs.json.*
 import lila.common.Json.given
 import lila.core.LightUser
 import lila.gathering.Condition.WithVerdicts
-import lila.rating.PerfType
 
 final class JsonView(
     gameRepo: lila.core.game.GameRepo,
@@ -16,17 +15,16 @@ final class JsonView(
 
   private def fetchGames(simul: Simul): Fu[List[Game]] =
     if simul.isFinished then gameRepo.gamesFromSecondary(simul.gameIds)
-    else simul.gameIds.traverse(gameProxy.game).dmap(_.flatten)
+    else simul.gameIds.parallel(gameProxy.game).dmap(_.flatten)
 
   def apply(simul: Simul, verdicts: WithVerdicts): Fu[JsObject] = for
     games      <- fetchGames(simul)
     lightHost  <- getLightUser(simul.hostId)
-    applicants <- simul.applicants.sortBy(-_.player.rating.value).map(applicantJson).parallel
+    applicants <- simul.applicants.sortBy(-_.player.rating.value).sequentially(applicantJson)
     pairingOptions <-
       simul.pairings
         .sortBy(-_.player.rating.value)
-        .map(pairingJson(games, simul.hostId))
-        .parallel
+        .parallel(pairingJson(games, simul.hostId))
     pairings = pairingOptions.flatten
   yield baseSimul(simul, lightHost) ++ Json
     .obj(
@@ -48,7 +46,7 @@ final class JsonView(
         .add("finishedAt" -> simul.finishedAt)
 
   def api(simuls: List[Simul]): Fu[JsArray] =
-    simuls.traverse(apiJson).map(JsArray.apply)
+    simuls.sequentially(apiJson).map(JsArray.apply)
 
   def apiAll(
       pending: List[Simul],

@@ -1,17 +1,14 @@
 package views.mod
 
 import play.api.data.Form
-import scala.util.chaining.*
 
 import lila.app.UiEnv.{ *, given }
-
-import lila.evaluation.PlayerAssessment
-import lila.rating.PerfType
 import lila.core.chess.Rank
-import lila.tournament.LeaderboardApi.TourEntry
+import lila.evaluation.PlayerAssessment
 import lila.game.GameExt.*
 import lila.mod.GameMod
 import lila.mod.ui.ModUserTableUi.sortNoneTh
+import lila.tournament.LeaderboardApi.TourEntry
 
 def games(
     user: User,
@@ -21,8 +18,8 @@ def games(
     swisses: Seq[(lila.core.swiss.IdName, Rank)]
 )(using Context) =
   Page(s"${user.username} games")
-    .cssTag("mod.games")
-    .js(EsmInit("mod.games")):
+    .css("mod.games")
+    .js(Esm("mod.games")):
       main(cls := "mod-games box")(
         boxTop(
           h1(userLink(user, params = "?mod"), " games"),
@@ -166,7 +163,7 @@ def games(
                       case _ => frag(td, td)
                     ,
                     td(dataSort := pov.game.movedAt.toSeconds.toString)(
-                      a(href := routes.Round.watcher(pov.gameId, pov.color.name), cls := "glpt")(
+                      a(href := routes.Round.watcher(pov.gameId, pov.color), cls := "glpt")(
                         momentFromNowServerText(pov.game.movedAt)
                       )
                     )

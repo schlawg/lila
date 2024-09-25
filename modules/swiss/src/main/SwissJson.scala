@@ -5,11 +5,12 @@ import play.api.libs.json.*
 
 import lila.common.Json.given
 import lila.core.LightUser
+import lila.core.socket.SocketVersion
 import lila.db.dsl.{ *, given }
 import lila.gathering.Condition.WithVerdicts
 import lila.gathering.GreatPlayer
+import lila.gathering.GatheringJson.*
 import lila.quote.Quote.given
-import lila.core.socket.SocketVersion
 
 final class SwissJson(
     mongo: SwissMongo,
@@ -19,16 +20,19 @@ final class SwissJson(
     statsApi: SwissStatsApi,
     userApi: lila.core.user.UserApi,
     lightUserApi: lila.core.user.LightUserApi
-)(using Executor):
+)(using Executor, lila.core.i18n.Translator):
 
   import SwissJson.{ *, given }
   import BsonHandlers.given
+  import lila.gathering.ConditionHandlers.JSONHandlers.*
 
-  def api(swiss: Swiss) = statsApi(swiss).map { stats =>
-    swissJsonBase(swiss) ++ Json.obj(
-      "stats" -> stats,
-      "rated" -> swiss.settings.rated
-    )
+  def api(swiss: Swiss, verdicts: WithVerdicts)(using lang: Lang) = statsApi(swiss).map { stats =>
+    swissJsonBase(swiss) ++ Json
+      .obj(
+        "verdicts" -> verdictsFor(verdicts, swiss.perfType),
+        "rated"    -> swiss.settings.rated
+      )
+      .add("stats" -> stats)
   }
 
   def apply(
@@ -177,6 +181,7 @@ object SwissJson:
       })
       .add("isRecentlyFinished" -> swiss.isRecentlyFinished)
       .add("password" -> swiss.settings.password.isDefined)
+      .add("position" -> swiss.settings.position.map(fullFen => position(fullFen.opening)))
 
   private[swiss] def playerJson(swiss: Swiss, view: SwissPlayer.View): JsObject =
     playerJsonBase(view, performance = false) ++ Json

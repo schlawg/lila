@@ -70,6 +70,8 @@
   <string name="promoteVariation">Promote variation</string>
   <string name="makeMainLine">Make main line</string>
   <string name="deleteFromHere">Delete from here</string>
+  <string name="collapseVariations">Collapse variations</string>
+  <string name="expandVariations">Expand variations</string>
   <string name="forceVariation">Force variation</string>
   <string name="copyVariationPgn">Copy variation PGN</string>
   <string name="move">Move</string>
@@ -178,6 +180,7 @@
   <string name="latestForumPosts">Latest forum posts</string>
   <string name="players">Players</string>
   <string name="friends">Friends</string>
+  <string name="otherPlayers">other players</string>
   <string name="discussions">Conversations</string>
   <string name="today">Today</string>
   <string name="yesterday">Yesterday</string>
@@ -223,8 +226,8 @@
   <string name="youAreLeavingLichess">You are leaving Lichess</string>
   <string name="neverTypeYourPassword">Never type your Lichess password on another site!</string>
   <string name="proceedToX">Proceed to %s</string>
-  <string name="passwordSuggestion">Do not set a password suggested by someone else. They could use it to steal your account.</string>
-  <string name="emailSuggestion">Do not set an email address suggested by someone else. They could use it to steal your account.</string>
+  <string name="passwordSuggestion">Do not set a password suggested by someone else. They will use it to steal your account.</string>
+  <string name="emailSuggestion">Do not set an email address suggested by someone else. They will use it to steal your account.</string>
   <string name="emailConfirmHelp">Help with email confirmation</string>
   <string name="emailConfirmNotReceived">Didn\'t receive your confirmation email after signing up?</string>
   <string name="whatSignupUsername">What username did you use to sign up?</string>
@@ -233,10 +236,10 @@
   <string name="emailSent">We have sent an email to %s.</string>
   <string name="emailCanTakeSomeTime">It can take some time to arrive.</string>
   <string name="refreshInboxAfterFiveMinutes">Wait 5 minutes and refresh your email inbox.</string>
-  <string name="checkSpamFolder">If you do not receive a confirmation email, check your spam folder. Be sure to indicate messages from Xxxxx as \'safe\' so you can stay informed of important communication.</string>
+  <string name="checkSpamFolder">Also check your spam folder, it might end up there. If so, mark it as not spam.</string>
   <string name="emailForSignupHelp">If you still have questions, please send us an email:</string>
   <string name="copyTextToEmail">Copy and paste the above text and send it to %s</string>
-  <string name="waitForSignupHelp">We will be back with you shortly to help complete your signup process.</string>
+  <string name="waitForSignupHelp">We will come back to you shortly to help you complete your signup.</string>
   <string name="accountConfirmed">The user %s is successfully confirmed.</string>
   <string name="accountCanLogin">You can login right now as %s.</string>
   <string name="accountConfirmationEmailNotNeeded">You do not need a confirmation email.</string>
@@ -466,9 +469,6 @@ computer analysis, game chat and shareable URL.</string>
   <string name="safeTournamentName">Pick a very safe name for the tournament.</string>
   <string name="inappropriateNameWarning">Anything even slightly inappropriate could get your account closed.</string>
   <string name="emptyTournamentName">Leave empty to name the tournament after a notable chess player.</string>
-  <string name="recommendNotTouching">We recommend not touching these.</string>
-  <string name="fewerPlayers">If you set entry requirements, your tournament will have fewer players.</string>
-  <string name="showAdvancedSettings">Show advanced settings</string>
   <string name="makePrivateTournament">Make the tournament private, and restrict access with a password</string>
   <string name="join">Join</string>
   <string name="withdraw">Withdraw</string>
@@ -508,8 +508,7 @@ computer analysis, game chat and shareable URL.</string>
   <string name="ifNoneLeaveEmpty">If none, leave empty</string>
   <string name="profile">Profile</string>
   <string name="editProfile">Edit profile</string>
-  <string name="firstName">First name</string>
-  <string name="lastName">Last name</string>
+  <string name="realName">Real name</string>
   <string name="setFlair">Set your flair</string>
   <string name="flair">Flair</string>
   <string name="youCanHideFlair">There is a setting to hide all user flairs across the entire site.</string>
@@ -540,6 +539,8 @@ computer analysis, game chat and shareable URL.</string>
   <string name="descPrivateHelp">Text that only the team members will see. If set, replaces the public description for team members.</string>
   <string name="no">No</string>
   <string name="yes">Yes</string>
+  <string name="website">Website</string>
+  <string name="mobile">Mobile</string>
   <string name="help">Help:</string>
   <string name="createANewTopic">Create a new topic</string>
   <string name="topics">Topics</string>
@@ -556,11 +557,11 @@ computer analysis, game chat and shareable URL.</string>
   <string name="reason">Reason</string>
   <string name="whatIsIheMatter">What\'s the matter?</string>
   <string name="cheat">Cheat</string>
-  <string name="insult">Insult</string>
   <string name="troll">Troll</string>
-  <string name="ratingManipulation">Rating manipulation</string>
   <string name="other">Other</string>
-  <string name="reportDescriptionHelp">Paste the link to the game(s) and explain what is wrong about this user behavior. Don\'t just say \"they cheat\", but tell us how you came to this conclusion. Your report will be processed faster if written in English.</string>
+  <string name="reportCheatBoostHelp" comment="This is a generic message and not specific to cheating reports. It attempts to educate the player on how to write a useful report for the Lichess team. It also requests evidence.&#10;&#10;Appears on the &quot;Report a user&quot; page https://lichess.org/report.">Paste a link to the game(s) and explain what is wrong with this user\'s behavior. Don\'t just say \"they cheat,\" but tell us how you came to this conclusion.</string>
+  <string name="reportUsernameHelp" comment="This is a generic message, which attempts to educate the player on how to write a useful report for the Lichess team.&#10;&#10;Appears on the &quot;Report a user&quot; page https://lichess.org/report, when selecting the 'User name' option.">Explain why this username is offensive. Don\'t just say \"it\'s offensive/inappropriate,\" but tell us how you came to this conclusion, especially if the offense is obscure, not in English, in slang, or a historical/cultural reference.</string>
+  <string name="reportProcessedFasterInEnglish" comment="Appears on the &quot;Report a user&quot; page https://lichess.org/report, to encourage users to write in English, so any Lichess moderator can process it.">Your report will be processed faster if written in English.</string>
   <string name="error.provideOneCheatedGameLink">Please provide at least one link to a cheated game.</string>
   <string name="by">by %s</string>
   <string name="importedByX">Imported by %s</string>
@@ -593,6 +594,7 @@ computer analysis, game chat and shareable URL.</string>
   <string name="slow">Slow</string>
   <string name="insideTheBoard">Inside the board</string>
   <string name="outsideTheBoard">Outside the board</string>
+  <string name="allSquaresOfTheBoard">All squares on the board</string>
   <string name="onSlowGames">On slow games</string>
   <string name="always">Always</string>
   <string name="never">Never</string>
@@ -792,9 +794,12 @@ computer analysis, game chat and shareable URL.</string>
   <string name="transparent">Transparent</string>
   <string name="deviceTheme">Device theme</string>
   <string name="backgroundImageUrl">Background image URL:</string>
-  <string name="boardGeometry">Board geometry</string>
-  <string name="boardTheme">Board theme</string>
-  <string name="boardSize">Board size</string>
+  <string name="board">Board</string>
+  <string name="size">Size</string>
+  <string name="opacity">Opacity</string>
+  <string name="brightness">Brightness</string>
+  <string name="hue">Hue</string>
+  <string name="boardReset">Reset colors to default</string>
   <string name="pieceSet">Piece set</string>
   <string name="embedInYourWebsite">Embed in your website</string>
   <string name="usernameAlreadyUsed">This username is already in use, please try another one.</string>

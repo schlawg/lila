@@ -1,13 +1,13 @@
 import { view as cevalView } from 'ceval';
 import { onClickAway } from 'common';
-import { looseH as h, onInsert, bind, MaybeVNode, VNode } from 'common/snabbdom';
+import { looseH as h, onInsert, VNode } from 'common/snabbdom';
 import * as licon from 'common/licon';
 import AnalyseCtrl from '../../ctrl';
 import { view as keyboardView } from '../../keyboard';
 import type * as studyDeps from '../../study/studyDeps';
-import { renderVideoPlayer, player } from './videoPlayerView';
 import RelayCtrl from './relayCtrl';
 import { tourSide, renderRelayTour } from './relayTourView';
+import { renderVideoPlayer } from './videoPlayer';
 import {
   type RelayViewContext,
   viewContext,
@@ -31,7 +31,7 @@ export function relayView(
     deps.studyView.overboard(study),
 
     ...(ctx.hasRelayTour
-      ? [renderRelayTour(ctx), ...tourSide(ctx), deps.relayManager(relay, study)]
+      ? [renderRelayTour(ctx), tourSide(ctx), deps.relayManager(relay, study)]
       : renderBoardView(ctx, wide)),
   ]);
 }
@@ -61,42 +61,25 @@ export function renderStreamerMenu(relay: RelayCtrl): VNode {
   );
 }
 
-export function renderPinnedImage(ctx: RelayViewContext): MaybeVNode {
-  const { allowVideo, relay } = ctx;
-  if (!relay.pinStreamer() || !relay.data.pinned?.image) return undefined;
-  return h('img.link', {
-    attrs: { src: relay.data.pinned.image },
-    hook: bind('click', () => {
-      if (!allowVideo) {
-        window.open(`${window.location.origin}/streamer/${relay.data.pinned!.userId}`, '_blank', 'noopener');
-        return;
-      }
-      const url = new URL(location.href);
-      url.searchParams.set('embed', relay.data.pinned!.userId);
-      window.location.replace(url);
-    }),
-  });
-}
-
 export function allowVideo(): boolean {
   return window.getComputedStyle(document.body).getPropertyValue('---allow-video') === 'true';
 }
 
-export function addResizeListener(redraw: () => void) {
-  let [oldWide, oldShowVideo, oldTinyBoard] = [false, false, false];
-  window.addEventListener(
-    'resize',
-    () => {
-      const { wide, allowVideo, tinyBoard } = queryBody(),
-        placeholder = document.getElementById('video-player-placeholder') ?? undefined,
-        showVideo = allowVideo && !!placeholder;
-      player?.cover(allowVideo ? placeholder : undefined);
-      if (oldShowVideo !== showVideo || oldWide !== wide || oldTinyBoard !== tinyBoard) redraw();
-      [oldWide, oldShowVideo, oldTinyBoard] = [wide, showVideo, tinyBoard];
-    },
-    { passive: true },
-  );
-}
+// export function addResizeListener(redraw: () => void) {
+//   let [oldWide, oldShowVideo, oldTinyBoard] = [false, false, false];
+//   window.addEventListener(
+//     'resize',
+//     () => {
+//       const { wide, allowVideo, tinyBoard } = queryBody(),
+//         placeholder = document.getElementById('video-player-placeholder') ?? undefined,
+//         showVideo = allowVideo && !!placeholder;
+//       player?.cover(allowVideo ? placeholder : undefined);
+//       if (oldShowVideo !== showVideo || oldWide !== wide || oldTinyBoard !== tinyBoard) redraw();
+//       [oldWide, oldShowVideo, oldTinyBoard] = [wide, showVideo, tinyBoard];
+//     },
+//     { passive: true },
+//   );
+// }
 
 function queryBody() {
   const docStyle = window.getComputedStyle(document.body),
@@ -118,19 +101,11 @@ function renderBoardView(ctx: RelayViewContext, wide: boolean) {
   return [
     renderBoard(ctx),
     gaugeOn && cevalView.renderGauge(ctrl),
-    wide && renderEmbedPlaceholder(ctx),
-    renderTools(ctx, wide ? undefined : renderEmbedPlaceholder(ctx)),
+    wide && renderVideoPlayer(ctx.relay),
+    renderTools(ctx, wide ? undefined : renderVideoPlayer(ctx.relay)),
     renderControls(ctrl),
-    renderUnderboard(ctx),
-    ...tourSide(ctx),
+    !ctrl.isEmbed && renderUnderboard(ctx),
+    tourSide(ctx),
     deps.relayManager(relay, study),
   ];
-}
-
-function renderEmbedPlaceholder(ctx: RelayViewContext): MaybeVNode {
-  return ctx.relay.data.videoUrls
-    ? renderVideoPlayer(ctx.relay)
-    : ctx.relay.pinStreamer() && ctx.relay.allowPinnedImageOnUniboards()
-    ? renderPinnedImage(ctx)
-    : undefined;
 }

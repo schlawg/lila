@@ -5,15 +5,15 @@ import reactivemongo.api.bson.*
 
 import lila.common.Bus
 import lila.common.Json.given
-import lila.db.dsl.{ *, given }
-import lila.db.paginator.*
-import lila.core.timeline.{ Follow as FollowUser, Propagate }
-import lila.memo.CacheApi.*
-import lila.relation.BSONHandlers.given
+import lila.core.relation.Relation.{ Block, Follow }
 import lila.core.relation.{ Relation, Relations }
-import lila.core.relation.Relation.{ Follow, Block }
+import lila.core.timeline.{ Follow as FollowUser, Propagate }
 import lila.core.user.UserApi
 import lila.core.userId.UserSearch
+import lila.db.dsl.{ *, given }
+import lila.db.paginator.*
+import lila.memo.CacheApi.*
+import lila.relation.BSONHandlers.given
 
 final class RelationApi(
     repo: RelationRepo,
@@ -21,10 +21,8 @@ final class RelationApi(
     cacheApi: lila.memo.CacheApi,
     userApi: UserApi,
     config: RelationConfig
-)(using Executor)
+)(using Executor, lila.core.config.RateLimit)
     extends lila.core.relation.RelationApi(repo.coll):
-
-  import RelationRepo.makeId
 
   def fetchRelation(u1: UserId, u2: UserId): Fu[Option[Relation]] =
     (u1 != u2).so(coll.primitiveOne[Relation]($doc("u1" -> u1, "u2" -> u2), "r"))
@@ -39,7 +37,9 @@ final class RelationApi(
     blocking as fetchBlocking,
     following as fetchFollowing,
     freshFollowersFromSecondary,
-    filterBlocked
+    filterBlocked,
+    unfollowAll,
+    removeAllFollowers
   }
 
   def fetchFriends(userId: UserId): Fu[Set[UserId]] =
@@ -118,7 +118,7 @@ final class RelationApi(
           case _ =>
             (repo.follow(u1, u2) >> limitFollow(u1)).andDo {
               countFollowingCache.update(u1, prev => (prev + 1).atMost(config.maxFollow.value))
-              lila.common.Bus.named.timeline(Propagate(FollowUser(u1, u2)).toFriendsOf(u1))
+              lila.common.Bus.pub(Propagate(FollowUser(u1, u2)).toFriendsOf(u1))
               Bus.publish(lila.core.relation.Follow(u1, u2), "relation")
               lila.mon.relation.follow.increment()
             }
@@ -173,8 +173,6 @@ final class RelationApi(
       }
     })
 
-  def unfollowAll(u1: UserId): Funit = repo.unfollowAll(u1)
-
   def unblock(u1: UserId, u2: UserId): Funit =
     (u1 != u2).so(fetchBlocks(u1, u2).flatMap {
       if _ then
@@ -188,6 +186,11 @@ final class RelationApi(
         }
       else funit
     })
+
+  def isBlockedByAny(by: Iterable[UserId])(using me: Option[Me]): Fu[Boolean] =
+    me.ifTrue(by.nonEmpty)
+      .so: me =>
+        coll.exists($doc("_id".$in(by.map(makeId(_, me.userId))), "r" -> Block))
 
   def searchFollowedBy(u: UserId, term: UserSearch, max: Int): Fu[List[UserId]] =
     repo

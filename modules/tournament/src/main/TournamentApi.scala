@@ -3,20 +3,18 @@ package lila.tournament
 import akka.stream.scaladsl.*
 import com.roundeights.hasher.Algo
 import play.api.libs.json.*
+import scalalib.paginator.Paginator
 
 import java.nio.charset.StandardCharsets.UTF_8
 import java.security.MessageDigest
-import scala.util.chaining.*
 
-import scalalib.paginator.Paginator
 import lila.common.{ Bus, Debouncer }
+import lila.core.game.LightPov
+import lila.core.round.{ AbortForce, GoBerserk }
+import lila.core.team.LightTeam
+import lila.core.tournament.Status
 import lila.gathering.Condition
 import lila.gathering.Condition.GetMyTeamIds
-import lila.core.team.LightTeam
-import lila.core.round.{ AbortForce, GoBerserk }
-import lila.tournament.TeamBattle.TeamInfo
-import lila.core.tournament.Status
-import lila.core.game.LightPov
 
 final class TournamentApi(
     cached: TournamentCache,
@@ -91,7 +89,7 @@ final class TournamentApi(
 
   private def ejectPlayersNonLongerOnAllowList(old: Tournament, tour: Tournament): Funit =
     tour.isCreated.so:
-      tour.conditions.removedFromAllowList(old.conditions).toList.traverse_ {
+      tour.conditions.removedFromAllowList(old.conditions).toList.sequentiallyVoid {
         withdraw(tour.id, _, false, false)
       }
 
@@ -138,12 +136,10 @@ final class TournamentApi(
               case pairings =>
                 pairingRepo.insert(pairings.map(_.pairing)) >>
                   pairings
-                    .map: pairing =>
+                    .parallelVoid: pairing =>
                       autoPairing(tour, pairing, ranking.ranking)
                         .mon(_.tournament.pairing.createAutoPairing)
                         .map { socket.startGame(tour.id, _) }
-                    .parallel
-                    .void
                     .mon(_.tournament.pairing.createInserts)
                     .andDo:
                       lila.mon.tournament.pairing.batchSize.record(pairings.size)
@@ -237,7 +233,7 @@ final class TournamentApi(
       playerRepo
         .bestByTourWithRank(tour.id, 500)
         .flatMap:
-          _.traverse_ :
+          _.sequentiallyVoid:
             case rp if rp.rank.value == 1 =>
               trophyApi.award(tournamentUrl(tour.id), rp.player.userId, marathonWinner)
             case rp if rp.rank <= 10 =>
@@ -368,7 +364,7 @@ final class TournamentApi(
 
   def withdrawAll(user: User): Funit =
     tournamentRepo.withdrawableIds(user.id, reason = "withdrawAll").flatMap {
-      _.traverse_ {
+      _.sequentiallyVoid {
         withdraw(_, user.id, isPause = false, isStalling = false)
       }
     }
@@ -397,9 +393,8 @@ final class TournamentApi(
         .flatMap: pairingOpt =>
           Parallel(tourId, "finishGame")(cached.tourCache.started): tour =>
             pairingOpt
-              .so { pairing =>
-                game.userIds.map(updatePlayerAfterGame(tour, game, pairing)).parallel.void
-              }
+              .so: pairing =>
+                game.userIds.parallelVoid(updatePlayerAfterGame(tour, game, pairing))
               .andDo {
                 duelStore.remove(game)
                 socket.reload(tour.id)
@@ -430,7 +425,7 @@ final class TournamentApi(
             )
           }
           .andDo(game.whitePlayer.userId.foreach: whiteUserId =>
-            colorHistoryApi.inc(player.id, chess.Color.fromWhite(player.is(whiteUserId))))
+            colorHistoryApi.inc(player.id, Color.fromWhite(player.is(whiteUserId))))
       }
     }
 
@@ -450,18 +445,17 @@ final class TournamentApi(
 
   def pausePlaybanned(userId: UserId) =
     tournamentRepo.withdrawableIds(userId, reason = "pausePlaybanned").flatMap {
-      _.traverse_(playerRepo.withdraw(_, userId))
+      _.sequentiallyVoid(playerRepo.withdraw(_, userId))
     }
 
   private[tournament] def kickFromTeam(teamId: TeamId, userId: UserId): Funit =
     tournamentRepo.withdrawableIds(userId, teamId = teamId.some, reason = "kickFromTeam").flatMap {
-      _.traverse: tourId =>
+      _.sequentiallyVoid: tourId =>
         Parallel(tourId, "kickFromTeam")(tournamentRepo.byId): tour =>
           val fu =
             if tour.isCreated then playerRepo.remove(tour.id, userId)
             else playerRepo.withdraw(tour.id, userId)
           (fu >> updateNbPlayers(tourId)).andDo(socket.reload(tourId))
-      .void
     }
 
   // withdraws the player and forfeits all pairings in ongoing tournaments
@@ -476,7 +470,7 @@ final class TournamentApi(
                 roundApi.tell(currentPairing.gameId, AbortForce)
             } >> pairingRepo.opponentsOf(tour.id, userId).flatMap { uids =>
               pairingRepo.forfeitByTourAndUserId(tour.id, userId) >>
-                uids.toList.traverse_(recomputePlayerAndSheet(tour))
+                uids.toList.sequentiallyVoid(recomputePlayerAndSheet(tour))
             }
         } >>
           updateNbPlayers(tour.id)).andDo(socket.reload(tour.id)).andDo(publish())
@@ -613,7 +607,7 @@ final class TournamentApi(
 
   def allCurrentLeadersInStandard: Fu[Map[lila.core.tournament.Tournament, List[UserId]]] =
     tournamentRepo.standardPublicStartedFromSecondary.flatMap:
-      _.traverse: tour =>
+      _.sequentially: tour =>
         tournamentTop(tour.id).dmap(tour -> _.value.map(_.userId))
       .dmap(_.toMap)
 

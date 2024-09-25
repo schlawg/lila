@@ -1,6 +1,7 @@
 package lila.tournament
 
 import play.api.i18n.Lang
+
 import lila.core.chess.Rank
 
 final class LeaderboardRepo(val coll: lila.db.dsl.Coll)
@@ -56,7 +57,7 @@ case class RankedPairing(pairing: Pairing, rank1: Rank, rank2: Rank):
 
   def bestRank: Rank = rank1.atLeast(rank2)
 
-  def bestColor = chess.Color.fromWhite(rank1 < rank2)
+  def bestColor = Color.fromWhite(rank1 < rank2)
 
 object RankedPairing:
 

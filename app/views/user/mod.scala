@@ -1,22 +1,15 @@
 package views.user
 
-import play.api.i18n.Lang
-
 import lila.app.UiEnv.{ *, given }
-
 import lila.appeal.Appeal
-import lila.evaluation.Display
-import lila.mod.IpRender.RenderIp
-import lila.mod.{ ModPresets, UserWithModlog }
-import lila.mod.ui.ModUserTableUi
-import lila.core.playban.RageSit
-import lila.security.{ Dated, UserAgentParser, UserClient, UserLogins }
-import lila.core.perm.Permission
 import lila.core.i18n.Translate
+import lila.mod.IpRender.RenderIp
+import lila.mod.UserWithModlog
+import lila.mod.ui.ModUserTableUi
+import lila.security.{ Dated, UserAgentParser, UserClient, UserLogins }
 
 object mod:
 
-  import views.mod.userTable
   import views.mod.user.*
   import views.mod.{ user as ui }
 
@@ -26,12 +19,12 @@ object mod:
       appeal.map: a =>
         frag(
           div(cls := "mod_log mod_log--appeal")(
-            st.a(href := routes.Appeal.show(a.id)):
+            st.a(href := routes.Appeal.show(a.userId)):
               strong(cls := "text", dataIcon := Icon.CautionTriangle)("Appeal status: ", a.status.toString)
             ,
             br,
             a.msgs.map(_.text).map(shorten(_, 140)).map(p(_)),
-            (a.msgs.size > 1).option(st.a(href := routes.Appeal.show(a.id)):
+            (a.msgs.size > 1).option(st.a(href := routes.Appeal.show(a.userId)):
               frag("and ", pluralize("more message", a.msgs.size - 1))
             )
           )
@@ -43,7 +36,7 @@ object mod:
       "Created by ",
       userLink(managed.createdBy),
       " for class ",
-      a(href := routes.Clas.show(managed.clas.id.value))(managed.clas.name)
+      a(href := routes.Clas.show(managed.clas.id))(managed.clas.name)
     )
 
   def boardTokens(tokens: List[lila.oauth.AccessToken])(using Context): Frag =
@@ -109,7 +102,7 @@ object mod:
           tr(
             th(
               pluralize("linked user", userLogins.otherUsers.size),
-              (max < 1000 || othersWithEmail.others.sizeIs >= max).option(
+              (max < 1000 || othersPartiallyLoaded).option(
                 frag(
                   nbsp,
                   a(cls := "more-others")("Load more")
@@ -207,11 +200,14 @@ object mod:
 
   private def emailValueOf(emails: UserLogins.WithMeSortedWithEmails[UserWithModlog])(u: User) =
     emails.emails.get(u.id).map(_.value).map {
-      case EmailAddress.clasIdRegex(id) => a(href := routes.Clas.show(id))(s"Class #$id")
+      case EmailAddress.clasIdRegex(id) => a(href := routes.Clas.show(lila.core.id.ClasId(id)))(s"Class #$id")
       case email                        => frag(email)
     }
 
-  def identification(logins: UserLogins)(using ctx: Context, renderIp: RenderIp): Frag =
+  def identification(logins: UserLogins, othersPartiallyLoaded: Boolean)(using
+      ctx: Context,
+      renderIp: RenderIp
+  ): Frag =
     val canIpBan  = Granter.opt(_.IpBan)
     val canFpBan  = Granter.opt(_.PrintBan)
     val canLocate = Granter.opt(_.Admin)
@@ -301,7 +297,7 @@ object mod:
                     button(
                       cls := List(
                         "button button-empty" -> true,
-                        "button-discouraging" -> (ip.alts.cleans > 0)
+                        "button-discouraging" -> (ip.alts.cleans > 0 || othersPartiallyLoaded)
                       ),
                       href := routes.Mod.singleIpBan(!ip.blocked, ip.ip.value.value)
                     )("BAN")
@@ -335,7 +331,7 @@ object mod:
                     button(
                       cls := List(
                         "button button-empty" -> true,
-                        "button-discouraging" -> (fp.alts.cleans > 0)
+                        "button-discouraging" -> (fp.alts.cleans > 0 || othersPartiallyLoaded)
                       ),
                       href := routes.Mod.printBan(!fp.banned, fp.fp.value.value)
                     )("BAN")

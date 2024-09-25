@@ -2,7 +2,8 @@ package lila.i18n
 
 import play.api.i18n.Lang
 import play.api.mvc.RequestHeader
-import lila.core.i18n.{ defaultLang, Language, defaultLanguage, fixJavaLanguage }
+
+import lila.core.i18n.{ Language, defaultLang, defaultLanguage, fixJavaLanguage }
 
 object LangPicker extends lila.core.i18n.LangPicker:
 
@@ -65,17 +66,17 @@ object LangPicker extends lila.core.i18n.LangPicker:
     if LangList.all.keySet contains to then Some(to)
     else defaultByLanguage.get(to.language).orElse(lichessCodes.get(to.language))
 
-  def byHref(code: String, req: RequestHeader): ByHref =
-    Lang.get(code).flatMap(findCloser) match
-      case Some(lang) if fixJavaLanguage(lang).value == code =>
+  def byHref(language: Language, req: RequestHeader): ByHref =
+    Lang.get(language.value).flatMap(findCloser) match
+      case Some(lang) if fixJavaLanguage(lang) == language =>
         if req.acceptLanguages.isEmpty || req.acceptLanguages.exists(_.language == lang.language)
         then ByHref.Found(lang)
         else ByHref.Refused(lang)
-      case Some(lang) => ByHref.Redir(fixJavaLanguage(lang).value)
+      case Some(lang) => ByHref.Redir(fixJavaLanguage(lang))
       case None       => ByHref.NotFound
 
   enum ByHref:
     case Found(lang: Lang)
     case Refused(lang: Lang)
-    case Redir(code: String)
+    case Redir(language: Language)
     case NotFound

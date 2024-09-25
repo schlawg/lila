@@ -1,15 +1,17 @@
 import { h, VNode } from 'snabbdom';
 import { Prop, prop } from 'common';
 import * as licon from 'common/licon';
+import { snabDialog } from 'common/dialog';
 import { bind, dataIcon, iconTag, onInsert } from 'common/snabbdom';
 import { storedProp, storedJsonProp, StoredJsonProp, StoredProp, storedStringProp } from 'common/storage';
 import { ExplorerDb, ExplorerSpeed, ExplorerMode } from './interfaces';
 import AnalyseCtrl from '../ctrl';
-import { perf } from 'game/perf';
+import perfIcons from 'common/perfIcons';
 import { ucfirst } from './explorerUtil';
 import { Color } from 'chessground/types';
 import { opposite } from 'chessground/util';
 import { Redraw } from '../interfaces';
+import { userComplete } from 'common/userComplete';
 
 const allSpeeds: ExplorerSpeed[] = ['ultraBullet', 'bullet', 'blitz', 'rapid', 'classical', 'correspondence'];
 const allModes: ExplorerMode[] = ['casual', 'rated'];
@@ -115,10 +117,10 @@ export class ExplorerConfigCtrl {
 
   toggleMany =
     <T>(c: StoredJsonProp<T[]>) =>
-    (value: T) => {
-      if (!c().includes(value)) c(c().concat([value]));
-      else if (c().length > 1) c(c().filter(v => v !== value));
-    };
+      (value: T) => {
+        if (!c().includes(value)) c(c().concat([value]));
+        else if (c().length > 1) c(c().filter(v => v !== value));
+      };
 
   toggleColor = () => this.data.color(opposite(this.data.color()));
 
@@ -143,8 +145,8 @@ export function view(ctrl: ExplorerConfigCtrl): VNode[] {
     ctrl.data.db() === 'masters'
       ? masterDb(ctrl)
       : ctrl.data.db() === 'lichess'
-      ? lichessDb(ctrl)
-      : playerDb(ctrl),
+        ? lichessDb(ctrl)
+        : playerDb(ctrl),
     h(
       'section.save',
       h(
@@ -208,15 +210,15 @@ const masterDb = (ctrl: ExplorerConfigCtrl) =>
 
 const radioButton =
   <T>(ctrl: ExplorerConfigCtrl, storage: StoredJsonProp<T[]>, render?: (t: T) => VNode) =>
-  (v: T) =>
-    h(
-      'button',
-      {
-        attrs: { 'aria-pressed': `${storage().includes(v)}`, title: render ? ucfirst('' + v) : '' },
-        hook: bind('click', _ => ctrl.toggleMany(storage)(v), ctrl.root.redraw),
-      },
-      render ? render(v) : ctrl.root.trans.noarg('' + v),
-    );
+    (v: T) =>
+      h(
+        'button',
+        {
+          attrs: { 'aria-pressed': `${storage().includes(v)}`, title: render ? ucfirst('' + v) : '' },
+          hook: bind('click', _ => ctrl.toggleMany(storage)(v), ctrl.root.redraw),
+        },
+        render ? render(v) : ctrl.root.trans.noarg('' + v),
+      );
 
 const lichessDb = (ctrl: ExplorerConfigCtrl) =>
   h('div', [
@@ -231,7 +233,7 @@ const lichessDb = (ctrl: ExplorerConfigCtrl) =>
 const speedSection = (ctrl: ExplorerConfigCtrl) =>
   h('section.speed', [
     h('label', ctrl.root.trans.noarg('timeControl')),
-    h('div.choices', allSpeeds.map(radioButton(ctrl, ctrl.data.speed, s => iconTag(perf.icons[s])))),
+    h('div.choices', allSpeeds.map(radioButton(ctrl, ctrl.data.speed, s => iconTag(perfIcons[s])))),
   ]);
 
 const modeSection = (ctrl: ExplorerConfigCtrl) =>
@@ -333,7 +335,7 @@ const playerModal = (ctrl: ExplorerConfigCtrl) => {
     }
     return '.button-metal';
   };
-  return site.dialog.snab({
+  return snabDialog({
     class: 'explorer__config__player__choice',
     onClose() {
       ctrl.data.playerName.open(false);
@@ -348,10 +350,7 @@ const playerModal = (ctrl: ExplorerConfigCtrl) => {
             spellcheck: 'false',
           },
           hook: onInsert<HTMLInputElement>(input =>
-            site.asset
-              .userComplete({ input, tag: 'span', onSelect: v => onSelect(v.name) })
-              .then(() => input.focus()),
-          ),
+            userComplete({ input, focus: true, tag: 'span', onSelect: v => onSelect(v.name) })),
         }),
       ]),
       h(
@@ -371,9 +370,9 @@ const playerModal = (ctrl: ExplorerConfigCtrl) => {
             ),
             name && ctrl.data.playerName.previous().includes(name)
               ? h('button.remove', {
-                  attrs: dataIcon(licon.X),
-                  hook: bind('click', () => ctrl.removePlayer(name), ctrl.root.redraw),
-                })
+                attrs: dataIcon(licon.X),
+                hook: bind('click', () => ctrl.removePlayer(name), ctrl.root.redraw),
+              })
               : null,
           ]),
         ),

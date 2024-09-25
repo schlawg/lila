@@ -1,9 +1,9 @@
 package lila.round
 
-import chess.format.{ Fen, Uci }
 import chess.format.pgn.SanStr
-import chess.{ Check, Ply, Square }
+import chess.format.{ Fen, Uci }
 import chess.variant.Variant
+import chess.{ Check, Ply, Square }
 import play.api.libs.json.*
 
 case class Step(
@@ -38,16 +38,15 @@ object Step:
       .add(
         "dests",
         dests.map {
-          _.map { case (orig, dests) =>
+          _.map { (orig, dests) =>
             s"${orig.asChar}${dests.map(_.asChar).mkString}"
           }.mkString(" ")
         }
       )
       .add(
         "drops",
-        drops.map { drops =>
+        drops.map: drops =>
           JsString(drops.map(_.key).mkString)
-        }
       )
       .add("crazy", crazyData)
 

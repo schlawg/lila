@@ -3,14 +3,14 @@ package controllers
 import play.api.libs.json.{ Json, Writes }
 import play.api.mvc.Result
 import scalalib.Json.given
+import scalalib.paginator.{ AdapterLike, Paginator }
 
 import lila.app.{ *, given }
-import scalalib.paginator.{ AdapterLike, Paginator }
 import lila.core.LightUser
-import lila.relation.Related
-import lila.relation.RelationStream.*
 import lila.core.perf.UserWithPerfs
 import lila.rating.UserPerfsExt.bestRatedPerf
+import lila.relation.Related
+import lila.relation.RelationStream.*
 
 final class Relation(env: Env, apiC: => Api) extends LilaController(env):
 
@@ -36,17 +36,11 @@ final class Relation(env: Env, apiC: => Api) extends LilaController(env):
     )
   yield res
 
-  private val FollowLimitPerUser = lila.memo.RateLimit[UserId](
-    credits = 150,
-    duration = 72.hour,
-    key = "follow.user"
-  )
-
   private def RatelimitWith(
       str: UserStr
   )(f: LightUser => Fu[Result])(using me: Me)(using Context): Fu[Result] =
     Found(env.user.lightUserApi.async(str.id)): user =>
-      FollowLimitPerUser(me, rateLimited):
+      limit.follow(me, rateLimited):
         f(user)
 
   def follow(username: UserStr) = AuthOrScoped(_.Follow.Write, _.Web.Mobile) { ctx ?=> me ?=>
@@ -73,12 +67,12 @@ final class Relation(env: Env, apiC: => Api) extends LilaController(env):
   }
   def unfollowBc = unfollow
 
-  def block(username: UserStr) = Auth { ctx ?=> me ?=>
+  def block(username: UserStr) = AuthOrScoped(_.Follow.Write, _.Web.Mobile) { ctx ?=> me ?=>
     RatelimitWith(username): user =>
       api.block(me, user.id).recoverDefault >> renderActions(user.name, getBool("mini"))
   }
 
-  def unblock(username: UserStr) = Auth { ctx ?=> me ?=>
+  def unblock(username: UserStr) = AuthOrScoped(_.Follow.Write, _.Web.Mobile) { ctx ?=> me ?=>
     RatelimitWith(username): user =>
       api.unblock(me, user.id).recoverDefault >> renderActions(user.name, getBool("mini"))
   }
@@ -139,7 +133,7 @@ final class Relation(env: Env, apiC: => Api) extends LilaController(env):
   private def followship(userIds: Seq[UserId])(using ctx: Context): Fu[List[Related[UserWithPerfs]]] = for
     users       <- env.user.api.listWithPerfs(userIds.toList)
     followables <- ctx.isAuth.so(env.pref.api.followableIds(users.map(_.id)))
-    rels <- users.traverse: u =>
+    rels <- users.sequentially: u =>
       ctx.userId
         .so(api.fetchRelation(_, u.id))
         .map: rel =>

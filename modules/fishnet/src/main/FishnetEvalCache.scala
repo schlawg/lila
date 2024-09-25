@@ -1,8 +1,6 @@
 package lila.fishnet
 
-import chess.format.Fen
 import lila.tree.CloudEval
-
 import JsonApi.Request.Evaluation
 
 trait IFishnetEvalCache:
@@ -47,9 +45,9 @@ final private class FishnetEvalCache(getSinglePvEval: CloudEval.GetSinglePvEval)
       )
       .fold(
         _ => fuccess(Nil),
-        _.mapWithIndex: (sit, index) =>
-          getSinglePvEval(game.variant, Fen.write(sit)).dmap2 { index -> _ }
-        .parallel
+        _.zipWithIndex
+          .parallel: (sit, index) =>
+            getSinglePvEval(sit).dmap2 { index -> _ }
           .map(_.flatten)
       )
 

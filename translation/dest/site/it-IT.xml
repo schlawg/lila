@@ -70,6 +70,8 @@
   <string name="promoteVariation">Promuovi la variante</string>
   <string name="makeMainLine">Rendi questa la variante principale</string>
   <string name="deleteFromHere">Elimina da qui</string>
+  <string name="collapseVariations">Riduci varianti</string>
+  <string name="expandVariations">Espandi varianti</string>
   <string name="forceVariation">Mostra come variante</string>
   <string name="copyVariationPgn">Copia il PGN della variante</string>
   <string name="move">Mossa</string>
@@ -178,6 +180,7 @@
   <string name="latestForumPosts">Ultimi interventi nel forum</string>
   <string name="players">Giocatori</string>
   <string name="friends">Amici</string>
+  <string name="otherPlayers">altri giocatori</string>
   <string name="discussions">Conversazioni</string>
   <string name="today">Oggi</string>
   <string name="yesterday">Ieri</string>
@@ -466,9 +469,6 @@ analizzarla con il computer, commentarla in chat, e condividerla tramite un indi
   <string name="safeTournamentName">Scegli un nome appropriato per il torneo.</string>
   <string name="inappropriateNameWarning">Qualsiasi cosa anche solo lievemente inappropriata potrebbe comportare l\'eliminazione del tuo account.</string>
   <string name="emptyTournamentName">Lascia vuoto il nome del torneo per chiamarlo con il nome di un giocatore famoso casuale.</string>
-  <string name="recommendNotTouching">Si consiglia di non toccare queste impostazioni.</string>
-  <string name="fewerPlayers">Se imponi condizioni d\'accesso il torneo avrà un minor numero di giocatori.</string>
-  <string name="showAdvancedSettings">Mostra impostazioni avanzate</string>
   <string name="makePrivateTournament">Rendi privato il torneo e limita l\'accesso con una password</string>
   <string name="join">Unisciti</string>
   <string name="withdraw">Ritirati</string>
@@ -508,8 +508,7 @@ analizzarla con il computer, commentarla in chat, e condividerla tramite un indi
   <string name="ifNoneLeaveEmpty">Se nessuno, lasciare vuoto</string>
   <string name="profile">Profilo</string>
   <string name="editProfile">Modifica profilo</string>
-  <string name="firstName">Nome</string>
-  <string name="lastName">Cognome</string>
+  <string name="realName">Nome reale</string>
   <string name="setFlair">Imposta la tua icona</string>
   <string name="flair">Icona</string>
   <string name="youCanHideFlair">Esiste un\'impostazione per nascondere le icone di tutti gli utenti, sull\'intero sito.</string>
@@ -540,6 +539,8 @@ analizzarla con il computer, commentarla in chat, e condividerla tramite un indi
   <string name="descPrivateHelp">Il testo che solo i membri del team vedranno. Se impostato sostituisce la descrizione pubblica per i membri del team.</string>
   <string name="no">No</string>
   <string name="yes">Sì</string>
+  <string name="website">Sito</string>
+  <string name="mobile">Cellulare</string>
   <string name="help">Aiuto:</string>
   <string name="createANewTopic">Crea una nuova discussione</string>
   <string name="topics">Discussioni</string>
@@ -556,11 +557,11 @@ analizzarla con il computer, commentarla in chat, e condividerla tramite un indi
   <string name="reason">Motivo</string>
   <string name="whatIsIheMatter">Qual è il problema?</string>
   <string name="cheat">Imbrogli</string>
-  <string name="insult">Insulti</string>
   <string name="troll">Provocazioni</string>
-  <string name="ratingManipulation">Manipolazione del rating</string>
   <string name="other">Altro</string>
-  <string name="reportDescriptionHelp">Incolla il link della partita/e e spiega cosa non va con questo giocatore. Non dire soltanto \"ha imbrogliato\", ma specifica come sei arrivato a questa conclusione. Il tuo report verrà processato più velocemente se scritto in lingua inglese.</string>
+  <string name="reportCheatBoostHelp" comment="This is a generic message and not specific to cheating reports. It attempts to educate the player on how to write a useful report for the Lichess team. It also requests evidence.&#10;&#10;Appears on the &quot;Report a user&quot; page https://lichess.org/report.">Incolla il link della partita(o partite) e spiega cosa non va sul comportamento di questo utente. Non dire solamente \"ha barato\", ma invece dici come sei arrivato a questa conclusione.</string>
+  <string name="reportUsernameHelp" comment="This is a generic message, which attempts to educate the player on how to write a useful report for the Lichess team.&#10;&#10;Appears on the &quot;Report a user&quot; page https://lichess.org/report, when selecting the 'User name' option.">Spiegaci cosa vi è di offensivo in questo nome utente. Non dire solamente \"è offensivo/inappopriato\", ma invece dici come sei arrivato a questa conclusione, soprattutto se l\'insulto è offuscato, non in inglese, in linguaggio giovanile, oppure se è un riferimento storico/culturale.</string>
+  <string name="reportProcessedFasterInEnglish" comment="Appears on the &quot;Report a user&quot; page https://lichess.org/report, to encourage users to write in English, so any Lichess moderator can process it.">La tua segnalazione sarà processata più velocemente se scritta in Inglese.</string>
   <string name="error.provideOneCheatedGameLink">Si prega di fornire almeno un collegamento link di una partita in cui il giocatore ha imbrogliato.</string>
   <string name="by">di %s</string>
   <string name="importedByX">Importato da %s</string>
@@ -593,6 +594,7 @@ analizzarla con il computer, commentarla in chat, e condividerla tramite un indi
   <string name="slow">Lenta</string>
   <string name="insideTheBoard">Dentro la scacchiera</string>
   <string name="outsideTheBoard">Fuori la scacchiera</string>
+  <string name="allSquaresOfTheBoard">Su tutte le case della scacchiera</string>
   <string name="onSlowGames">Nelle partite lente</string>
   <string name="always">Sempre</string>
   <string name="never">Mai</string>
@@ -792,9 +794,12 @@ analizzarla con il computer, commentarla in chat, e condividerla tramite un indi
   <string name="transparent">Trasparente</string>
   <string name="deviceTheme">Tema del dispositivo</string>
   <string name="backgroundImageUrl">URL dell\'immagine di sfondo:</string>
-  <string name="boardGeometry">Geometria scacchiera</string>
-  <string name="boardTheme">Tema scacchiera</string>
-  <string name="boardSize">Dimensione scacchiera</string>
+  <string name="board">Scacchiera</string>
+  <string name="size">Grandezza</string>
+  <string name="opacity">Opacità</string>
+  <string name="brightness">Luminosità</string>
+  <string name="hue">Tonalità</string>
+  <string name="boardReset">Ripristina i colori predefiniti</string>
   <string name="pieceSet">Set pezzi</string>
   <string name="embedInYourWebsite">Incorpora nel tuo sito Web</string>
   <string name="usernameAlreadyUsed">Questo nome è già in uso. Prego sceglierne un altro.</string>

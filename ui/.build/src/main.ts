@@ -1,6 +1,6 @@
-import * as ps from 'node:process';
-import * as path from 'node:path';
-import * as fs from 'node:fs';
+import ps from 'node:process';
+import path from 'node:path';
+import fs from 'node:fs';
 import { clean } from './clean';
 import { build, postBuild } from './build';
 
@@ -28,7 +28,7 @@ const longArgs = args.map(x => x[0]);
 const shortArgs = args.map(x => x[1] && x[1][1]).filter(x => x);
 type Builder = 'sass' | 'tsc' | 'esbuild';
 
-export function main() {
+export function main(): void {
   const args = ps.argv.slice(2);
   const oneDashArgs = args.filter(x => /^-([a-z]+)$/.test(x))?.flatMap(x => x.slice(1).split(''));
   oneDashArgs.filter(x => !shortArgs.includes(x)).forEach(arg => env.exit(`Unknown flag '-${arg}'`));
@@ -70,14 +70,14 @@ export function main() {
   }
 }
 
-export interface LichessModule {
-  root: string; // absolute path to package.json parentdir (module root)
-  name: string; // dirname of module root
+export interface Package {
+  root: string; // absolute path to package.json parentdir (package root)
+  name: string; // dirname of package root
   pkg: any; // the entire package.json object
   pre: string[][]; // pre-bundle build steps from package.json scripts
   post: string[][]; // post-bundle build steps from package.json scripts
-  hasTsconfig?: boolean; // fileExists('tsconfig.json')
   bundles?: string[];
+  hashGlobs?: string[];
   sync?: Sync[]; // pre-bundle filesystem copies from package json
 }
 
@@ -85,7 +85,7 @@ export interface Sync {
   // src must be a file or a glob expression, use <dir>/** to sync entire directories
   src: string;
   dest: string;
-  mod: LichessModule;
+  pkg: Package;
 }
 
 export const lines = (s: string): string[] => s.split(/[\n\r\f]+/).filter(x => x.trim());
@@ -95,7 +95,7 @@ const colorLines = (text: string, code: string) =>
     .map(t => (env.color ? escape(t, code) : t))
     .join('\n');
 
-export const colors = {
+export const colors: Record<string, (text: string) => string> = {
   red: (text: string): string => colorLines(text, codes.red),
   green: (text: string): string => colorLines(text, codes.green),
   yellow: (text: string): string => colorLines(text, codes.yellow),
@@ -111,11 +111,11 @@ export const colors = {
 };
 
 class Env {
-  rootDir = path.resolve(__dirname, '../../..'); // absolute path to lila project root
+  rootDir: string = path.resolve(__dirname, '../../..'); // absolute path to lila project root
 
-  deps: Map<string, string[]>;
-  modules: Map<string, LichessModule>;
-  building: LichessModule[];
+  deps: Map<string, string[]> = new Map();
+  packages: Map<string, Package> = new Map();
+  building: Package[] = [];
 
   watch = false;
   rebuild = false;
@@ -125,7 +125,7 @@ class Env {
   rgb = false;
   install = true;
   copies = true;
-  exitCode = new Map<Builder, number | false>();
+  exitCode: Map<Builder, number | false> = new Map();
   startTime: number | undefined = Date.now();
   logTime = true;
   logContext = true;
@@ -147,8 +147,8 @@ class Env {
     return this.exitCode.get('esbuild') !== false;
   }
   get manifestOk(): boolean {
-    return ['tsc', 'esbuild', 'sass'].every(
-      (x: Builder) => this.exitCode.get(x) === 0 || this.exitCode.get(x) === false,
+    return (['tsc', 'esbuild', 'sass'] as const).every(
+      x => this.exitCode.get(x) === 0 || this.exitCode.get(x) === false,
     );
   }
   get uiDir(): string {
@@ -157,49 +157,56 @@ class Env {
   get outDir(): string {
     return path.join(this.rootDir, 'public');
   }
+  get cssOutDir(): string {
+    return path.join(this.outDir, 'css');
+  }
+  get jsOutDir(): string {
+    return path.join(this.outDir, 'compiled');
+  }
+  get hashOutDir(): string {
+    return path.join(this.outDir, 'hashed');
+  }
   get themeDir(): string {
     return path.join(this.uiDir, 'common', 'css', 'theme');
   }
   get themeGenDir(): string {
     return path.join(this.themeDir, 'gen');
   }
-  get cssDir(): string {
-    return path.join(this.outDir, 'css');
-  }
-  get cssTempDir(): string {
-    return path.join(this.buildDir, 'dist', 'css');
-  }
-  get jsDir(): string {
-    return path.join(this.outDir, 'compiled');
-  }
   get buildDir(): string {
     return path.join(this.uiDir, '.build');
+  }
+  get cssTempDir(): string {
+    return path.join(this.buildDir, '.build-gen', 'css');
+  }
+  get buildTempDir(): string {
+    return path.join(this.buildDir, 'build');
   }
   get typesDir(): string {
     return path.join(this.uiDir, '@types');
   }
-  warn(d: any, ctx = 'build') {
+  get manifestFile(): string {
+    return path.join(this.jsOutDir, `manifest.${this.prod ? 'prod' : 'dev'}.json`);
+  }
+  warn(d: any, ctx = 'build'): void {
     this.log(d, { ctx: ctx, warn: true });
   }
-  error(d: any, ctx = 'build') {
+  error(d: any, ctx = 'build'): void {
     this.log(d, { ctx: ctx, error: true });
   }
-  exit(d: any, ctx = 'build') {
+  exit(d: any, ctx = 'build'): void {
     this.log(d, { ctx: ctx, error: true });
     process.exit(1);
   }
-  good(ctx = 'build') {
+  good(ctx = 'build'): void {
     this.log(colors.good('No errors') + env.watch ? ` - ${colors.grey('Watching')}...` : '', { ctx: ctx });
   }
-  log(d: any, { ctx = 'build', error = false, warn = false } = {}) {
+  log(d: any, { ctx = 'build', error = false, warn = false }: any = {}): void {
     let text: string =
-      typeof d === 'string'
-        ? d
-        : d instanceof Buffer
-        ? d.toString('utf8')
+      !d || typeof d === 'string' || d instanceof Buffer
+        ? String(d)
         : Array.isArray(d)
-        ? d.join('\n')
-        : JSON.stringify(d);
+          ? d.join('\n')
+          : JSON.stringify(d);
 
     const esc = this.color ? escape : (text: string, _: any) => text;
 
@@ -222,30 +229,29 @@ class Env {
     this.exitCode.set(ctx, code);
     const err = [...this.exitCode.values()].find(x => x);
     const allDone = this.exitCode.size === 3;
-
-    this.log(
-      `${code === 0 ? 'Done' : colors.red('Failed')}` +
+    if (ctx !== 'tsc' || code === 0)
+      this.log(
+        `${code === 0 ? 'Done' : colors.red('Failed')}` +
         (this.watch ? ` - ${colors.grey('Watching')}...` : ''),
-      {
-        ctx: ctx,
-      },
-    );
-
+        {
+          ctx: ctx,
+        },
+      );
     if (allDone) {
       if (!err) postBuild();
       if (this.startTime && !err)
         this.log(`Done in ${colors.green((Date.now() - this.startTime) / 1000 + '')}s`);
       this.startTime = undefined; // it's pointless to time subsequent builds, they are too fast
-      if (!env.watch) {
-        process.exitCode = err || 0;
-      }
+    }
+    if (!env.watch && err) {
+      process.exitCode = err;
     }
   }
 }
 
-export const env = new Env();
+export const env: Env = new Env();
 
-export const codes: any = {
+export const codes: Record<string, string> = {
   black: '30',
   red: '31',
   green: '32',
@@ -266,12 +272,11 @@ const escape = (text: string, code: string): string => `\x1b[${code}m${stripColo
 const pad2 = (n: number) => (n < 10 ? `0${n}` : `${n}`);
 
 function stripColorEscapes(text: string) {
-  // eslint-disable-next-line no-control-regex
   return text.replace(/\x1b\[[0-9;]*m/, '');
 }
 
-export const errorMark = colors.red('✘ ') + colors.error('[ERROR]');
-export const warnMark = colors.yellow('⚠ ') + colors.warn('[WARNING]');
+export const errorMark: string = colors.red('✘ ') + colors.error('[ERROR]');
+export const warnMark: string = colors.yellow('⚠ ') + colors.warn('[WARNING]');
 
 function prettyTime() {
   const now = new Date();

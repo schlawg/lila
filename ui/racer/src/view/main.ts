@@ -3,6 +3,7 @@ import RacerCtrl from '../ctrl';
 import renderClock from 'puz/view/clock';
 import renderHistory from 'puz/view/history';
 import * as licon from 'common/licon';
+import { copyMeInput } from 'common/copyMe';
 import { MaybeVNodes, bind, looseH as h } from 'common/snabbdom';
 import { VNode } from 'snabbdom';
 import { playModifiers, renderCombo } from 'puz/view/util';
@@ -10,7 +11,7 @@ import { renderRace } from './race';
 import { renderBoard } from './board';
 import { povMessage } from 'puz/run';
 
-export default function (ctrl: RacerCtrl): VNode {
+export default function(ctrl: RacerCtrl): VNode {
   return h(
     'div.racer.racer-app.racer--play',
     { class: { ...playModifiers(ctrl.run), [`racer--${ctrl.status()}`]: true } },
@@ -30,48 +31,48 @@ const selectScreen = (ctrl: RacerCtrl): MaybeVNodes => {
       const povMsg = h('p.racer__pre__message__pov', ctrl.trans(povMessage(ctrl.run)));
       return ctrl.race.lobby
         ? [
-            waitingToStart(noarg),
-            h('div.racer__pre__message.racer__pre__message--with-skip', [
-              h('div.racer__pre__message__text', [
-                h(
-                  'p',
-                  ctrl.knowsSkip()
-                    ? noarg(ctrl.vm.startsAt ? 'getReady' : 'waitingForMorePlayers')
-                    : skipHelp(noarg),
-                ),
-                povMsg,
-              ]),
-              !ctrl.knowsSkip() && renderSkip(ctrl),
-            ]),
-            comboZone(ctrl),
-          ]
-        : [
-            waitingToStart(noarg),
-            h('div.racer__pre__message', [
-              ...(ctrl.raceFull()
-                ? ctrl.isPlayer()
-                  ? [renderStart(ctrl)]
-                  : []
-                : ctrl.isPlayer()
-                ? [renderLink(ctrl), renderStart(ctrl)]
-                : [renderJoin(ctrl)]),
+          waitingToStart(noarg),
+          h('div.racer__pre__message.racer__pre__message--with-skip', [
+            h('div.racer__pre__message__text', [
+              h(
+                'p',
+                ctrl.knowsSkip()
+                  ? noarg(ctrl.vm.startsAt ? 'getReady' : 'waitingForMorePlayers')
+                  : skipHelp(noarg),
+              ),
               povMsg,
             ]),
-            comboZone(ctrl),
-          ];
+            !ctrl.knowsSkip() && renderSkip(ctrl),
+          ]),
+          comboZone(ctrl),
+        ]
+        : [
+          waitingToStart(noarg),
+          h('div.racer__pre__message', [
+            ...(ctrl.raceFull()
+              ? ctrl.isPlayer()
+                ? [renderStart(ctrl)]
+                : []
+              : ctrl.isPlayer()
+                ? [renderLink(ctrl), renderStart(ctrl)]
+                : [renderJoin(ctrl)]),
+            povMsg,
+          ]),
+          comboZone(ctrl),
+        ];
     }
     case 'racing': {
       const clock = renderClock(ctrl.run, ctrl.end, false);
       return ctrl.isPlayer()
         ? [playerScore(ctrl), h('div.puz-clock', [clock, renderSkip(ctrl)]), comboZone(ctrl)]
         : [
-            spectating(noarg),
-            h('div.racer__spectating', [
-              h('div.puz-clock', clock),
-              ctrl.race.lobby ? lobbyNext(ctrl) : waitForRematch(noarg),
-            ]),
-            comboZone(ctrl),
-          ];
+          spectating(noarg),
+          h('div.racer__spectating', [
+            h('div.puz-clock', clock),
+            ctrl.race.lobby ? lobbyNext(ctrl) : waitForRematch(noarg),
+          ]),
+          comboZone(ctrl),
+        ];
     }
     case 'post': {
       const nextRace = ctrl.race.lobby ? lobbyNext(ctrl) : friendNext(ctrl);
@@ -131,18 +132,7 @@ const playerScore = (ctrl: RacerCtrl): VNode =>
 const renderLink = (ctrl: RacerCtrl) =>
   h('div.puz-side__link', [
     h('p', ctrl.trans.noarg('toInviteSomeoneToPlayGiveThisUrl')),
-    h('div', [
-      h(`input#racer-url-${ctrl.race.id}.copyable.autoselect`, {
-        attrs: {
-          spellcheck: 'false',
-          readonly: 'readonly',
-          value: `${window.location.protocol}//${window.location.host}/racer/${ctrl.race.id}`,
-        },
-      }),
-      h('button.copy.button', {
-        attrs: { title: 'Copy URL', 'data-rel': `racer-url-${ctrl.race.id}`, 'data-icon': licon.Link },
-      }),
-    ]),
+    copyMeInput(`${window.location.protocol}//${window.location.host}/racer/${ctrl.race.id}`),
   ]);
 
 const renderStart = (ctrl: RacerCtrl) =>

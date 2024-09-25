@@ -1,17 +1,17 @@
 package controllers
 
-import scalalib.ThreadLocalRandom
 import play.api.libs.json.{ JsNull, JsObject, JsValue, Json }
 import play.api.mvc.*
+import scalalib.ThreadLocalRandom
 import scalatags.Text.all.stringFrag
 
 import lila.app.*
+import lila.common.HTTPRequest
 import lila.common.Json.given
-import lila.core.net.{ Bearer, IpAddress }
+import lila.core.net.Bearer
 import lila.oauth.{ AccessTokenRequest, AuthorizationRequest, OAuthScopes }
 
 import Api.ApiResult
-import lila.common.HTTPRequest
 
 final class OAuth(env: Env, apiC: => Api) extends LilaController(env):
 
@@ -102,47 +102,38 @@ final class OAuth(env: Env, apiC: => Api) extends LilaController(env):
   }
 
   def revokeClient = AuthBody { ctx ?=> _ ?=>
-    lila.oauth.AccessTokenRequest.revokeClientForm
-      .bindFromRequest()
-      .fold(
-        _ => BadRequest,
-        origin => env.oAuth.tokenApi.revokeByClientOrigin(origin).inject(NoContent)
-      )
+    bindForm(lila.oauth.AccessTokenRequest.revokeClientForm)(
+      _ => BadRequest,
+      origin => env.oAuth.tokenApi.revokeByClientOrigin(origin).inject(NoContent)
+    )
   }
 
   def challengeTokens = ScopedBody(_.Web.Mod) { ctx ?=> me ?=>
     if isGranted(_.ApiChallengeAdmin) then
-      lila.oauth.OAuthTokenForm
-        .adminChallengeTokens()
-        .bindFromRequest()
-        .fold(
-          jsonFormError,
-          data =>
-            env.oAuth.tokenApi
-              .adminChallengeTokens(data, me)
-              .map: tokens =>
-                JsonOk(tokens.view.mapValues(_.plain).toMap)
-        )
+      bindForm(lila.oauth.OAuthTokenForm.adminChallengeTokens())(
+        jsonFormError,
+        data =>
+          env.oAuth.tokenApi
+            .adminChallengeTokens(data, me)
+            .map: tokens =>
+              JsonOk(tokens.view.mapValues(_.plain).toMap)
+      )
     else Unauthorized(jsonError("Missing permission"))
   }
 
-  private val testTokenRateLimit = lila.memo.RateLimit[IpAddress](
-    credits = 10_000,
-    duration = 10.minutes,
-    key = "api.token.test"
-  )
   def testTokens = AnonBodyOf(parse.tolerantText): body =>
     val bearers = Bearer.from(body.trim.split(',').view.take(1000).toList)
-    testTokenRateLimit(req.ipAddress, fuccess(ApiResult.Limited), cost = bearers.size):
-      env.oAuth.tokenApi.test(bearers).map { tokens =>
-        import lila.common.Json.given
-        ApiResult.Data(JsObject(tokens.map { (bearer, token) =>
-          bearer.value -> token.fold[JsValue](JsNull): t =>
-            Json.obj(
-              "userId"  -> t.userId,
-              "scopes"  -> t.scopes.into(OAuthScopes).keyList,
-              "expires" -> t.expires
-            )
-        }))
-      }
-    .map(apiC.toHttp)
+    limit
+      .oauthTokenTest(req.ipAddress, fuccess(ApiResult.Limited), cost = bearers.size):
+        env.oAuth.tokenApi.test(bearers).map { tokens =>
+          import lila.common.Json.given
+          ApiResult.Data(JsObject(tokens.map { (bearer, token) =>
+            bearer.value -> token.fold[JsValue](JsNull): t =>
+              Json.obj(
+                "userId"  -> t.userId,
+                "scopes"  -> t.scopes.into(OAuthScopes).keyList,
+                "expires" -> t.expires
+              )
+          }))
+        }
+      .map(apiC.toHttp)

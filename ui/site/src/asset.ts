@@ -3,48 +3,51 @@ import { memoize } from 'common';
 
 export const baseUrl = memoize(() => document.body.getAttribute('data-asset-url') || '');
 
-const version = memoize(() => document.body.getAttribute('data-asset-version'));
+const assetVersion = memoize(() => document.body.getAttribute('data-asset-version'));
 
 export const url = (path: string, opts: AssetUrlOpts = {}) => {
-  opts = opts || {};
-  const base = opts.sameDomain ? '' : baseUrl(),
-    v = opts.version || version();
-  return `${base}/assets${opts.noVersion ? '' : '/_' + v}/${path}`;
+  const base = opts.documentOrigin ? window.location.origin : opts.pathOnly ? '' : baseUrl();
+  const version = opts.version === false ? '' : `_${opts.version ?? assetVersion()}/`;
+  const hash = opts.version !== false && site.manifest.hashed[path];
+  return `${base}/assets/${hash ? asHashed(path, hash) : `${version}${path}`}`;
 };
+
+function asHashed(path: string, hash: string) {
+  const name = path.slice(path.lastIndexOf('/') + 1);
+  const extPos = name.indexOf('.');
+  return `hashed/${extPos < 0 ? `${name}.${hash}` : `${name.slice(0, extPos)}.${hash}${name.slice(extPos)}`}`;
+}
 
 // bump flairs version if a flair is changed only (not added or removed)
 export const flairSrc = (flair: Flair) => url(`flair/img/${flair}.webp`, { version: '_____2' });
 
-const safeClassNameRegex = /[ .#:\[\]\{\},>+~*;!'"\\]/g; // modules/common/src/main/String.scala
-const safeClassName = (name: string) => name.replace(safeClassNameRegex, '-');
-
-export const loadCss = (href: string, key?: string): Promise<void> =>
-  new Promise(resolve => {
-    href = url(href, { noVersion: true });
-    if (key) removeCssPath(key);
-    else if (document.querySelector(`head > link[href="${href}"]`)) return resolve();
+export const loadCss = (href: string, key?: string): Promise<void> => {
+  return new Promise(resolve => {
+    href = url(href, { version: false });
+    if (document.head.querySelector(`link[href="${href}"]`)) return resolve();
 
     const el = document.createElement('link');
-    if (key) el.className = `css-${safeClassName(key)}`;
+    if (key) el.setAttribute('data-css-key', key);
     el.rel = 'stylesheet';
     el.href = href;
     el.onload = () => resolve();
     document.head.append(el);
   });
+};
 
-export const loadCssPath = async (key: string): Promise<void> => {
+export const loadCssPath = async(key: string): Promise<void> => {
   const hash = site.manifest.css[key];
   await loadCss(`css/${key}${hash ? `.${hash}` : ''}.css`, key);
 };
 
-export const removeCssPath = (key: string) => {
-  $(`head > link.css-${safeClassName(key)}`).remove();
-};
+export const removeCss = (href: string) => $(`head > link[href="${href}"]`).remove();
 
-export const jsModule = (name: string) => {
+export const removeCssPath = (key: string) => $(`head > link[data-css-key="${key}"]`).remove();
+
+export const jsModule = (name: string, prefix: string = 'compiled/') => {
   if (name.endsWith('.js')) name = name.slice(0, -3);
   const hash = site.manifest.js[name];
-  return `compiled/${name}${hash ? `.${hash}` : ''}.js`;
+  return `${prefix}${name}${hash ? `.${hash}` : ''}.js`;
 };
 
 const scriptCache = new Map<string, Promise<void>>();
@@ -54,30 +57,21 @@ export const loadIife = (u: string, opts: AssetUrlOpts = {}): Promise<void> => {
   return scriptCache.get(u)!;
 };
 
-export async function loadEsm<T, ModuleOpts = any>(
-  name: string,
-  opts?: { init?: ModuleOpts; url?: AssetUrlOpts },
-): Promise<T> {
-  const urlOpts = opts?.url?.version ? opts?.url : { ...opts?.url, noVersion: true };
-  const module = await import(url(jsModule(name), urlOpts));
-  return module.initModule ? module.initModule(opts?.init) : module.default(opts?.init);
+export async function loadEsm<T>(name: string, opts: EsmModuleOpts = {}): Promise<T> {
+  opts = { ...opts, version: opts.version ?? false };
+
+  const module = await import(url(opts.npm ? jsModule(name, 'npm/') : jsModule(name), opts));
+  const initializer = module.initModule ?? module.default;
+  return opts.npm && !opts.init ? initializer : initializer(opts.init);
 }
 
-export const loadPageEsm = async (name: string) => {
-  const modulePromise = import(url(jsModule(name), { noVersion: true }));
+export const loadEsmPage = async(name: string) => {
+  const modulePromise = import(url(jsModule(name), { version: false }));
   const dataScript = document.getElementById('page-init-data');
   const opts = dataScript && JSON.parse(dataScript.innerHTML);
   dataScript?.remove();
   const module = await modulePromise;
   module.initModule ? module.initModule(opts) : module.default(opts);
-};
-
-export const userComplete = async (opts: UserCompleteOpts): Promise<UserComplete> => {
-  const [userComplete] = await Promise.all([
-    loadEsm('bits.userComplete', { init: opts }),
-    loadCssPath('complete'),
-  ]);
-  return userComplete as UserComplete;
 };
 
 export function embedChessground() {

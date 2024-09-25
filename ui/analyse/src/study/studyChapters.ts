@@ -16,13 +16,16 @@ import {
   ChapterPreviewFromServer,
   ChapterId,
   Federations,
-  ChapterPreviewPlayerFromServer,
-  ChapterPreviewPlayer,
+  StudyPlayerFromServer,
+  StudyPlayer,
+  ChapterSelect,
 } from './interfaces';
 import StudyCtrl from './studyCtrl';
 import { opposite } from 'chessops/util';
 import { fenColor } from 'common/miniBoard';
 import { initialFen } from 'chess';
+import type Sortable from 'sortablejs';
+import { pubsub } from 'common/pubsub';
 
 /* read-only interface for external use */
 export class StudyChapters {
@@ -79,12 +82,9 @@ export default class StudyChaptersCtrl {
         lastMoveAt: defined(c.thinkTime) ? Date.now() - 1000 * c.thinkTime : undefined,
       })),
     );
-  private convertPlayersFromServer = (players: PairOf<ChapterPreviewPlayerFromServer>) => {
+  private convertPlayersFromServer = (players: PairOf<StudyPlayerFromServer>) => {
     const feds = this.federations(),
-      conv: ChapterPreviewPlayer[] = players.map(p => ({
-        ...p,
-        fed: p.fed ? { id: p.fed, name: feds?.[p.fed] || p.fed } : undefined,
-      }));
+      conv: StudyPlayer[] = players.map(p => convertPlayerFromServer(p, feds));
     return { white: conv[0], black: conv[1] };
   };
 
@@ -97,6 +97,7 @@ export default class StudyChaptersCtrl {
       if (onRelayPath || !d.relayPath) {
         cp.fen = node.fen;
         cp.lastMove = node.uci;
+        cp.check = node.san?.includes('#') ? '#' : node.san?.includes('+') ? '+' : undefined;
       }
       if (onRelayPath) {
         cp.lastMoveAt = Date.now();
@@ -106,6 +107,14 @@ export default class StudyChaptersCtrl {
     }
   };
 }
+
+export const convertPlayerFromServer = <A extends StudyPlayerFromServer>(
+  player: A,
+  federations?: Federations,
+) => ({
+  ...player,
+  fed: player.fed ? { id: player.fed, name: federations?.[player.fed] || player.fed } : undefined,
+});
 
 export function isFinished(c: StudyChapter) {
   const result = findTag(c.tags, 'result');
@@ -121,30 +130,26 @@ export const looksLikeLichessGame = (tags: TagArray[]) =>
   !!findTag(tags, 'site')?.match(new RegExp(location.hostname + '/\\w{8}$'));
 
 export function resultOf(tags: TagArray[], isWhite: boolean): string | undefined {
-  switch (findTag(tags, 'result')) {
-    case '1-0':
-      return isWhite ? '1' : '0';
-    case '0-1':
-      return isWhite ? '0' : '1';
-    case '1/2-1/2':
-      return '1/2';
-    default:
-      return;
-  }
+  const both = findTag(tags, 'result')?.split('-');
+  const mine = both && both.length == 2 ? both[isWhite ? 0 : 1] : undefined;
+  return mine == '1/2' ? '½' : mine;
 }
 
-export const gameLinkAttrs = (basePath: string, game: { id: ChapterId }) => ({
-  href: `${basePath}/${game.id}`,
+export const gameLinkAttrs = (roundPath: string, game: { id: ChapterId }) => ({
+  href: `${roundPath}/${game.id}`,
 });
-export const gameLinksListener = (setChapter: (id: ChapterId | number) => boolean) => (vnode: VNode) =>
+export const gameLinksListener = (select: ChapterSelect) => (vnode: VNode) =>
   (vnode.elm as HTMLElement).addEventListener(
     'click',
-    e => {
+    async e => {
       let target = e.target as HTMLLinkElement;
       while (target && target.tagName !== 'A') target = target.parentNode as HTMLLinkElement;
       const href = target?.href;
       const id = target?.dataset['board'] || href?.match(/^[^?#]*/)?.[0].slice(-8);
-      if (id && setChapter(id) && !href?.match(/[?&]embed=/)) e.preventDefault();
+      if (id && select.is(id)) {
+        if (!href?.match(/[?&]embed=/)) e.preventDefault();
+        await select.set(id);
+      }
     },
     { passive: false },
   );
@@ -166,15 +171,13 @@ export function view(ctrl: StudyCtrl): VNode {
     }
     vData.count = newCount;
     if (canContribute && newCount > 1 && !vData.sortable) {
-      const makeSortable = () => {
-        vData.sortable = window.Sortable.create(el, {
+      site.asset.loadEsm<typeof Sortable>('sortable.esm', { npm: true }).then(s => {
+        vData.sortable = s.create(el, {
           draggable: '.draggable',
           handle: 'ontouchstart' in window ? 'span' : undefined,
           onSort: () => ctrl.chapters.sort(vData.sortable.toArray()),
         });
-      };
-      if (window.Sortable) makeSortable();
-      else site.asset.loadIife('javascripts/vendor/Sortable.min.js').then(makeSortable);
+      });
     }
   }
 
@@ -194,14 +197,14 @@ export function view(ctrl: StudyCtrl): VNode {
           });
           vnode.data!.li = {};
           update(vnode);
-          site.pubsub.emit('chat.resize');
+          pubsub.emit('chat.resize');
         },
         postpatch(old, vnode) {
           vnode.data!.li = old.data!.li;
           update(vnode);
         },
         destroy: vnode => {
-          const sortable = vnode.data!.li!.sortable;
+          const sortable: Sortable = vnode.data!.li!.sortable;
           if (sortable) sortable.destroy();
         },
       },
@@ -212,7 +215,7 @@ export function view(ctrl: StudyCtrl): VNode {
         const editing = ctrl.chapters.editForm.isEditing(chapter.id),
           active = !ctrl.vm.loading && current?.id === chapter.id;
         return h(
-          'div',
+          'button',
           {
             key: chapter.id,
             attrs: { 'data-id': chapter.id },
@@ -229,11 +232,11 @@ export function view(ctrl: StudyCtrl): VNode {
       .concat(
         ctrl.members.canContribute()
           ? [
-              h('div.add', { hook: bind('click', ctrl.chapters.toggleNewForm, ctrl.redraw) }, [
-                h('span', iconTag(licon.PlusButton)),
-                h('h3', ctrl.trans.noarg('addNewChapter')),
-              ]),
-            ]
+            h('button.add', { hook: bind('click', ctrl.chapters.toggleNewForm, ctrl.redraw) }, [
+              h('span', iconTag(licon.PlusButton)),
+              h('h3', ctrl.trans.noarg('addNewChapter')),
+            ]),
+          ]
           : [],
       ),
   );

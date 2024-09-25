@@ -1,10 +1,12 @@
 import { Prop, Toggle, propWithEffect, toggle } from 'common';
 import * as licon from 'common/licon';
 import { bind, dataIcon, onInsert } from 'common/snabbdom';
+import { snabDialog } from 'common/dialog';
 import { h, VNode } from 'snabbdom';
 import { Redraw } from '../interfaces';
 import { ChapterPreview } from './interfaces';
 import { StudyChapters } from './studyChapters';
+import { pubsub } from 'common/pubsub';
 
 export class SearchCtrl {
   open: Toggle;
@@ -17,7 +19,7 @@ export class SearchCtrl {
     readonly redraw: Redraw,
   ) {
     this.open = toggle(false, () => this.query(''));
-    site.pubsub.on('study.search.open', () => this.open(true));
+    pubsub.on('study.search.open', () => this.open(true));
   }
 
   cleanQuery = () => this.query().toLowerCase().trim();
@@ -49,7 +51,7 @@ const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); //
 export function view(ctrl: SearchCtrl) {
   const cleanQuery = ctrl.cleanQuery();
   const highlightRegex = cleanQuery && new RegExp(escapeRegExp(cleanQuery), 'gi');
-  return site.dialog.snab({
+  return snabDialog({
     class: 'study-search',
     onClose() {
       ctrl.open(false);
@@ -67,18 +69,19 @@ export function view(ctrl: SearchCtrl) {
       h(
         // dynamic extra class necessary to fully redraw the results and produce innerHTML
         `div.study-search__results.search-query-${cleanQuery}`,
+        { attrs: { tabindex: -1 } },
         ctrl.results().map(c =>
-          h('div', { hook: bind('click', () => ctrl.setChapter(c.id)) }, [
+          h('button', { hook: bind('click', () => ctrl.setChapter(c.id)) }, [
             h(
               'h3',
               {
                 hook: highlightRegex
                   ? {
-                      insert(vnode: VNode) {
-                        const el = vnode.elm as HTMLElement;
-                        el.innerHTML = c.name.replace(highlightRegex, '<high>$&</high>');
-                      },
-                    }
+                    insert(vnode: VNode) {
+                      const el = vnode.elm as HTMLElement;
+                      el.innerHTML = c.name.replace(highlightRegex, '<high>$&</high>');
+                    },
+                  }
                   : {},
               },
               c.name,

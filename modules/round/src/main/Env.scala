@@ -8,14 +8,13 @@ import play.api.Configuration
 import scala.util.matching.Regex
 
 import lila.common.autoconfig.{ *, given }
-import lila.core.config.*
 import lila.common.{ Bus, Uptime }
-import lila.game.{ Game, GameRepo, Pov }
+import lila.core.config.*
 import lila.core.round.{ Abort, Resign }
-import lila.memo.SettingStore
-import lila.rating.RatingFactor
-import lila.rating.PerfType
 import lila.core.user.{ FlairGet, FlairGetMap }
+import lila.game.GameRepo
+import lila.memo.SettingStore
+import lila.rating.{ PerfType, RatingFactor }
 import lila.round.RoundGame.*
 
 @Module
@@ -32,7 +31,6 @@ final class Env(
     gameRepo: GameRepo,
     idGenerator: lila.game.IdGenerator,
     userRepo: lila.user.UserRepo,
-    perfsRepo: lila.user.UserPerfsRepo,
     userApi: lila.user.UserApi,
     chatApi: lila.chat.ChatApi,
     crosstableApi: lila.game.CrosstableApi,
@@ -48,6 +46,7 @@ final class Env(
     socketKit: lila.core.socket.ParallelSocketKit,
     userLagPut: lila.core.socket.userLag.Put,
     lightUserApi: lila.user.LightUserApi,
+    bookmarkExists: lila.core.bookmark.BookmarkExists,
     simulApiCircularDep: => lila.core.simul.SimulApi,
     settingStore: lila.memo.SettingStore.Builder,
     shutdown: akka.actor.CoordinatedShutdown
@@ -56,10 +55,11 @@ final class Env(
     FlairGetMap,
     Executor,
     akka.stream.Materializer,
-    lila.core.i18n.Translator
+    lila.core.i18n.Translator,
+    lila.core.config.RateLimit
 ):
 
-  private val (botSync, async, sync) = (lightUserApi.isBotSync, lightUserApi.async, lightUserApi.sync)
+  private val (botSync, async) = (lightUserApi.isBotSync, lightUserApi.async)
 
   private val config = appConfig.get[RoundConfig]("round")(AutoConfig.loader)
 
@@ -67,7 +67,7 @@ final class Env(
   private val goneWeightsFor: Game => Fu[(Float, Float)] = (game: Game) =>
     if !game.playable || !game.hasClock || game.hasAi || !Uptime.startedSinceMinutes(1) then fuccess(1f -> 1f)
     else
-      def of(color: chess.Color): Fu[Float] =
+      def of(color: Color): Fu[Float] =
         def rageSitGoneWeight(sit: lila.core.playban.RageSit): Float =
           import scala.math.{ log10, sqrt }
           import lila.playban.RageSit.extensions.*
@@ -165,7 +165,7 @@ final class Env(
 
   lazy val recentTvGames = wire[RecentTvGames]
 
-  private lazy val botFarming = wire[BotFarming]
+  private lazy val farmBoostDetection = wire[FarmBoostDetection]
 
   lazy val perfsUpdater: PerfsUpdater = wire[PerfsUpdater]
 

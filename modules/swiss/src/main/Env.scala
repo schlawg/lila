@@ -5,8 +5,8 @@ import play.api.Configuration
 
 import lila.common.LilaScheduler
 import lila.core.config.*
-import lila.db.dsl.Coll
 import lila.core.socket.{ GetVersion, SocketVersion }
+import lila.db.dsl.Coll
 
 @Module
 final class Env(
@@ -32,7 +32,8 @@ final class Env(
     akka.stream.Materializer,
     lila.core.game.IdGenerator,
     play.api.Mode,
-    lila.core.user.FlairGet
+    lila.core.user.FlairGet,
+    lila.core.i18n.Translator
 ):
 
   private val mongo = new SwissMongo(

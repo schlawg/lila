@@ -1,11 +1,11 @@
 package lila.ui
 
-import chess.{ Clock, Color, Mode, Outcome, Ply }
+import chess.{ Clock, Color, Mode, Outcome }
 
-import lila.ui.ScalatagsTemplate.{ *, given }
 import lila.core.LightUser
-import lila.core.game.{ Namer, Game, Player, LightPlayer }
 import lila.core.config.BaseUrl
+import lila.core.game.{ Game, LightPlayer, Namer, Player }
+import lila.ui.ScalatagsTemplate.{ *, given }
 
 trait GameHelper:
   self: I18nHelper & StringHelper & AssetHelper & UserHelper =>
@@ -168,7 +168,7 @@ trait GameHelper:
     val owner = ownerLink.so(ctx.me.flatMap(game.player))
     if tv then routes.Tv.index
     else
-      owner.fold(routes.Round.watcher(game.id, color.name)): o =>
+      owner.fold(routes.Round.watcher(game.id, color)): o =>
         routes.Round.player(game.fullIdOf(o.color))
   }.toString
 

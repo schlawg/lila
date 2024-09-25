@@ -7,7 +7,7 @@ import { StudyPracticeData, Goal } from './interfaces';
 import { StudyData } from '../interfaces';
 import AnalyseCtrl from '../../ctrl';
 
-export default class StudyPractice {
+export default class StudyPracticeCtrl {
   goal: Prop<Goal>;
   nbMoves = prop(0);
   // null = ongoing, true = win, false = fail
@@ -20,8 +20,8 @@ export default class StudyPractice {
     readonly data: StudyPracticeData,
   ) {
     this.goal = prop<Goal>(root.data.practiceGoal!);
-    site.sound.load('practiceSuccess', `${site.sound.baseUrl}/other/energy3`);
-    site.sound.load('practiceFailure', `${site.sound.baseUrl}/other/failure2`);
+    site.sound.load('practiceSuccess', site.sound.url('other/energy3.mp3'));
+    site.sound.load('practiceFailure', site.sound.url('other/failure2.mp3'));
     this.onLoad();
   }
 
@@ -47,10 +47,7 @@ export default class StudyPractice {
       if (gamebook.state.feedback === 'end') this.onVictory();
       return;
     }
-    if (!this.root.study?.data.chapter.practice) {
-      return this.saveNbMoves();
-    }
-    if (this.success() !== null) return;
+    if (this.success() !== null || !this.root.practice || !this.root.study?.data.chapter.practice) return;
     this.nbMoves(this.computeNbMoves());
     const res = this.success(makeSuccess(this.root, this.goal(), this.nbMoves()));
     if (res) this.onVictory();
@@ -58,10 +55,14 @@ export default class StudyPractice {
   };
 
   onVictory = (): void => {
-    this.saveNbMoves();
     site.sound.play('practiceSuccess');
+    this.onComplete();
     if (this.studyData.chapter.practice && this.autoNext())
       setTimeout(this.root.study!.goToNextChapter, 1000);
+  };
+
+  onComplete = (): void => {
+    this.saveNbMoves();
   };
 
   saveNbMoves = (): void => {

@@ -9,7 +9,7 @@ import { moderationView } from './moderation';
 import type * as palantir from 'palantir';
 import ChatCtrl from './ctrl';
 
-export default function (ctrl: ChatCtrl): VNode {
+export default function(ctrl: ChatCtrl): VNode {
   return h(
     'section.mchat' + (ctrl.opts.alwaysEnabled ? '' : '.mchat-optional'),
     { class: { 'mchat-mod': !!ctrl.moderation }, hook: { destroy: ctrl.destroy } },
@@ -23,23 +23,21 @@ function renderPalantir(ctrl: ChatCtrl) {
   return p.instance
     ? p.instance.render(h)
     : h('div.mchat__tab.palantir.palantir-slot', {
-        attrs: { 'data-icon': licon.Handset, title: 'Voice chat' },
-        hook: bind('click', () => {
-          if (!p.loaded) {
-            p.loaded = true;
-            site.asset.loadIife('javascripts/vendor/peerjs.min.js').then(() => {
-              site.asset
-                .loadEsm<palantir.Palantir>('palantir', {
-                  init: { uid: ctrl.data.userId!, redraw: ctrl.redraw },
-                })
-                .then(m => {
-                  p.instance = m;
-                  ctrl.redraw();
-                });
+      attrs: { 'data-icon': licon.Handset, title: 'Voice chat' },
+      hook: bind('click', () => {
+        if (!p.loaded) {
+          p.loaded = true;
+          site.asset
+            .loadEsm<palantir.Palantir>('palantir', {
+              init: { uid: ctrl.data.userId!, redraw: ctrl.redraw },
+            })
+            .then(m => {
+              p.instance = m;
+              ctrl.redraw();
             });
-          }
-        }),
-      });
+        }
+      }),
+    });
 }
 
 function normalView(ctrl: ChatCtrl) {
@@ -54,8 +52,8 @@ function normalView(ctrl: ChatCtrl) {
       active === 'note' && ctrl.note
         ? [noteView(ctrl.note, ctrl.vm.autofocus)]
         : ctrl.plugin && active === ctrl.plugin.tab.key
-        ? [ctrl.plugin.view()]
-        : discussionView(ctrl),
+          ? [ctrl.plugin.view()]
+          : discussionView(ctrl),
     ),
   ];
 }
@@ -72,18 +70,31 @@ const renderTab = (ctrl: ChatCtrl, tab: Tab, active: Tab) =>
   );
 
 function tabName(ctrl: ChatCtrl, tab: Tab) {
-  if (tab === 'discussion')
+  if (tab === 'discussion') {
+    const id = `chat-toggle-${ctrl.data.id}`;
     return [
       h('span', ctrl.data.name),
       ctrl.opts.alwaysEnabled
         ? undefined
-        : h('input', {
-            attrs: { type: 'checkbox', title: ctrl.trans.noarg('toggleTheChat'), checked: ctrl.vm.enabled },
+        : h('div.switch', [
+          h(`input#${id}.cmn-toggle.cmn-toggle--subtle`, {
+            attrs: {
+              type: 'checkbox',
+              checked: ctrl.vm.enabled,
+            },
             hook: bind('change', (e: Event) => {
               ctrl.setEnabled((e.target as HTMLInputElement).checked);
             }),
           }),
+          h('label', {
+            attrs: {
+              for: id,
+              title: ctrl.trans.noarg('toggleTheChat'),
+            },
+          }),
+        ]),
     ];
+  }
   if (tab === 'note') return [h('span', ctrl.trans.noarg('notes'))];
   if (ctrl.plugin && tab === ctrl.plugin.tab.key) return [h('span', ctrl.plugin.tab.name)];
   return [];

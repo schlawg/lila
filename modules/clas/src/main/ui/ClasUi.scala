@@ -1,11 +1,8 @@
 package lila.clas
 package ui
-
-import play.api.data.Form
-
 import lila.ui.*
+
 import ScalatagsTemplate.{ *, given }
-import lila.user.WithPerfsAndEmails
 
 final class ClasUi(helpers: lila.ui.Helpers)(
     searchMenu: Context ?=> Frag
@@ -18,8 +15,8 @@ final class ClasUi(helpers: lila.ui.Helpers)(
       student: Option[Student] = None
   )(mods: AttrPair*)(using lila.ui.Context): Page =
     Page(title)
-      .cssTag("clas")
-      .js(EsmInit("bits.clas"))
+      .css("bits.clas")
+      .js(Esm("bits.clas"))
       .wrap: body =>
         if Granter.opt(_.Teacher) then
           main(cls := "page-menu")(
@@ -30,7 +27,7 @@ final class ClasUi(helpers: lila.ui.Helpers)(
 
   def home(using Context) =
     Page(trans.clas.lichessClasses.txt())
-      .cssTag("page", "clas"):
+      .css("bits.page", "bits.clas"):
         main(cls := "page-small box box-pad page clas-home")(
           h1(cls := "box__top")(trans.clas.lichessClasses()),
           div(cls := "clas-home__doc body")(
@@ -71,11 +68,11 @@ final class ClasUi(helpers: lila.ui.Helpers)(
       ),
       active.left.toOption.map { clas =>
         frag(
-          a(cls := "active", href := routes.Clas.show(clas.clas.id.value))(clas.clas.name),
+          a(cls := "active", href := routes.Clas.show(clas.clas.id))(clas.clas.name),
           clas.students.map { s =>
             a(
               cls  := List("student" -> true, "active" -> student.exists(s.is)),
-              href := routes.Clas.studentShow(clas.clas.id.value, s.userId)
+              href := routes.Clas.studentShow(clas.clas.id, s.userId)
             )(
               titleNameOrId(s.userId),
               em(s.realName)
@@ -93,13 +90,13 @@ final class ClasUi(helpers: lila.ui.Helpers)(
 
     def clas(c: Clas, userTable: Frag)(using Context) =
       Page("IP address")
-        .cssTag("mod.misc")
-        .js(EsmInit("mod.search")):
+        .css("mod.misc")
+        .js(Esm("mod.search")):
           main(cls := "page-menu")(
             searchMenu,
             div(cls := "mod-search page-menu__content box")(
               boxTop(
-                h1("Class ", a(href := routes.Clas.show(c.id.value))(c.name)),
+                h1("Class ", a(href := routes.Clas.show(c.id))(c.name)),
                 p("Teachers: ", c.teachers.toList.map(id => teacherLink(id)))
               ),
               br,
@@ -109,7 +106,7 @@ final class ClasUi(helpers: lila.ui.Helpers)(
           )
 
     def teacher(teacherId: UserId, classes: List[Clas])(using Context) =
-      Page("Classes").cssTag("mod.misc"):
+      Page("Classes").css("mod.misc"):
         main(cls := "page-menu")(
           searchMenu,
           div(cls := "mod-search page-menu__content box")(
@@ -132,7 +129,7 @@ final class ClasUi(helpers: lila.ui.Helpers)(
                 tbody(
                   classes.map: c =>
                     tr(
-                      td(a(href := routes.Clas.show(c.id.value))(s"${c.id}")),
+                      td(a(href := routes.Clas.show(c.id))(s"${c.id}")),
                       td(c.name),
                       td(momentFromNow(c.created.at)),
                       c.archived match

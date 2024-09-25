@@ -1,7 +1,9 @@
 package lila.web
 package ui
 
+import lila.core.id.{ CmsPageKey, ForumCategId }
 import lila.ui.*
+
 import ScalatagsTemplate.{ *, given }
 
 final class SitePages(helpers: Helpers):
@@ -25,11 +27,11 @@ final class SitePages(helpers: Helpers):
       a(activeCls("contact"), href := routes.Main.contact)(trans.contact.contact()),
       a(activeCls("tos"), href := routes.Cms.tos)(trans.site.termsOfService()),
       a(activeCls("privacy"), href := "/privacy")(trans.site.privacy()),
-      a(activeCls("master"), href := routes.Cms.master)("Title verification"),
+      a(activeCls("title"), href := routes.TitleVerify.index)("Title verification"),
       sep,
       a(activeCls("source"), href := routes.Cms.source)(trans.site.sourceCode()),
       a(activeCls("help"), href := routes.Cms.help)(trans.site.contribute()),
-      a(activeCls("changelog"), href := routes.Cms.menuPage("changelog"))("Changelog"),
+      a(activeCls("changelog"), href := routes.Cms.menuPage(CmsPageKey("changelog")))("Changelog"),
       a(activeCls("thanks"), href := "/thanks")(trans.site.thankYou()),
       sep,
       a(activeCls("webmasters"), href := routes.Main.webmasters)(trans.site.webmasters()),
@@ -46,146 +48,130 @@ final class SitePages(helpers: Helpers):
       title = "Webmasters",
       active = "webmasters",
       contentCls = "page force-ltr"
-    ).cssTag("page"):
-      frag(
-        st.section(cls := "box box-pad developers")(
-          h1(cls := "box__top")("HTTP API"),
-          p(
-            "Lichess exposes a RESTish HTTP/JSON API that you are welcome to use. Read the ",
-            a(href := "/api")("HTTP API documentation"),
-            "."
-          )
-        ),
-        br,
-        st.section(cls := "box box-pad developers") {
-          val args = """style="width: 400px; height: 444px;" allowtransparency="true" frameborder="0""""
-          frag(
-            h1(cls := "box__top", id := "embed-tv")("Embed Lichess TV in your site"),
-            div(cls := "body")(
-              div(cls := "center")(raw(s"""<iframe src="/tv/frame?theme=brown&bg=dark" $args></iframe>""")),
-              p("Add the following HTML to your site:"),
-              p(cls := "copy-zone")(
-                input(
-                  id    := "tv-embed-src",
-                  cls   := "copyable autoselect",
-                  value := s"""<iframe src="$netBaseUrl/tv/frame?theme=brown&bg=dark" $args></iframe>"""
+    ).css("bits.page")
+      .csp(_.copy(frameSrc = "https://lichess.org" :: Nil)):
+        frag(
+          st.section(cls := "box box-pad developers")(
+            h1(cls := "box__top")("HTTP API"),
+            p(
+              "Lichess exposes a RESTish HTTP/JSON API that you are welcome to use. Read the ",
+              a(href := "/api")("HTTP API documentation"),
+              "."
+            )
+          ),
+          br,
+          st.section(cls := "box box-pad developers") {
+            val args =
+              """style="width: 400px; aspect-ratio: 10/11;" allowtransparency="true" frameborder="0""""
+            frag(
+              h1(cls := "box__top", id := "embed-tv")("Embed Lichess TV in your site"),
+              div(cls := "body")(
+                div(cls := "center")(raw(s"""<iframe src="/tv/frame?theme=brown&bg=dark" $args></iframe>""")),
+                p("Add the following HTML to your site:"),
+                copyMeInput(s"""<iframe src="$netBaseUrl/tv/frame?theme=brown&bg=dark" $args></iframe>"""),
+                parameters,
+                p(
+                  "You can also show the channel for a specific variant or time control by adding the channel key to the URL, corresponding to the channels available at ",
+                  a(href := "/tv")("lichess.org/tv"),
+                  ". If not included, the top rated game will be shown."
                 ),
-                button(
-                  st.title := "Copy code",
-                  cls      := "copy button",
-                  dataRel  := "tv-embed-src",
-                  dataIcon := Icon.Link
-                )
-              ),
-              parameters,
-              p(
-                "You can also show the channel for a specific variant or time control by adding the channel key to the URL, corresponding to the channels available at ",
-                a(href := "/tv")("lichess.org/tv"),
-                ". If not included, the top rated game will be shown."
-              ),
-              p(cls := "copy-zone")(
-                input(
-                  id    := "tv-channel-embed-src",
-                  cls   := "copyable autoselect",
-                  value := s"""<iframe src="$netBaseUrl/tv/rapid/frame?theme=brown&bg=dark" $args></iframe>"""
-                ),
-                button(
-                  st.title := "Copy code",
-                  cls      := "copy button",
-                  dataRel  := "tv-channel-embed-src",
-                  dataIcon := Icon.Link
+                copyMeInput(
+                  s"""<iframe src="$netBaseUrl/tv/rapid/frame?theme=brown&bg=dark" $args></iframe>"""
                 )
               )
             )
-          )
-        },
-        br,
-        st.section(cls := "box box-pad developers") {
-          val args = """style="width: 400px; height: 444px;" allowtransparency="true" frameborder="0""""
-          frag(
-            h1(cls := "box__top", id := "embed-puzzle")("Embed the daily puzzle in your site"),
-            div(cls := "body")(
-              div(cls := "center")(
-                raw(s"""<iframe src="/training/frame?theme=brown&bg=dark" $args></iframe>""")
-              ),
-              p("Add the following HTML to your site:"),
-              p(cls := "copy-zone")(
-                input(
-                  id    := "puzzle-embed-src",
-                  cls   := "copyable autoselect",
-                  value := s"""<iframe src="$netBaseUrl/training/frame?theme=brown&bg=dark" $args></iframe>"""
+          },
+          br,
+          st.section(cls := "box box-pad developers") {
+            val args =
+              """style="width: 400px; aspect-ratio: 10/11;" allowtransparency="true" frameborder="0""""
+            frag(
+              h1(cls := "box__top", id := "embed-puzzle")("Embed the daily puzzle in your site"),
+              div(cls := "body")(
+                div(cls := "center")(
+                  raw(s"""<iframe src="/training/frame?theme=brown&bg=dark" $args></iframe>""")
                 ),
-                button(
-                  st.title := "Copy code",
-                  cls      := "copy button",
-                  dataRel  := "puzzle-embed-src",
-                  dataIcon := Icon.Link
+                p("Add the following HTML to your site:"),
+                copyMeInput(
+                  s"""<iframe src="$netBaseUrl/training/frame?theme=brown&bg=dark" $args></iframe>"""
+                ),
+                parameters,
+                p("The text is automatically translated to your visitor's language."),
+                p(
+                  "Alternatively, you can ",
+                  a(href := routes.Main.dailyPuzzleSlackApp)("post the puzzle in your slack workspace"),
+                  "."
                 )
-              ),
-              parameters,
-              p("The text is automatically translated to your visitor's language."),
-              p(
-                "Alternatively, you can ",
-                a(href := routes.Main.dailyPuzzleSlackApp)("post the puzzle in your slack workspace"),
-                "."
               )
             )
-          )
-        },
-        br,
-        st.section(cls := "box box-pad developers") {
-          val args = """style="width: 600px; height: 397px;" frameborder="0""""
-          frag(
-            h1(cls := "box__top", id := "embed-study")("Embed a chess analysis in your site"),
-            div(cls := "body")(
-              div(cls := "center"):
-                raw(s"""<iframe src="/study/embed/XtFCFYlM/GCUTf2Jk?bg=auto&theme=auto" $args></iframe>""")
-              ,
-              p(
-                "Create ",
-                a(href := routes.Study.allDefault())("a study"),
-                ", then click the share button to get the HTML code for the current chapter."
-              ),
-              parameters,
-              p("The text is automatically translated to your visitor's language.")
-            )
-          )
-        },
-        br,
-        st.section(cls := "box box-pad developers") {
-          val args = """style="width: 600px; height: 397px;" frameborder="0""""
-          frag(
-            h1(cls := "box__top")("Embed a chess game in your site"),
-            div(cls := "body")(
-              div(cls := "center"):
-                raw(s"""<iframe src="/embed/game/MPJcy1JW?bg=auto&theme=auto" $args></iframe>""")
-              ,
-              p(
-                raw(
-                  """On a game analysis page, click the <em>"FEN &amp; PGN"</em> tab at the bottom, then """
+          },
+          br,
+          st.section(cls := "box box-pad developers") {
+            val args = """style="width: 100%; aspect-ratio: 3/2;" frameborder="0""""
+            frag(
+              h1(cls := "box__top", id := "embed-study")("Embed a chess analysis in your site"),
+              div(cls := "body")(
+                div(cls := "center"):
+                  raw(s"""<iframe src="/study/embed/XtFCFYlM/GCUTf2Jk?bg=auto&theme=auto" $args></iframe>""")
+                ,
+                p(
+                  "Create ",
+                  a(href := routes.Study.allDefault())("a study"),
+                  ", then click the share button to get the HTML code for the current chapter."
                 ),
-                "\"",
-                em(trans.site.embedInYourWebsite(), "\".")
-              ),
-              parameters,
-              p("The text is automatically translated to your visitor's language.")
+                parameters,
+                p("The text is automatically translated to your visitor's language.")
+              )
             )
-          )
-        }
-      )
+          },
+          br,
+          st.section(cls := "box box-pad developers") {
+            val args = """style="width: 100%; aspect-ratio: 3/2;" frameborder="0""""
+            frag(
+              h1(cls := "box__top")("Embed a chess game in your site"),
+              div(cls := "body")(
+                div(cls := "center"):
+                  raw(s"""<iframe src="/embed/game/MPJcy1JW?bg=auto&theme=auto" $args></iframe>""")
+                ,
+                p(
+                  "On a game analysis page, click the ",
+                  em("FEN & PGN"),
+                  " tab at the bottom, then ",
+                  "\"",
+                  em(trans.site.embedInYourWebsite(), "\".")
+                ),
+                parameters,
+                p("The text is automatically translated to your visitor's language.")
+              )
+            )
+          },
+          br,
+          st.section(cls := "box box-pad developers", id := "broadcast") {
+            val args = """style="width: 100%; aspect-ratio: 4/3;" frameborder="0""""
+            frag(
+              h1(cls := "box__top")("Embed a broadcast in your site"),
+              div(cls := "body")(
+                div(cls := "center"):
+                  raw(
+                    s"""<iframe src="https://lichess.org/embed/broadcast/fide-world-rapidblitz-team-championships-2024--rapid-matches-1-10/G1YjiG7j" $args></iframe>"""
+                  )
+                ,
+                p(
+                  "On a broadcast page, select the embed iframe code, then optionally add query parameters to customize the appearance."
+                ),
+                parameters,
+                p("The text is automatically translated to your visitor's language.")
+              )
+            )
+          }
+        )
 
   def source(title: String, rendered: Frag, commit: String, date: Option[String], message: Option[String])(
       using Context
   ) =
     SitePage(title = title, active = "source", contentCls = "page force-ltr")
-      .cssTag("source")
-      .js(
-        embedJsUnsafeLoadThen:
-          """$('#asset-version-date').text(site.info.date);
-  $('#asset-version-commit').attr('href', 'https://github.com/lichess-org/lila/commits/' + site.info.commit).find('pre').text(site.info.commit.substr(0, 7));
-  $('#asset-version-upcoming').attr('href', 'https://github.com/lichess-org/lila/compare/' + site.info.commit + '...master').find('pre').text('...');
-  $('#asset-version-message').text(site.info.message);"""
-      ):
+      .css("bits.source")
+      .js(esmInitBit("setAssetInfo")):
         frag(
           st.section(cls := "box")(
             h1(cls := "box__top")(title),
@@ -220,8 +206,8 @@ final class SitePages(helpers: Helpers):
   def lag(using Context) =
     import trans.{ lag as trl }
     SitePage(title = "Is Lichess lagging?", active = "lag")
-      .cssTag("lag")
-      .js(jsModuleInit("chart.lag")):
+      .css("bits.lag")
+      .js(esmInit("chart.lag")):
         div(cls := "box box-pad lag")(
           h1(cls := "box__top")(
             trl.isLichessLagging(),
@@ -260,7 +246,7 @@ final class SitePages(helpers: Helpers):
 
   def dailyPuzzleSlackApp(using Context) =
     Page("Daily Chess Puzzle by Lichess (Slack App)")
-      .cssTag("page"):
+      .css("bits.page"):
         main(cls := "page page-small box box-pad")(
           h1(cls := "box__top")("Daily Chess Puzzle by Lichess (Slack App)"),
           div(cls := "body")(
@@ -309,7 +295,7 @@ final class SitePages(helpers: Helpers):
               // Contact email, because Slack requires a support channel without
               // mandatory registration.
               "Give us feedback or ask questions ",
-              a(href := routes.ForumCateg.show("lichess-feedback"))(
+              a(href := routes.ForumCateg.show(ForumCategId("lichess-feedback")))(
                 "in the forum"
               ),
               ". The source code is available at ",
@@ -342,14 +328,3 @@ final class SitePages(helpers: Helpers):
           "."
         )
       )
-
-  def ghost(using Context) =
-    Page("Deleted user")
-      .cssTag("ghost"):
-        main(cls := "page-small box box-pad page")(
-          h1(cls := "box__top")("Deleted user"),
-          div(
-            p("This player account is gone!"),
-            p("Nothing to see here, move along.")
-          )
-        )

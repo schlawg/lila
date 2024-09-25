@@ -1,26 +1,14 @@
 package lila.common
 
 import akka.actor.{ ActorRef, Scheduler }
-import lila.core.bus.{ Payload, Channel, Tellable, WithChannel }
 
 import scala.jdk.CollectionConverters.*
 import scala.reflect.Typeable
 
-object NamedBus:
-  object fishnet:
-    import lila.core.fishnet.*
-    def analyseGame(gameId: GameId): Unit                   = Bus.publish(GameRequest(gameId), "fishnet")
-    def analyseStudyChapter(req: StudyChapterRequest): Unit = Bus.publish(req, "fishnet")
-  object timeline:
-    import lila.core.timeline.*
-    def apply(propagate: Propagate): Unit = Bus.publish(propagate, "timeline")
+import lila.core.bus.{ Channel, WithChannel }
 
-final class BusChannel(channel: Channel):
-  def apply(msg: Payload): Unit                           = Bus.publish(msg, channel)
-  def subscribe(subscriber: Bus.SubscriberFunction): Unit = Bus.subscribeFun(channel)(subscriber)
-
-object BusChannel:
-  val forumPost = BusChannel("forumPost")
+trait Tellable extends Any:
+  def !(msg: Matchable): Unit
 
 object Tellable:
   case class Actor(ref: akka.actor.ActorRef) extends Tellable:
@@ -34,9 +22,8 @@ object Tellable:
 
 object Bus:
 
+  type Payload            = Matchable
   type SubscriberFunction = PartialFunction[Payload, Unit]
-
-  val named = NamedBus
 
   def pub[T <: Payload](payload: T)(using wc: WithChannel[T]) =
     publish(payload, wc.channel)
@@ -92,6 +79,19 @@ object Bus:
     publish(msg, channel)
     promise.future
       .withTimeout(timeout, s"Bus.ask $channel $msg")
+      .monSuccess(_.bus.ask(s"${channel}_${msg.getClass}"))
+
+  def safeAsk[A, T <: Payload](makeMsg: Promise[A] => T, timeout: FiniteDuration = 2.second)(using
+      wc: WithChannel[T],
+      e: Executor,
+      s: Scheduler
+  ): Fu[A] =
+    val promise = Promise[A]()
+    val channel = wc.channel
+    val msg     = makeMsg(promise)
+    pub(msg)
+    promise.future
+      .withTimeout(timeout, s"Bus.safeAsk $channel $msg")
       .monSuccess(_.bus.ask(s"${channel}_${msg.getClass}"))
 
   private val bus = EventBus[Payload, Channel, Tellable](

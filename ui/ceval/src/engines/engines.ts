@@ -4,13 +4,13 @@ import { SimpleEngine } from './simpleEngine';
 import { StockfishWebEngine } from './stockfishWebEngine';
 import { ThreadedEngine } from './threadedEngine';
 import { ExternalEngine } from './externalEngine';
-import { storedStringProp, StoredProp } from 'common/storage';
+import { storedStringProp, StoredProp, storage } from 'common/storage';
 import { isAndroid, isIOS, isIPad, getFirefoxMajorVersion, features, Feature } from 'common/device';
 import { xhrHeader } from 'common/xhr';
 import { lichessRules } from 'chessops/compat';
 
 export class Engines {
-  private _active: EngineInfo | undefined = undefined;
+  private activeEngine: EngineInfo | undefined = undefined;
   localEngines: BrowserEngineInfo[];
   localEngineMap: Map<string, WithMake>;
   externalEngines: ExternalEngineInfo[];
@@ -20,7 +20,7 @@ export class Engines {
   constructor(private ctrl: CevalCtrl) {
     if (
       ((getFirefoxMajorVersion() ?? 114) > 113 && !('brave' in navigator)) ||
-      site.storage.get('ceval.lsfw.forceEnable') === 'true'
+      storage.get('ceval.lsfw.forceEnable') === 'true'
     ) {
       this.browserSupport.push('allowLsfw'); // lsfw is https://github.com/lichess-org/lila-stockfish-web
     }
@@ -30,13 +30,13 @@ export class Engines {
     this.selectProp = storedStringProp('ceval.engine', this.localEngines[0].id);
   }
 
-  status = (status: { download?: { bytes: number; total: number }; error?: string } = {}) => {
+  status = (status: { download?: { bytes: number; total: number }; error?: string } = {}): void => {
     if (this.ctrl.enabled()) this.ctrl.download = status.download;
     if (status.error) this.ctrl.engineFailed(status.error);
     this.ctrl.opts.redraw();
   };
 
-  makeEngineMap() {
+  makeEngineMap(): Map<string, WithMake> {
     type Hash = string;
     type Variant = [VariantKey, Hash];
     const variantMap = (v: VariantKey): string => (v === 'threeCheck' ? '3check' : v.toLowerCase());
@@ -49,10 +49,10 @@ export class Engines {
         requires: ['simd', 'allowLsfw'],
         variants: [key],
         assets: {
-          version: 'sfw003',
+          version: 'sfw006',
           root: 'npm/lila-stockfish-web',
-          nnue: `${variantMap(key)}-${nnue}.nnue`,
-          js: 'fsf.js',
+          nnue: [`${variantMap(key)}-${nnue}.nnue`],
+          js: 'fsf14.js',
         },
       },
       make: (e: BrowserEngineInfo) => new StockfishWebEngine(e, this.status, variantMap),
@@ -77,25 +77,25 @@ export class Engines {
             requires: ['simd', 'allowLsfw'],
             minMem: 1536,
             assets: {
-              version: 'sfw003',
+              version: 'sfw006',
               root: 'npm/lila-stockfish-web',
-              js: 'linrock-nnue-7.js',
+              js: 'sf16-7.js',
             },
           },
           make: (e: BrowserEngineInfo) => new StockfishWebEngine(e, this.status),
         },
         {
           info: {
-            id: '__sf16nnue40',
-            name: 'Stockfish 16 NNUE · 40MB',
-            short: 'SF 16 · 40MB',
+            id: '__sf17nnue79',
+            name: 'Stockfish 17 NNUE · 79MB',
+            short: 'SF 17 · 79MB',
             tech: 'NNUE',
             requires: ['simd', 'allowLsfw'],
-            minMem: 2048,
+            minMem: 2560,
             assets: {
-              version: 'sfw003',
+              version: 'sfw006',
               root: 'npm/lila-stockfish-web',
-              js: 'sf-nnue-40.js',
+              js: 'sf17-79.js',
             },
           },
           make: (e: BrowserEngineInfo) => new StockfishWebEngine(e, this.status),
@@ -106,6 +106,7 @@ export class Engines {
             name: 'Stockfish 14 NNUE',
             short: 'SF 14',
             tech: 'NNUE',
+            obsoletedBy: 'allowLsfw',
             requires: ['simd'],
             minMem: 2048,
             assets: {
@@ -127,9 +128,9 @@ export class Engines {
             requires: ['simd', 'allowLsfw'],
             variants: variants.map(v => v[0]),
             assets: {
-              version: 'sfw003',
+              version: 'sfw006',
               root: 'npm/lila-stockfish-web',
-              js: 'fsf.js',
+              js: 'fsf14.js',
             },
           },
           make: (e: BrowserEngineInfo) =>
@@ -219,25 +220,29 @@ export class Engines {
     );
   }
 
-  get active() {
-    return this._active ?? this.activate();
+  get active(): EngineInfo | undefined {
+    return this.activeEngine ?? this.activate();
   }
 
-  activate() {
-    this._active = this.getEngine({ id: this.selectProp(), variant: this.ctrl.opts.variant.key });
-    return this._active;
+  activate(): EngineInfo | undefined {
+    this.activeEngine = this.getEngine({ id: this.selectProp(), variant: this.ctrl.opts.variant.key });
+    return this.activeEngine;
   }
 
-  select(id: string) {
+  select(id: string): void {
     this.selectProp(id);
     this.activate();
   }
 
-  get external() {
+  get external(): ExternalEngineInfo | undefined {
     return this.active && 'endpoint' in this.active ? this.active : undefined;
   }
 
-  async deleteExternal(id: string) {
+  get maxMovetime(): number {
+    return this.external ? 30 * 1000 : Number.POSITIVE_INFINITY; // broker timeouts prevent long search
+  }
+
+  async deleteExternal(id: string): Promise<boolean> {
     if (this.externalEngines.every(e => e.id !== id)) return false;
     const r = await fetch(`/api/external-engine/${id}`, { method: 'DELETE', headers: xhrHeader });
     if (!r.ok) return false;
@@ -246,7 +251,7 @@ export class Engines {
     return true;
   }
 
-  updateCevalCtrl(ctrl: CevalCtrl) {
+  updateCevalCtrl(ctrl: CevalCtrl): void {
     this.ctrl = ctrl;
   }
 
@@ -269,7 +274,7 @@ export class Engines {
   }
 
   make(selector?: { id?: string; variant?: VariantKey }): CevalEngine {
-    const e = (this._active = this.getEngine(selector));
+    const e = (this.activeEngine = this.getEngine(selector));
     if (!e) throw Error(`Engine not found ${selector?.id ?? selector?.variant ?? this.selectProp()}}`);
 
     return e.tech !== 'EXTERNAL'
@@ -279,8 +284,10 @@ export class Engines {
 }
 
 function maxHashMB() {
-  if (isAndroid()) return 64; // budget androids are easy to crash @ 128
-  else if (isIPad()) return 64; // iPadOS safari pretends to be desktop but acts more like iphone
+  if (isAndroid())
+    return 64; // budget androids are easy to crash @ 128
+  else if (isIPad())
+    return 64; // iPadOS safari pretends to be desktop but acts more like iphone
   else if (isIOS()) return 32;
   return 512; // allocating 1024 often fails and offers little benefit over 512, or 16 for that matter
 }

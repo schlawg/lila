@@ -1,11 +1,10 @@
 package views.game
 
 import lila.app.UiEnv.{ *, given }
-
-import lila.ui.Context
-import lila.core.game.{ Player }
+import lila.core.game.Player
 import lila.game.GameExt.perfType
 import lila.game.Player.nameSplit
+import lila.ui.Context
 
 object widgets:
 
@@ -56,7 +55,7 @@ object widgets:
                   frag(separator, views.simul.ui.link(simulId))
                 })
                 .orElse(g.swissId.map { swissId =>
-                  frag(separator, views.swiss.ui.link(SwissId(swissId)))
+                  frag(separator, views.swiss.ui.link(swissId))
                 })
             )
           ),

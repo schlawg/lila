@@ -1,14 +1,14 @@
 package lila.activity
 
 import play.api.i18n.Lang
-
 import scalalib.HeapSort
+
+import lila.core.chess.Rank
+import lila.core.game.LightPov
+import lila.core.swiss.IdName as SwissIdName
 import lila.db.AsyncCollFailingSilently
 import lila.db.dsl.*
-import lila.core.game.LightPov
-
-import lila.core.swiss.{ IdName as SwissIdName }
-import lila.core.chess.Rank
+import chess.Speed.Correspondence
 
 final class ActivityReadApi(
     coll: AsyncCollFailingSilently,
@@ -29,21 +29,20 @@ final class ActivityReadApi(
 
   private given Ordering[Double] = scala.math.Ordering.Double.TotalOrdering
 
-  def recentAndPreload(u: User)(using lang: Lang): Fu[Vector[ActivityView]] = for
+  def recentAndPreload(u: User)(using lang: Lang): Fu[List[ActivityView]] = for
     activities <-
       coll(
         _.find(regexId(u.id))
           .sort($sort.desc("_id"))
           .cursor[Activity]()
-          .vector(Activity.recentNb)
+          .list(Activity.recentNb)
       ).dmap(_.filterNot(_.isEmpty))
         .mon(_.user.segment("activity.raws"))
     practiceStudies <- activities
       .exists(_.practice.isDefined)
       .soFu(getPracticeStudies())
-    views <- activities
-      .traverse: a =>
-        one(practiceStudies, a).mon(_.user.segment("activity.view"))
+    views <- activities.sequentially: a =>
+      one(practiceStudies, a).mon(_.user.segment("activity.view"))
     _ <- preloadAll(views)
   yield addSignup(u.createdAt, views)
 
@@ -89,18 +88,19 @@ final class ActivityReadApi(
           _.map(corres.moves -> _)
       corresEnds <- a.corres.so: corres =>
         getLightPovs(a.id.userId, corres.end).dmap:
-          _.map: povs =>
-            Score.make(povs) -> povs
-      simuls <-
-        a.simuls
-          .soFu: simuls =>
-            simulApi.byIds(simuls.value)
-          .dmap(_.filter(_.nonEmpty))
-      studies <-
-        a.studies
-          .soFu: studies =>
-            studyApi.publicIdNames(studies.value)
-          .dmap(_.filter(_.nonEmpty))
+          _.map:
+            _.groupBy(pov => PerfKey(pov.game.variant, Correspondence)).view
+              .mapValues: groupedPovs =>
+                (Score.make(groupedPovs) -> groupedPovs)
+              .toMap
+      simuls <- a.simuls
+        .soFu: simuls =>
+          simulApi.byIds(simuls.value)
+        .dmap(_.filter(_.nonEmpty))
+      studies <- a.studies
+        .soFu: studies =>
+          studyApi.publicIdNames(studies.value)
+        .dmap(_.filter(_.nonEmpty))
       tours <- a.games
         .exists(_.hasNonCorres)
         .so:
@@ -162,8 +162,8 @@ final class ActivityReadApi(
             .map: s =>
               (idName, s.rank)
 
-  private def addSignup(at: Instant, recent: Vector[ActivityView]) =
-    val (found, views) = recent.foldLeft(false -> Vector.empty[ActivityView]) {
+  private def addSignup(at: Instant, recent: List[ActivityView]) =
+    val (found, views) = recent.foldLeft(false -> List.empty[ActivityView]) {
       case ((false, as), a) if a.interval.contains(at) => (true, as :+ a.copy(signup = true))
       case ((found, as), a)                            => (found, as :+ a)
     }

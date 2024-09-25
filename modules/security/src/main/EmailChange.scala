@@ -1,9 +1,9 @@
 package lila.security
 
+import scalalib.Iso
 import scalatags.Text.all.*
 
 import lila.core.config.*
-import scalalib.Iso
 import lila.core.i18n.I18nKey.emails as trans
 import lila.mailer.Mailer
 import lila.user.{ Me, User, UserRepo }
@@ -50,10 +50,13 @@ ${trans.common_orPaste.txt()}
   // also returns the previous email address
   def confirm(token: String): Fu[Option[(Me, Option[EmailAddress])]] =
     tokener.read(token).dmap(_.flatten).flatMapz { case TokenPayload(userId, email) =>
-      userRepo.email(userId).flatMap { previous =>
-        (userRepo.setEmail(userId, email).recoverDefault >> userRepo.me(userId))
-          .map2(_ -> previous)
-      }
+      for
+        previous <- userRepo.email(userId)
+        _        <- userRepo.setEmail(userId, email).recoverDefault
+        me       <- userRepo.me(userId)
+      yield
+        logger.info(s"Change email for $userId: $previous -> $email")
+        me.map(_ -> previous)
     }
 
   case class TokenPayload(userId: UserId, email: EmailAddress)

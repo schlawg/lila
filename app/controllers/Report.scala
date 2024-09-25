@@ -7,6 +7,8 @@ import play.api.mvc.{ AnyContentAsFormUrlEncoded, Result }
 import lila.app.{ *, given }
 import lila.common.HTTPRequest
 import lila.core.id.ReportId
+import lila.mod.ui.PendingCounts
+import lila.report.Room.Scores
 import lila.report.{ Mod as AsMod, Report as ReportModel, Reporter, Room, Suspect }
 
 final class Report(env: Env, userC: => User, modC: => Mod) extends LilaController(env):
@@ -28,16 +30,20 @@ final class Report(env: Env, userC: => User, modC: => Mod) extends LilaControlle
     else notFound
   }
 
-  protected[controllers] def getScores =
-    api.maxScores.zip(env.streamer.api.approval.countRequests).zip(env.appeal.api.countUnread)
+  protected[controllers] def getScores: Future[(Scores, PendingCounts)] = (
+    api.maxScores,
+    env.streamer.api.approval.countRequests,
+    env.appeal.api.countUnread,
+    env.title.api.countPending
+  ).mapN: (scores, streamers, appeals, titles) =>
+    (scores, PendingCounts(streamers, appeals, titles))
 
   private def renderList(room: String)(using Context, Me) =
-    api.openAndRecentWithFilter(12, Room(room)).zip(getScores).flatMap {
-      case (reports, ((scores, streamers), appeals)) =>
-        env.user.lightUserApi.preloadMany(reports.flatMap(_.report.userIds)) >>
-          Ok.page:
-            val filteredReports = reports.filter(r => lila.report.Reason.isGranted(r.report.reason))
-            views.report.list(filteredReports, room, scores, streamers, appeals)
+    api.openAndRecentWithFilter(12, Room(room)).zip(getScores).flatMap { case (reports, (scores, pending)) =>
+      env.user.lightUserApi.preloadMany(reports.flatMap(_.report.userIds)) >>
+        Ok.page:
+          val filteredReports = reports.filter(r => lila.report.Room.isGranted(r.report.room))
+          views.report.list(filteredReports, room, scores, pending)
     }
 
   def inquiry(reportOrAppealId: String) = Secure(_.SeeReport) { _ ?=> me ?=>
@@ -60,7 +66,7 @@ final class Report(env: Env, userC: => User, modC: => Mod) extends LilaControlle
 
   private def onInquiryStart(inquiry: ReportModel): Result =
     if inquiry.isRecentComm then Redirect(routes.Mod.communicationPrivate(inquiry.user))
-    else if inquiry.isComm then Redirect(routes.Mod.communicationPublic(inquiry.user))
+    else if inquiry.is(_.Comm) then Redirect(routes.Mod.communicationPublic(inquiry.user))
     else modC.redirect(inquiry.user)
 
   protected[controllers] def onModAction(goTo: Suspect)(using ctx: BodyContext[?], me: Me): Fu[Result] =
@@ -86,7 +92,6 @@ final class Report(env: Env, userC: => User, modC: => Mod) extends LilaControlle
     thenGoTo match
       case Some(url) => process().inject(Redirect(url))
       case _ =>
-        def redirectToList = Redirect(routes.Report.listWithFilter(inquiry.room.key))
         if inquiry.isAppeal then process() >> Redirect(routes.Appeal.queue())
         else if dataOpt.flatMap(_.get("next")).exists(_.headOption contains "1") then
           process() >> {
@@ -96,7 +101,8 @@ final class Report(env: Env, userC: => User, modC: => Mod) extends LilaControlle
               api.inquiries
                 .toggleNext(inquiry.room)
                 .map:
-                  _.fold(redirectToList)(onInquiryStart)
+                  case Some(next) => onInquiryStart(next)
+                  case _          => Redirect(routes.Report.listWithFilter(inquiry.room.key))
           }
         else if processed then userC.modZoneOrRedirect(inquiry.user)
         else onInquiryStart(inquiry)
@@ -140,46 +146,66 @@ final class Report(env: Env, userC: => User, modC: => Mod) extends LilaControlle
           val form = env.report.forms.create
           val filledForm: Form[lila.report.ReportSetup] = (user, get("postUrl")) match
             case (Some(u), Some(pid)) =>
-              form.fill:
-                lila.report.ReportSetup(
-                  u.light,
-                  reason = ~get("reason"),
-                  text = s"$pid\n\n"
-                )
+              form.fill(lila.report.ReportSetup(u.light, reason = ~get("reason"), text = s"$pid\n\n"))
             case _ => form
-          views.report.form(filledForm, user)
+          views.report.ui.form(filledForm, user, get("from"))
     }
   }
 
+  private val reportRateLimit =
+    env.security.ipTrust.rateLimit(30, 3.hours, "report.create", _.proxyMultiplier(3))
+
   def create = AuthBody { _ ?=> me ?=>
-    env.report.forms.create
-      .bindFromRequest()
-      .fold(
-        err =>
-          for
-            user <- getUserStr("username").so(env.user.repo.byId)
-            page <- renderPage(views.report.form(err, user))
-          yield BadRequest(page),
-        data =>
-          if me.is(data.user.id) then BadRequest("You cannot report yourself")
-          else
+    bindForm(env.report.forms.create)(
+      err =>
+        for
+          user <- getUserStr("username").so(env.user.repo.byId)
+          page <- renderPage(views.report.ui.form(err, user, none))
+        yield BadRequest(page),
+      data =>
+        if me.is(data.user.id) then BadRequest("You cannot report yourself")
+        else
+          reportRateLimit(rateLimited):
             for
-              _ <- api.create(data, Reporter(me))
+              _ <- api.create(data, Reporter(me), Nil)
               _ <- api.isAutoBlock(data).so(env.relation.api.block(me, data.user.id))
             yield Redirect(routes.Report.thanks).flashing("reported" -> data.user.name.value)
+    )
+  }
+
+  private def inboxFormPage(user: lila.core.user.User, form: Form[?])(using Context, Me) = for
+    msgs <- env.msg.api.msgsToReport(user.id)
+    page <- renderPage(views.report.ui.inbox(form, user, msgs))
+  yield (msgs, page)
+
+  def inboxForm(username: UserStr) = Auth { _ ?=> _ ?=>
+    Found(env.user.repo.byId(username)): user =>
+      inboxFormPage(user, env.report.forms.create).map: (msgs, page) =>
+        if msgs.nonEmpty then Ok(page)
+        else Redirect(s"${routes.Report.form}?username=${user.username}")
+  }
+
+  def inboxCreate(username: UserStr) = AuthBody { _ ?=> me ?=>
+    Found(env.user.repo.byId(username)): user =>
+      bindForm(env.report.forms.create)(
+        err => inboxFormPage(user, err).map((_, page) => BadRequest(page)),
+        data =>
+          for
+            msgs <- env.msg.api.msgsToReport(data.user.id, data.msgs.some)
+            _    <- api.create(data, Reporter(me), msgs.map(_.text))
+            _    <- api.isAutoBlock(data).so(env.relation.api.block(me, data.user.id))
+          yield Redirect(routes.Report.thanks).flashing("reported" -> data.user.name.value)
       )
   }
 
   def flag = AuthBody { _ ?=> me ?=>
-    env.report.forms.flag
-      .bindFromRequest()
-      .fold(
-        _ => BadRequest,
-        data =>
-          Found(env.user.repo.byId(data.username)): user =>
-            if user == me then BadRequest
-            else api.commFlag(Reporter(me), Suspect(user), data.resource, data.text).inject(jsonOkResult)
-      )
+    bindForm(env.report.forms.flag)(
+      _ => BadRequest,
+      data =>
+        Found(env.user.repo.byId(data.username)): user =>
+          if user == me then BadRequest
+          else api.commFlag(Reporter(me), Suspect(user), data.resource, data.text).inject(jsonOkResult)
+    )
   }
 
   def thanks = Auth { ctx ?=> me ?=>

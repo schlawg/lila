@@ -7,19 +7,18 @@ import reactivemongo.api.bson.{ BSONDocumentHandler, BSONDocumentReader, BSONNul
 import scala.concurrent.blocking
 
 import lila.common.HTTPRequest
-import lila.core.net.{ ApiVersion, IpAddress }
+import lila.core.net.{ ApiVersion, IpAddress, UserAgent }
+import lila.core.security.FingerHash
+import lila.core.socket.Sri
 import lila.db.dsl.{ *, given }
 import lila.oauth.AccessToken
-import lila.core.socket.Sri
-import lila.core.net.UserAgent
-import lila.core.security.FingerHash
 
 final class Store(val coll: Coll, cacheApi: lila.memo.CacheApi)(using Executor):
 
   import Store.*
   import FingerHash.given
 
-  private val authCache = cacheApi[String, Option[AuthInfo]](65536, "security.authCache"):
+  private val authCache = cacheApi[String, Option[AuthInfo]](65_536, "security.authCache"):
     _.expireAfterAccess(5 minutes).buildAsyncFuture[String, Option[AuthInfo]]: id =>
       coll
         .find($doc("_id" -> id, "up" -> true), authInfoProjection.some)

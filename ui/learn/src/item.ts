@@ -1,50 +1,20 @@
-import type { Square as Key } from 'chess.js';
-import m from './mithrilFix';
+import type { SquareName as Key } from 'chessops';
 import * as util from './util';
 
-export interface Items<T> {
-  get(key: Key): T | undefined;
-  withItem<U>(key: Key, f: (item: T) => U): U | undefined;
+export interface Items {
+  doIfKeyExists<U>(key: Key, f: () => U): U | undefined;
   remove(key: Key): void;
-  hasItem(item: T): boolean;
+  isEmpty(): boolean;
   appleKeys(): Key[];
 }
 
-export function ctrl(blueprint: { apples: string | Key[] }): Items<'apple'> {
-  const items: Partial<Record<Key, 'apple'>> = {};
-  util.readKeys(blueprint.apples).forEach(function (key: Key) {
-    items[key] = 'apple';
-  });
-
-  const get = function (key: Key) {
-    return items[key];
-  };
-
-  const list = function () {
-    return Object.values(items);
-  };
+export function ctrl(blueprint: { apples: string | Key[] }): Items {
+  const items: Set<Key> = new Set(util.readKeys(blueprint.apples));
 
   return {
-    get: get,
-    withItem: function <U>(key: Key, f: (item: 'apple') => U) {
-      const item = items[key];
-      if (item) return f(item);
-      return;
-    },
-    remove: function (key: Key) {
-      delete items[key];
-    },
-    hasItem: function (item: 'apple') {
-      return list().includes(item);
-    },
-    appleKeys: function () {
-      const keys: Key[] = [];
-      for (const k in items) if (items[k as Key] === 'apple') keys.push(k as Key);
-      return keys;
-    },
+    doIfKeyExists: <U>(key: Key, f: () => U) => (items.has(key) ? f() : undefined),
+    remove: (key: Key) => items.delete(key),
+    isEmpty: () => items.size == 0,
+    appleKeys: () => Array.from(items),
   };
-}
-
-export function view(item: string) {
-  return m('item.' + item);
 }

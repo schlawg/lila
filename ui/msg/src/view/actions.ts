@@ -1,6 +1,7 @@
 import { h, VNode } from 'snabbdom';
 import * as licon from 'common/licon';
 import { bind } from 'common/snabbdom';
+import { confirm } from 'common/dialog';
 import { Convo } from '../interfaces';
 import MsgCtrl from '../ctrl';
 
@@ -51,21 +52,19 @@ export default function renderActions(ctrl: MsgCtrl, convo: Convo): VNode[] {
       hook: bind('click', withConfirm(ctrl.delete)),
     }),
   );
-  if (ctrl.reportableMsg())
-    nodes.push(
-      h(`button.${cls}.bad`, {
-        key: 'report',
-        attrs: {
-          'data-icon': licon.CautionTriangle,
-          type: 'button',
-          title: ctrl.trans('reportXToModerators', convo.user.name),
-        },
-        hook: bind('click', withConfirm(ctrl.report)),
-      }),
-    );
+  nodes.push(
+    h(`a.${cls}.bad`, {
+      key: 'report',
+      attrs: {
+        href: '/report/inbox/' + convo.user.name,
+        'data-icon': licon.CautionTriangle,
+        title: ctrl.trans('reportXToModerators', convo.user.name),
+      },
+    }),
+  );
   return nodes;
 }
 
 const withConfirm = (f: () => void) => (e: MouseEvent) => {
-  if (confirm(`${(e.target as HTMLElement).getAttribute('title') || 'Confirm'}?`)) f();
+  confirm(`${(e.target as HTMLElement).getAttribute('title') || 'Confirm'}?`).then(yes => yes && f());
 };

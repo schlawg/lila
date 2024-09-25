@@ -7,7 +7,7 @@ export type LobbyTab = 'real_time' | 'variant' | 'correspondence';
 export type GamesTab = 'playing' | 'recent';
 export type EventsTab = 'simuls' | 'tournaments' | 'swiss';
 export type Tab = AppTab | LobbyTab | GamesTab | EventsTab;
-export type GameType = 'hook' | 'friend' | 'ai';
+export type GameType = 'hook' | 'friend' | 'ai' | 'local';
 export type TimeMode = 'realTime' | 'correspondence' | 'unlimited';
 export type GameMode = 'casual' | 'rated';
 
@@ -36,7 +36,6 @@ export interface Hook {
   u?: string; // username
   rating?: number;
   ra?: 1; // rated
-  c?: Color;
   action: 'cancel' | 'join';
   disabled?: boolean;
 }
@@ -47,7 +46,6 @@ export interface Seek {
   rating: number;
   mode: number;
   days?: number;
-  color: string;
   perf: {
     key: Exclude<Perf, 'fromPosition'>;
   };
@@ -145,4 +143,6 @@ export interface ForceSetupOptions {
   variant?: VariantKey;
   fen?: string;
   timeMode?: TimeMode;
+  time?: number;
+  increment?: number;
 }

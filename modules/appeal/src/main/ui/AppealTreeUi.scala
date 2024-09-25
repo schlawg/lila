@@ -1,7 +1,9 @@
 package lila.appeal
 package ui
 
+import lila.core.id.CmsPageKey
 import lila.ui.*
+
 import ScalatagsTemplate.{ *, given }
 
 final class AppealTreeUi(helpers: Helpers, ui: AppealUi)(
@@ -12,6 +14,8 @@ final class AppealTreeUi(helpers: Helpers, ui: AppealUi)(
   import trans.{ appeal as tap }
   import lila.ui.navTree.*
   import lila.ui.navTree.Node.*
+
+  private def cmsPageUrl(key: String) = routes.Cms.lonePage(CmsPageKey(key))
 
   private def cleanMenu(using Context): Branch =
     Branch(
@@ -52,7 +56,7 @@ final class AppealTreeUi(helpers: Helpers, ui: AppealUi)(
             " to contact us about other issues.",
             br,
             "You can also ",
-            a(href := routes.Cms.lonePage("appeal"))("find here more information about appeals.")
+            a(href := cmsPageUrl("appeal"))("find here more information about appeals.")
           )
         )
       )
@@ -95,7 +99,7 @@ final class AppealTreeUi(helpers: Helpers, ui: AppealUi)(
           )
         )
       ),
-      content = tap.engineMarkedInfo(a(href := routes.Cms.lonePage("fair-play"))(tap.fairPlay())).some
+      content = tap.engineMarkedInfo(a(href := cmsPageUrl("fair-play"))(tap.fairPlay())).some
     )
 
   private def boostMenu(using Context): Branch =
@@ -146,7 +150,7 @@ final class AppealTreeUi(helpers: Helpers, ui: AppealUi)(
           frag(
             p(
               "I accept that I have not followed the ",
-              a(href := routes.Cms.lonePage("communication-guidelines"))(
+              a(href := cmsPageUrl("communication-guidelines"))(
                 "communication guidelines"
               ),
               ". I will behave better in future, please give me another chance."
@@ -166,7 +170,7 @@ final class AppealTreeUi(helpers: Helpers, ui: AppealUi)(
       ),
       content = tap
         .accountMutedInfo(
-          a(href := routes.Cms.lonePage("communication-guidelines"))(tap.communicationGuidelines())
+          a(href := cmsPageUrl("communication-guidelines"))(tap.communicationGuidelines())
         )
         .some
     )
@@ -260,7 +264,7 @@ final class AppealTreeUi(helpers: Helpers, ui: AppealUi)(
           )
         )
       ),
-      content = tap.hiddenBlogInfo(a(href := routes.Cms.lonePage("blog-etiquette"))(tap.blogRules())).some
+      content = tap.hiddenBlogInfo(a(href := cmsPageUrl("blog-etiquette"))(tap.blogRules())).some
     )
 
   private def prizebanMenu(using Context): Branch =
@@ -383,7 +387,7 @@ final class AppealTreeUi(helpers: Helpers, ui: AppealUi)(
           ),
           p(cls := "text", dataIcon := Icon.InfoCircle)(trans.contact.doNotMessageModerators()),
           p(
-            a(cls := "text", dataIcon := Icon.InfoCircle, href := routes.Cms.lonePage("appeal"))(
+            a(cls := "text", dataIcon := Icon.InfoCircle, href := cmsPageUrl("appeal"))(
               "Read more about the appeal process"
             )
           ),

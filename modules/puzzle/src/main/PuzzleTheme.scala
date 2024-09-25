@@ -1,7 +1,7 @@
 package lila.puzzle
 
-import lila.core.i18n.I18nKey.puzzleTheme as i
 import lila.core.i18n.I18nKey
+import lila.core.i18n.I18nKey.puzzleTheme as i
 
 case class PuzzleTheme(key: PuzzleTheme.Key, name: I18nKey, description: I18nKey)
 
@@ -234,6 +234,6 @@ object PuzzleTheme:
 
   def find(key: String) = byLowerKey.get(key.toLowerCase)
 
-  def findOrMix(key: Key) = find(key) | mix
+  def findOrMix(key: String) = find(key) | mix
 
   def findDynamic(key: String) = find(key).filterNot(t => staticThemes(t.key))

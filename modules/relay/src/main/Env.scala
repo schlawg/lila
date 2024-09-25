@@ -4,15 +4,18 @@ import akka.actor.*
 import com.softwaremill.macwire.*
 import com.softwaremill.tagging.*
 import play.api.libs.ws.StandaloneWSClient
+import scalalib.paginator.Paginator
 
 import scala.util.matching.Regex
 
 import lila.core.config.*
 import lila.memo.SettingStore
 import lila.memo.SettingStore.Formable.given
+import lila.relay.RelayTour.{ ActiveWithSomeRounds, WithLastRound }
 
 @Module
 final class Env(
+    config: play.api.Configuration,
     ws: StandaloneWSClient,
     db: lila.db.Db,
     yoloDb: lila.db.AsyncDb @@ lila.db.YoloDb,
@@ -24,8 +27,8 @@ final class Env(
     gameRepo: lila.game.GameRepo,
     pgnDump: lila.game.PgnDump,
     gameProxy: lila.core.game.GameProxy,
-    federations: lila.core.fide.Federation.FedsOf,
     guessPlayer: lila.core.fide.GuessPlayer,
+    getPlayer: lila.core.fide.GetPlayer,
     cacheApi: lila.memo.CacheApi,
     settingStore: SettingStore.Builder,
     irc: lila.core.irc.IrcApi,
@@ -33,11 +36,11 @@ final class Env(
     notifyApi: lila.core.notify.NotifyApi,
     picfitApi: lila.memo.PicfitApi,
     picfitUrl: lila.memo.PicfitUrl,
-    langList: lila.core.i18n.LangList
+    langList: lila.core.i18n.LangList,
+    baker: lila.core.security.LilaCookie
 )(using Executor, ActorSystem, akka.stream.Materializer, play.api.Mode, lila.core.i18n.Translator)(using
     scheduler: Scheduler
 ):
-
   lazy val roundForm = wire[RelayRoundForm]
 
   lazy val tourForm = wire[RelayTourForm]
@@ -50,13 +53,17 @@ final class Env(
 
   private lazy val groupRepo = RelayGroupRepo(colls.group)
 
-  lazy val leaderboard = wire[RelayLeaderboardApi]
+  private lazy val playerEnrich = wire[RelayPlayerEnrich]
+
+  private lazy val notifyAdmin = wire[RelayNotifierAdmin]
 
   private lazy val notifier = wire[RelayNotifier]
 
   lazy val jsonView = wire[JsonView]
 
   lazy val listing: RelayListing = wire[RelayListing]
+
+  lazy val stats = wire[RelayStatsApi]
 
   lazy val api: RelayApi = wire[RelayApi]
 
@@ -73,6 +80,16 @@ final class Env(
   lazy val teamTable = wire[RelayTeamTable]
 
   lazy val playerTour = wire[RelayPlayerTour]
+
+  lazy val playerApi = wire[RelayPlayerApi]
+
+  lazy val videoEmbed = wire[lila.relay.RelayVideoEmbedStore]
+
+  def top(page: Int): Fu[(List[ActiveWithSomeRounds], List[WithLastRound], Paginator[WithLastRound])] = for
+    active   <- (page == 1).so(listing.active.get({}))
+    upcoming <- (page == 1).so(listing.upcoming.get({}))
+    past     <- pager.inactive(page)
+  yield (active, upcoming, past)
 
   private lazy val sync = wire[RelaySync]
 
@@ -105,6 +122,9 @@ final class Env(
 
   private val relayFidePlayerApi = wire[RelayFidePlayerApi]
 
+  import lila.common.config.given
+  private val syncOnlyIds = config.getOptional[List[String]]("relay.syncOnlyIds").map(RelayTourId.from)
+
   // start the sync scheduler
   wire[RelayFetch]
 
@@ -128,15 +148,19 @@ final class Env(
       api.becomeStudyAdmin(studyId, me)
     },
     "isOfficialRelay" -> { case lila.study.actorApi.IsOfficialRelay(studyId, promise) =>
-      promise.completeWith(api.isOfficial(studyId))
+      promise.completeWith(api.isOfficial(studyId.into(RelayRoundId)))
     }
   )
+
+  lila.common.Bus.sub[lila.study.StudyMembers.OnChange]: change =>
+    api.onStudyMembersChange(change.study)
 
 private class RelayColls(mainDb: lila.db.Db, yoloDb: lila.db.AsyncDb @@ lila.db.YoloDb):
   val round = mainDb(CollName("relay"))
   val tour  = mainDb(CollName("relay_tour"))
   val group = mainDb(CollName("relay_group"))
   val delay = yoloDb(CollName("relay_delay"))
+  val stats = mainDb(CollName("relay_stats"))
 
 private trait ProxyCredentials
 private trait ProxyHostPort

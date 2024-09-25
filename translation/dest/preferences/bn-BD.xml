@@ -3,6 +3,7 @@
   <string name="preferences">পছন্দসমূহ</string>
   <string name="display">ডিসপ্লে</string>
   <string name="privacy">গোপনীয়তা</string>
+  <string name="notifications">নোটিফিকেশন</string>
   <string name="pieceAnimation">গুটির অ্যানিমেশন</string>
   <string name="materialDifference">গুটির মধ্যে ব্যবধান</string>
   <string name="boardHighlights">বোর্ডের বৈশিষ্ট সমূহ (শেষ চাল এবং পরীক্ষা)</string>
@@ -38,5 +39,5 @@
   <string name="castleByMovingTwoSquares">দুই বর্গে রাজা সরান</string>
   <string name="castleByMovingOntoTheRook">দাবার নৌকার উপর দিয়ে রাজাকে সরান</string>
   <string name="inputMovesWithTheKeyboard">কী-বোর্ডের সাথে নিবেশ সরান</string>
-  <string name="yourPreferencesHaveBeenSaved">আপনার পচ্ছন্দগুলি সংরক্ষিত করা হয়েছে.</string>
+  <string name="yourPreferencesHaveBeenSaved" comment="Appears after changing any preference on in the Preferences section (as preferences are auto-saved).">আপনার পচ্ছন্দগুলি সংরক্ষিত করা হয়েছে.</string>
 </resources>

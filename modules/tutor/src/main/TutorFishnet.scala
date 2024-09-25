@@ -2,7 +2,7 @@ package lila.tutor
 
 import com.softwaremill.tagging.*
 
-import lila.core.fishnet.{ FishnetRequest, AnalysisAwaiter }
+import lila.core.fishnet.{ AnalysisAwaiter, FishnetRequest }
 import lila.game.GameRepo
 import lila.insight.InsightPerfStats
 import lila.memo.SettingStore
@@ -22,7 +22,7 @@ final private class TutorFishnet(
   def ensureSomeAnalysis(stats: Map[PerfType, InsightPerfStats.WithGameIds]): Funit =
     val totalNbGames = stats.values.map(_.stats.totalNbGames).sum
     stats.values.toList
-      .traverse: s =>
+      .sequentially: s =>
         val ids = s.gameIds.take(s.stats.totalNbGames * maxGamesToConsider.value / totalNbGames)
         gameRepo.unanalysedGames(ids, Max(s.stats.totalNbGames * maxToAnalyse.value / totalNbGames))
       .map(_.flatten)

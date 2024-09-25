@@ -1,5 +1,4 @@
-import { h } from 'snabbdom';
-import { bind } from 'common/snabbdom';
+import { bind, looseH as h } from 'common/snabbdom';
 import LobbyController from '../ctrl';
 import { GameType } from '../interfaces';
 import renderSetupModal from './setup/modal';
@@ -10,12 +9,12 @@ export default function buttons(ctrl: LobbyController) {
   const hookDisabled =
     opts.playban || opts.hasUnreadLichessMessage || ctrl.me?.isBot || hasOngoingRealTimeGame;
   return h('div.lobby__start', [
-    ...(site.blindMode ? [h('h2', 'Play')] : []),
+    site.blindMode && h('h2', 'Play'),
     ...[
       ['hook', 'createAGame', hookDisabled],
       ['friend', 'playAFriend', hasOngoingRealTimeGame],
       ['ai', 'playTheComputer', hasOngoingRealTimeGame],
-    ].map(([gameType, transKey, disabled]: [GameType, string, boolean]) =>
+    ].map(([gameType, transKey, disabled]: [Exclude<GameType, 'local'>, string, boolean]) =>
       h(
         `button.button.button-metal.config_${gameType}`,
         {
@@ -24,10 +23,10 @@ export default function buttons(ctrl: LobbyController) {
           hook: disabled
             ? {}
             : bind(
-                site.blindMode ? 'click' : 'mousedown',
-                () => ctrl.setupCtrl.openModal(gameType),
-                ctrl.redraw,
-              ),
+              site.blindMode ? 'click' : 'mousedown',
+              () => ctrl.setupCtrl.openModal(gameType),
+              ctrl.redraw,
+            ),
         },
         trans(transKey),
       ),

@@ -2,13 +2,11 @@ package lila.relation
 
 import reactivemongo.api.bson.*
 
-import lila.core.relation.Relation.{ Follow, Block }
-import lila.db.dsl.{ *, given }
+import lila.core.relation.Relation.{ Block, Follow }
 import lila.core.userId.UserSearch
+import lila.db.dsl.{ *, given }
 
 final private class RelationRepo(colls: Colls, userRepo: lila.core.user.UserRepo)(using Executor):
-
-  import RelationRepo.makeId
 
   val coll = colls.relation
 
@@ -76,6 +74,8 @@ final private class RelationRepo(colls: Colls, userRepo: lila.core.user.UserRepo
 
   def unfollowAll(u1: UserId): Funit = coll.delete.one($doc("u1" -> u1)).void
 
+  def removeAllFollowers(u2: UserId): Funit = coll.delete.one($doc("u2" -> u2, "r" -> Follow)).void
+
   private def save(u1: UserId, u2: UserId, relation: Relation): Funit =
     coll.update
       .one(
@@ -102,7 +102,3 @@ final private class RelationRepo(colls: Colls, userRepo: lila.core.user.UserRepo
 
   def filterBlocked(by: UserId, candidates: Iterable[UserId]): Fu[Set[UserId]] =
     coll.distinctEasy[UserId, Set]("u2", $doc("u2".$in(candidates), "u1" -> by, "r" -> Block))
-
-object RelationRepo:
-
-  def makeId(u1: UserId, u2: UserId) = s"$u1/$u2"

@@ -1,6 +1,7 @@
 import TournamentController from '../ctrl';
 import { bind, MaybeVNode } from 'common/snabbdom';
 import { fullName, userFlair } from 'common/userLink';
+import { snabDialog } from 'common/dialog';
 import { h, VNode } from 'snabbdom';
 import { TeamBattle, RankedTeam, LightTeam } from '../interfaces';
 
@@ -10,7 +11,7 @@ export function joinWithTeamSelector(ctrl: TournamentController) {
     ctrl.joinWithTeamSelector = false;
     ctrl.redraw();
   };
-  return site.dialog.snab({
+  return snabDialog({
     class: 'team-battle__choice',
     onInsert(dlg) {
       $('.team-picker__team', dlg.view).on('click', e => {
@@ -26,24 +27,24 @@ export function joinWithTeamSelector(ctrl: TournamentController) {
         h('br'),
         ...(tb.joinWith.length
           ? [
-              h('p', ctrl.trans.noarg('whichTeamWillYouRepresentInThisBattle')),
-              ...tb.joinWith.map(id =>
-                h(
-                  'button.button.team-picker__team',
-                  { attrs: { 'data-id': id } },
-                  renderTeamArray(tb.teams[id]),
-                ),
-              ),
-            ]
-          : [
-              h('p', ctrl.trans.noarg('youMustJoinOneOfTheseTeamsToParticipate')),
+            h('p', ctrl.trans.noarg('whichTeamWillYouRepresentInThisBattle')),
+            ...tb.joinWith.map(id =>
               h(
-                'ul',
-                shuffleArray(Object.keys(tb.teams)).map((id: string) =>
-                  h('li', h('a', { attrs: { href: '/team/' + id } }, renderTeamArray(tb.teams[id]))),
-                ),
+                'button.button.team-picker__team',
+                { attrs: { 'data-id': id } },
+                renderTeamArray(tb.teams[id]),
               ),
-            ]),
+            ),
+          ]
+          : [
+            h('p', ctrl.trans.noarg('youMustJoinOneOfTheseTeamsToParticipate')),
+            h(
+              'ul',
+              shuffleArray(Object.keys(tb.teams)).map((id: string) =>
+                h('li', h('a', { attrs: { href: '/team/' + id } }, renderTeamArray(tb.teams[id]))),
+              ),
+            ),
+          ]),
       ]),
     ],
   });
@@ -57,11 +58,11 @@ export function teamStanding(ctrl: TournamentController, klass?: string): VNode 
     bigBattle = battle && Object.keys(battle.teams).length > 10;
   return battle && standing
     ? h('table.slist.tour__team-standing' + (klass ? '.' + klass : ''), [
-        h('tbody', [
-          ...standing.map(rt => teamTr(ctrl, battle, rt)),
-          ...(bigBattle ? [extraTeams(ctrl), myTeam(ctrl, battle)] : []),
-        ]),
-      ])
+      h('tbody', [
+        ...standing.map(rt => teamTr(ctrl, battle, rt)),
+        ...(bigBattle ? [extraTeams(ctrl), myTeam(ctrl, battle)] : []),
+      ]),
+    ])
     : null;
 }
 

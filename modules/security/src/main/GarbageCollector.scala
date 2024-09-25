@@ -1,9 +1,10 @@
 package lila.security
 
-import scalalib.ThreadLocalRandom
 import play.api.mvc.RequestHeader
+import scalalib.ThreadLocalRandom
 
 import lila.common.{ Bus, HTTPRequest }
+import lila.core.lilaism.LilaNoStackTrace
 import lila.core.net.IpAddress
 import lila.core.security.UserSignup
 
@@ -46,7 +47,7 @@ final class GarbageCollector(
 
   private def ensurePrintAvailable(data: ApplyData): Funit =
     userLogins.userHasPrint(data.user).flatMap {
-      case false => fufail(s"never got a print for ${data.user.username}")
+      case false => fufail(LilaNoStackTrace(s"never got a print for ${data.user.username}"))
       case _     => funit
     }
 
@@ -71,14 +72,12 @@ final class GarbageCollector(
                   logger.debug(s"other ${data.user.username} others=${others.map(_.username)}")
                   spy.ips
                     .existsM(ipTrust.isSuspicious)
-                    .map:
-                      _.so(
-                        collect(
-                          user,
-                          email,
-                          msg = s"Prev users: ${others.map(o => "@" + o.username).mkString(", ")}",
-                          quickly = quickly
-                        )
+                    .mapz:
+                      collect(
+                        user,
+                        email,
+                        msg = s"Prev users: ${others.map(o => "@" + o.username).mkString(", ")}",
+                        quickly = quickly
                       )
         yield ()
 
@@ -97,7 +96,7 @@ final class GarbageCollector(
       hasBeenCollectedBefore(user).not.map {
         if _ then
           val armed = isArmed()
-          val wait  = if quickly then 3.seconds else (30 + ThreadLocalRandom.nextInt(300)).seconds
+          val wait  = if quickly then 3.seconds else (30 + ThreadLocalRandom.nextInt(240)).seconds
           val message =
             s"Will dispose of https://lichess.org/${user.username} in $wait. Email: ${email.value}. $msg${(!armed)
                 .so(" [SIMULATION]")}"

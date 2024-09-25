@@ -1,8 +1,8 @@
 package lila.swiss
 
-import lila.common.{ Bus, LilaScheduler }
-import lila.db.dsl.{ *, given }
+import lila.common.LilaScheduler
 import lila.core.misc.push.TourSoon
+import lila.db.dsl.{ *, given }
 
 final private class SwissNotify(mongo: SwissMongo)(using Executor, Scheduler):
   import BsonHandlers.given
@@ -23,7 +23,7 @@ final private class SwissNotify(mongo: SwissMongo)(using Executor, Scheduler):
       .cursor[Swiss]()
       .list(5)
       .flatMap:
-        _.traverse_ { swiss =>
+        _.sequentiallyVoid { swiss =>
           doneMemo.put(swiss.id)
           SwissPlayer.fields: f =>
             mongo.player

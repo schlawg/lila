@@ -1,10 +1,6 @@
 package controllers
-
-import play.api.data.*
-
 import lila.api.GameApiV2
 import lila.app.{ *, given }
-import lila.core.config
 
 final class GameMod(env: Env)(using akka.stream.Materializer) extends LilaController(env):
 
@@ -42,38 +38,34 @@ final class GameMod(env: Env)(using akka.stream.Materializer) extends LilaContro
 
   def post(username: UserStr) = SecureBody(_.GamesModView) { ctx ?=> me ?=>
     Found(meOrFetch(username)): user =>
-      actionForm
-        .bindFromRequest()
-        .fold(
-          err => BadRequest(err.toString),
-          {
-            case (gameIds, Some("pgn")) => downloadPgn(user, gameIds)
-            case (gameIds, Some("analyse") | None) if isGranted(_.UserEvaluate) =>
-              multipleAnalysis(me, gameIds)
-            case _ => notFound
-          }
-        )
+      bindForm(actionForm)(
+        err => BadRequest(err.toString),
+        {
+          case (gameIds, Some("pgn")) => downloadPgn(user, gameIds)
+          case (gameIds, Some("analyse") | None) if isGranted(_.UserEvaluate) =>
+            multipleAnalysis(me, gameIds)
+          case _ => notFound
+        }
+      )
   }
 
   private def multipleAnalysis(me: Me, gameIds: Seq[GameId])(using Context) =
-    env.game.gameRepo
-      .unanalysedGames(gameIds)
-      .flatMap { games =>
-        games.map { game =>
-          env.fishnet
-            .analyser(
-              game,
-              lila.fishnet.Work.Sender(
-                userId = me,
-                ip = ctx.ip.some,
-                mod = true,
-                system = false
-              )
-            )
-            .void
-        }.parallel >> env.fishnet.awaiter(games.map(_.id), 2 minutes)
-      }
-      .inject(NoContent)
+    for
+      games <- env.game.gameRepo.unanalysedGames(gameIds)
+      _ <- games.sequentiallyVoid: game =>
+        env.fishnet
+          .analyser(
+            game,
+            lila.fishnet.Work.Sender(
+              userId = me,
+              ip = ctx.ip.some,
+              mod = true,
+              system = false
+            ),
+            lila.fishnet.Work.Origin.autoHunter.some
+          )
+      _ <- env.fishnet.awaiter(games.map(_.id), 2 minutes)
+    yield NoContent
 
   private def downloadPgn(user: lila.user.User, gameIds: Seq[GameId])(using Context) =
     val res = Ok.chunked {

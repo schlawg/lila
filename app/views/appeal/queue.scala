@@ -1,11 +1,10 @@
 package views.appeal
 
 import lila.app.UiEnv.{ *, given }
-
 import lila.appeal.Appeal
+import lila.appeal.Appeal.Filter
+import lila.mod.ui.PendingCounts
 import lila.report.Report.Inquiry
-
-import Appeal.Filter
 
 object queue:
 
@@ -15,10 +14,9 @@ object queue:
       filter: Option[Filter],
       markedByMe: Set[UserId],
       scores: lila.report.Room.Scores,
-      streamers: Int,
-      nbAppeals: Int
+      pending: PendingCounts
   )(using Context) =
-    views.report.layout("appeal", scores, streamers, nbAppeals):
+    views.report.layout("appeal", scores, pending):
       table(cls := "slist slist-pad see appeal-queue")(
         thead(
           tr(
@@ -51,7 +49,7 @@ object queue:
                   p(shorten(msg.text, 200))
                 )),
               td(
-                a(href := routes.Appeal.show(appeal.id), cls := "button button-empty")("View"),
+                a(href := routes.Appeal.show(appeal.userId), cls := "button button-empty")("View"),
                 inquiries.get(appeal.userId).map { i =>
                   frag(userIdLink(i.mod.some), nbsp, "is handling this")
                 }

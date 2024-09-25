@@ -1,10 +1,12 @@
+import { pubsub } from 'common/pubsub';
+
 export default class KeyboardChecker {
   keys: string[] = [];
   oks = 0;
   kos = 0;
   prev = '';
 
-  press = (e: KeyboardEvent) => {
+  press = (e: KeyboardEvent): void => {
     const v = (e.target as HTMLInputElement).value;
     if (v == this.prev) return;
     this.prev = v;
@@ -16,14 +18,14 @@ export default class KeyboardChecker {
           if (v.split('').every(c => this.keys.includes(c))) this.oks++;
           else {
             this.kos++;
-            if (this.kos == 9 && this.kos > this.oks) site.pubsub.emit('ab.rep', 'kbc');
+            if (this.kos == 9 && this.kos > this.oks) pubsub.emit('ab.rep', 'kbc');
           }
         }
       }
     }
   };
 
-  clear = () => {
+  clear = (): void => {
     this.keys = [];
   };
 }

@@ -1,7 +1,9 @@
 import * as xhr from 'common/xhr';
+import { spinnerHtml } from 'common/spinner';
+import { pubsub } from 'common/pubsub';
 
-export function initModule(selector: string = '.infinite-scroll') {
-  $(selector).each(function (this: HTMLElement) {
+export function initModule(selector: string = '.infinite-scroll'): void {
+  $(selector).each(function(this: HTMLElement) {
     register(this, selector);
   });
 }
@@ -27,15 +29,15 @@ function register(el: HTMLElement, selector: string, backoff = 500) {
         );
     })
       .then(() => {
-        nav.innerHTML = site.spinnerHtml;
+        nav.innerHTML = spinnerHtml;
         return xhr.text(nextUrl);
       })
       .then(
         html => {
           nav.remove();
-          $(el).append($(html).find(selector).html());
+          $(el).append(($(html).is(selector) ? $(html) : $(html).find(selector)).html());
           dedupEntries(el);
-          site.contentLoaded(el);
+          pubsub.emit('content-loaded', el);
           setTimeout(() => register(el, selector, backoff * 1.05), backoff); // recursion with backoff
         },
         e => {
@@ -54,7 +56,7 @@ function dedupEntries(el: HTMLElement) {
   const ids = new Set<string>();
   $(el)
     .find('[data-dedup]')
-    .each(function (this: HTMLElement) {
+    .each(function(this: HTMLElement) {
       const id = this.dataset.dedup;
       if (id) {
         if (ids.has(id)) $(this).remove();

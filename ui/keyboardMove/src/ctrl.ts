@@ -1,8 +1,10 @@
 import * as cg from 'chessground/types';
-import { h } from 'snabbdom';
+import { SanToUci } from 'chess';
+import { h, VNode } from 'snabbdom';
 import { onInsert } from 'common/snabbdom';
 import { promote } from 'chess/promotion';
 import { propWithEffect, Prop } from 'common';
+import { snabDialog } from 'common/dialog';
 import { MoveRootCtrl, MoveUpdate } from 'chess/moveRootCtrl';
 import { load as loadKeyboardMove } from './keyboardMove';
 import KeyboardChecker from './keyboardChecker';
@@ -24,6 +26,7 @@ export interface KeyboardMove {
   hasSelected(): cg.Key | undefined;
   confirmMove(): void;
   usedSan: boolean;
+  legalSans: SanToUci | null;
   arrowNavigate(arrowKey: ArrowKey): void;
   justSelected(): boolean;
   draw(): void;
@@ -128,6 +131,7 @@ export function ctrl(root: KeyboardMoveRootCtrl): KeyboardMove {
     hasSelected: () => cg.state.selected,
     confirmMove: () => (root.submitMove ? root.submitMove(true) : null),
     usedSan,
+    legalSans: null,
     arrowNavigate(arrowKey: ArrowKey) {
       if (root.handleArrowKey) {
         root.handleArrowKey?.(arrowKey);
@@ -156,7 +160,7 @@ export function ctrl(root: KeyboardMoveRootCtrl): KeyboardMove {
   };
 }
 
-export function render(ctrl: KeyboardMove) {
+export function render(ctrl: KeyboardMove): VNode {
   return h('div.keyboard-move', [
     h('input', {
       attrs: { spellcheck: 'false', autocomplete: 'off' },
@@ -168,11 +172,11 @@ export function render(ctrl: KeyboardMove) {
       ? h('em', 'Enter SAN (Nc3), ICCF (2133) or UCI (b1c3) moves, type ? to learn more')
       : h('strong', 'Press <enter> to focus'),
     ctrl.helpModalOpen()
-      ? site.dialog.snab({
-          class: 'help.keyboard-move-help',
-          htmlUrl: '/help/keyboard-move',
-          onClose: () => ctrl.helpModalOpen(false),
-        })
+      ? snabDialog({
+        class: 'help.keyboard-move-help',
+        htmlUrl: '/help/keyboard-move',
+        onClose: () => ctrl.helpModalOpen(false),
+      })
       : null,
   ]);
 }

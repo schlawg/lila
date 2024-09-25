@@ -4,14 +4,13 @@ import reactivemongo.api.bson.*
 
 import scala.util.Success
 
+import lila.core.perf.{ PerfId, UserPerfs }
+import lila.core.user.LightPerf
 import lila.db.AsyncCollFailingSilently
 import lila.db.dsl.{ *, given }
 import lila.memo.CacheApi.*
-import lila.rating.{ Glicko, Perf, UserPerfs }
-import lila.core.user.LightPerf
-import lila.core.perf.{ PerfId, UserPerfs }
-import lila.rating.PerfType
 import lila.rating.GlickoExt.rankable
+import lila.rating.PerfType
 
 final class RankingApi(
     c: AsyncCollFailingSilently,
@@ -62,7 +61,7 @@ final class RankingApi(
             .cursor[Ranking]()
             .list(nb)
             .flatMap:
-              _.map: r =>
+              _.parallel: r =>
                 lightUser(r.user).map2: light =>
                   LightPerf(
                     user = light,
@@ -70,7 +69,7 @@ final class RankingApi(
                     rating = r.rating,
                     progress = ~r.prog
                   )
-              .parallel.dmap(_.flatten)
+              .dmap(_.flatten)
 
   private[user] def fetchLeaderboard(nb: Int): Fu[lila.rating.UserPerfs.Leaderboards] =
     for
@@ -117,7 +116,7 @@ final class RankingApi(
     private val cache = cacheApi.unit[Map[PerfKey, Map[UserId, Rank]]]:
       _.refreshAfterWrite(15 minutes).buildAsyncFuture: _ =>
         lila.rating.PerfType.leaderboardable
-          .traverse: pt =>
+          .sequentially: pt =>
             compute(pt).dmap(pt -> _)
           .map(_.toMap)
           .chronometer

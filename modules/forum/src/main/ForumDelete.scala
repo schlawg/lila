@@ -2,9 +2,9 @@ package lila.forum
 
 import akka.stream.scaladsl.*
 
-import lila.core.perm.Granter as MasterGranter
-import lila.core.forum.BusForum
 import lila.common.Bus
+import lila.core.forum.BusForum
+import lila.core.perm.Granter as MasterGranter
 
 final class ForumDelete(
     postRepo: ForumPostRepo,
@@ -19,16 +19,15 @@ final class ForumDelete(
       .allByUserCursor(user)
       .documentSource()
       .mapAsyncUnordered(4): post =>
-        postApi.viewOf(post).flatMap { _.so(deletePost) }
+        postApi.viewOf(post).flatMap(_.so(deletePost))
       .runWith(Sink.ignore)
       .void
 
   def deleteTopic(view: PostView)(using Me): Funit =
     for
-      postIds <- postRepo.idsByTopicId(view.topic.id)
-      _       <- postRepo.removeByTopic(view.topic.id)
-      _       <- topicRepo.remove(view.topic)
-      _       <- categApi.denormalize(view.categ)
+      _ <- postRepo.removeByTopic(view.topic.id)
+      _ <- topicRepo.remove(view.topic)
+      _ <- categApi.denormalize(view.categ)
     yield publishDelete(view.post)
 
   def deletePost(view: PostView)(using Me): Funit =

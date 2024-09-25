@@ -3,7 +3,6 @@ package lila.web
 import chess.format.pgn.PgnStr
 import play.api.http.*
 import play.api.mvc.Codec
-import scalatags.Text.Frag
 
 import lila.ui.{ Page, RenderedPage, Snippet }
 
@@ -54,6 +53,9 @@ trait ResponseWriter extends ContentTypes:
     def jsToString(source: Source[JsValue, ?]) =
       source.map: o =>
         Json.stringify(o) + "\n"
+
+    def jsToString(source: Iterable[JsValue]): String =
+      source.map(Json.stringify).mkString("\n")
 
     def jsOptToString(source: Source[Option[JsValue], ?]) =
       source.map:

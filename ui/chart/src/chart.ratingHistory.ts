@@ -21,6 +21,7 @@ import duration from 'dayjs/plugin/duration';
 import dayOfYear from 'dayjs/plugin/dayOfYear';
 import utc from 'dayjs/plugin/utc';
 import { memoize } from 'common';
+import { pubsub } from 'common/pubsub';
 
 interface Opts {
   data: PerfRatingHistory[];
@@ -71,18 +72,15 @@ const oneDay = 24 * 60 * 60 * 1000;
 
 const dateFormat = memoize(() =>
   window.Intl && Intl.DateTimeFormat
-    ? new Intl.DateTimeFormat(
-        document.documentElement.lang.startsWith('ar-') ? 'ar-ly' : document.documentElement.lang,
-        {
-          month: 'short',
-          day: '2-digit',
-          year: 'numeric',
-        },
-      ).format
+    ? new Intl.DateTimeFormat(site.displayLocale, {
+      month: 'short',
+      day: '2-digit',
+      year: 'numeric',
+    }).format
     : (d: Date) => d.toLocaleDateString(),
 );
 
-export function initModule({ data, singlePerfName }: Opts) {
+export function initModule({ data, singlePerfName }: Opts): void {
   $('.spinner').remove();
 
   const $el = $('canvas.rating-history');
@@ -164,7 +162,7 @@ export function initModule({ data, singlePerfName }: Opts) {
               $el.addClass('panning');
               return true; // why
             },
-            onPan: () => site.pubsub.emit('chart.panning'),
+            onPan: () => pubsub.emit('chart.panning'),
             onPanComplete: ctx => {
               toggleEvents(ctx.chart as Chart<'line'>, false);
               $el.removeClass('panning');
@@ -244,10 +242,13 @@ export function initModule({ data, singlePerfName }: Opts) {
     // Disable events while dragging for a slight performance boost
     slider.on('start', () => toggleEvents(chart, true));
     slider.on('end', () => toggleEvents(chart, false));
-    site.pubsub.on('chart.panning', () => {
+    pubsub.on('chart.panning', () => {
       slider.set([chart.scales.x.min, chart.scales.x.max], false, true);
     });
-    const timeBtn = (t: string) => `<button class = "btn-rack__btn">${t}</button>`;
+    const activeIfDuration = (d: duration.Duration) => (initial.isSame(endDate.subtract(d)) ? 'active' : '');
+    const timeBtn = (b: { t: TimeButton; duration: duration.Duration }) =>
+      `<button class = "btn-rack__btn ${activeIfDuration(b.duration)}">${b.t}</button>`;
+
     const buttons: { t: TimeButton; duration: duration.Duration }[] = [
       { t: '1m', duration: dayjs.duration(1, 'months') },
       { t: '3m', duration: dayjs.duration(3, 'months') },
@@ -259,7 +260,7 @@ export function initModule({ data, singlePerfName }: Opts) {
     $('.time-selector-buttons').html(
       buttons
         .filter(b => startDate.isBefore(endDate.subtract(b.duration)) || b.t == 'all')
-        .map(b => timeBtn(b.t))
+        .map(b => timeBtn(b))
         .join(''),
     );
     const btnClick = (min: number) => {
@@ -267,7 +268,7 @@ export function initModule({ data, singlePerfName }: Opts) {
       slider.set([min, endDate.valueOf()]);
       chart.zoomScale('x', { min: min, max: endDate.valueOf() });
     };
-    $('.time-selector-buttons').on('mousedown', 'button', function (this: HTMLButtonElement) {
+    $('.time-selector-buttons').on('mousedown', 'button', function(this: HTMLButtonElement) {
       const min = buttons.find(b => b.t == this.textContent);
       if (min) btnClick(Math.max(startDate.valueOf(), endDate.subtract(min.duration).valueOf()));
       this.classList.add('active');

@@ -1,19 +1,21 @@
 package lila.round
 package ui
 
+import chess.variant.{ Crazyhouse, Variant }
+
 import lila.ui.*
+
 import ScalatagsTemplate.{ *, given }
-import chess.variant.{ Variant, Crazyhouse }
 
 final class RoundUi(helpers: Helpers, gameUi: lila.game.ui.GameUi):
   import helpers.{ *, given }
 
   def RoundPage(variant: Variant, title: String)(using ctx: Context) =
     Page(title)
-      .cssTag(if variant == Crazyhouse then "round.zh" else "round")
-      .cssTag(ctx.pref.hasKeyboardMove.option("keyboardMove"))
-      .cssTag(ctx.pref.hasVoice.option("voice"))
-      .cssTag(ctx.blind.option("round.nvui"))
+      .css(if variant == Crazyhouse then "round.zh" else "round")
+      .css(ctx.pref.hasKeyboardMove.option("keyboardMove"))
+      .css(ctx.pref.hasVoice.option("voice"))
+      .css(ctx.blind.option("round.nvui"))
       .zoom
       .csp(_.withPeer.withWebAssembly)
 
@@ -21,7 +23,7 @@ final class RoundUi(helpers: Helpers, gameUi: lila.game.ui.GameUi):
     OpenGraph(
       image = cdnUrl(routes.Export.gameThumbnail(pov.gameId, None, None).url).some,
       title = titleGame(pov.game),
-      url = s"$netBaseUrl${routes.Round.watcher(pov.gameId, pov.color.name).url}",
+      url = s"$netBaseUrl${routes.Round.watcher(pov.gameId, pov.color).url}",
       description = describePov(pov)
     )
 

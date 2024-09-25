@@ -2,7 +2,6 @@ package views.clas
 
 import play.api.data.Form
 
-import lila.ui.ContentSecurityPolicy
 import lila.app.UiEnv.{ *, given }
 import lila.clas.{ Clas, Student }
 
@@ -25,6 +24,6 @@ object student:
       clas: Clas,
       students: List[Student],
       s: Student.WithUserAndManagingClas,
-      activities: Vector[lila.activity.ActivityView]
+      activities: Seq[lila.activity.ActivityView]
   )(using ctx: Context) =
     ui.show(clas, students, s, views.activity(s.withPerfs, activities))

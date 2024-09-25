@@ -1,26 +1,25 @@
 package lila.tournament
 
-import chess.format.Fen
 import com.softwaremill.tagging.*
 import play.api.i18n.Lang
 import play.api.libs.json.*
 
 import lila.common.Json.given
+import lila.common.Json.lightUser.writeNoId
 import lila.common.Uptime
 import lila.core.LightUser
+import lila.core.chess.Rank
+import lila.core.data.Preload
+import lila.core.game.LightPov
+import lila.core.i18n.Translate
+import lila.core.socket.SocketVersion
+import lila.core.user.LightUserApi
 import lila.gathering.{ Condition, ConditionHandlers, GreatPlayer }
+import lila.gathering.GatheringJson.*
 import lila.memo.CacheApi.*
 import lila.memo.SettingStore
-import lila.ui.Icon.iconWrites
-
-import lila.core.socket.SocketVersion
-import lila.core.i18n.Translate
-import lila.core.data.Preload
-import lila.common.Json.lightUser.writeNoId
 import lila.rating.PerfType
-import lila.core.chess.Rank
-import lila.core.user.LightUserApi
-import lila.core.game.LightPov
+import lila.ui.Icon.iconWrites
 
 final class JsonView(
     lightUserApi: LightUserApi,
@@ -51,6 +50,7 @@ final class JsonView(
       socketVersion: Option[SocketVersion],
       partial: Boolean,
       withScores: Boolean,
+      withAllowList: Boolean,
       myInfo: Preload[Option[MyInfo]] = Preload.none
   )(using me: Option[Me])(using
       getMyTeamIds: Condition.GetMyTeamIds,
@@ -114,7 +114,7 @@ final class JsonView(
           .add("spotlight" -> tour.spotlight)
           .add("berserkable" -> tour.berserkable)
           .add("noStreak" -> tour.noStreak)
-          .add("position" -> tour.position.ifTrue(full).map(positionJson))
+          .add("position" -> tour.position.ifTrue(full).map(position))
           .add("verdicts" -> verdicts.map(verdictsFor(_, tour.perfType)))
           .add("schedule" -> tour.schedule.map(scheduleJson))
           .add("private" -> tour.isPrivate)
@@ -139,6 +139,7 @@ final class JsonView(
           .add("minRatedGames", tour.conditions.nbRatedGame)
           .add("onlyTitled", tour.conditions.titled.isDefined)
           .add("teamMember", tour.conditions.teamMember.map(_.teamId))
+          .add("allowList", withAllowList.so(tour.conditions.allowList).map(_.userIds))
 
   def addReloadEndpoint(js: JsObject, tour: Tournament, useLilaHttp: Tournament => Boolean) =
     js + ("reloadEndpoint" -> JsString({
@@ -310,7 +311,7 @@ final class JsonView(
         .obj("rating" -> rating)
         .add("berserk" -> berserk)
 
-  private val podiumJsonCache = cacheApi[TourId, Option[JsArray]](32, "tournament.podiumJson") {
+  private val podiumJsonCache = cacheApi[TourId, Option[JsArray]](128, "tournament.podiumJson") {
     _.expireAfterAccess(15 seconds)
       .expireAfterWrite(1 minute)
       .maximumSize(256)
@@ -327,7 +328,7 @@ final class JsonView(
                   .filter(w => tour.winnerId.forall(w !=))
                   .foreach:
                     tournamentRepo.setWinnerId(tour.id, _)
-                top3.traverse: rp =>
+                top3.sequentially: rp =>
                   for
                     sheet <- cached.sheet(tour, rp.player.userId)
                     json <- playerJson(
@@ -556,23 +557,6 @@ object JsonView:
       "limit"     -> clock.limitSeconds,
       "increment" -> clock.incrementSeconds
     )
-
-  private[tournament] def positionJson(fen: Fen.Standard): JsObject =
-    lila.gathering.Thematic.byFen(fen) match
-      case Some(pos) =>
-        Json
-          .obj(
-            "eco"  -> pos.eco,
-            "name" -> pos.name,
-            "fen"  -> pos.fen,
-            "url"  -> pos.url
-          )
-      case None =>
-        Json
-          .obj(
-            "name" -> "Custom position",
-            "fen"  -> fen
-          )
 
   private[tournament] given OWrites[Spotlight] = OWrites: s =>
     Json

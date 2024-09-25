@@ -1,13 +1,15 @@
 package lila.forum
 package ui
 
-import play.api.data.{ Form, Field }
+import play.api.data.{ Field, Form }
 import play.api.libs.json.Json
 import scalalib.paginator.Paginator
 
-import lila.ui.*
-import ScalatagsTemplate.{ *, given }
 import lila.core.captcha.Captcha
+import lila.core.id.CmsPageKey
+import lila.ui.*
+
+import ScalatagsTemplate.{ *, given }
 
 final class TopicUi(helpers: Helpers, bits: ForumBits, postUi: PostUi)(
     renderCaptcha: (Form[?] | Field, Captcha) => Context ?=> Frag,
@@ -17,13 +19,14 @@ final class TopicUi(helpers: Helpers, bits: ForumBits, postUi: PostUi)(
 
   def form(categ: lila.forum.ForumCateg, form: Form[?], captcha: Captcha)(using Context) =
     Page("New forum topic")
-      .cssTag("forum")
-      .js(EsmInit("bits.forum"))
-      .js(captchaEsmInit):
+      .csp(_.withInlineIconFont)
+      .css("bits.forum")
+      .js(Esm("bits.forum"))
+      .js(captchaEsm):
         main(cls := "forum forum-topic topic-form page-small box box-pad")(
           boxTop(
             h1(
-              a(href := routes.ForumCateg.show(categ.slug), dataIcon := Icon.LessThan, cls := "text"),
+              a(href := routes.ForumCateg.show(categ.id), dataIcon := Icon.LessThan, cls := "text"),
               categ.name
             )
           ),
@@ -43,16 +46,20 @@ final class TopicUi(helpers: Helpers, bits: ForumBits, postUi: PostUi)(
             ,
             p:
               trans.site.makeSureToRead:
-                strong(a(href := routes.Cms.lonePage("forum-etiquette"))(trans.site.theForumEtiquette()))
+                strong(
+                  a(href := routes.Cms.lonePage(CmsPageKey("forum-etiquette")))(
+                    trans.site.theForumEtiquette()
+                  )
+                )
           ),
-          postForm(cls := "form3", action := routes.ForumTopic.create(categ.slug))(
+          postForm(cls := "form3", action := routes.ForumTopic.create(categ.id))(
             form3.group(form("name"), trans.site.subject())(form3.input(_)(autofocus)),
             form3.group(form("post")("text"), trans.site.message())(
               form3.textarea(_, klass = "post-text-area")(rows := 10)
             ),
             renderCaptcha(form("post"), captcha),
             form3.actions(
-              a(href := routes.ForumCateg.show(categ.slug))(trans.site.cancel()),
+              a(href := routes.ForumCateg.show(categ.id))(trans.site.cancel()),
               Granter
                 .opt(_.PublicMod)
                 .option(
@@ -83,24 +90,23 @@ final class TopicUi(helpers: Helpers, bits: ForumBits, postUi: PostUi)(
     val backUrl =
       if isDiagnostic && !canModCateg then routes.ForumCateg.index.url
       else
-        topic.ublogId.fold(s"${routes.ForumCateg.show(categ.slug)}"): id =>
+        topic.ublogId.fold(s"${routes.ForumCateg.show(categ.id)}"): id =>
           routes.Ublog.redirect(id).url
 
     val teamOnly = categ.team.filterNot(isMyTeamSync)
-    val pager = paginationByQuery(routes.ForumTopic.show(categ.slug, topic.slug, 1), posts, showPost = true)
+    val pager    = paginationByQuery(routes.ForumTopic.show(categ.id, topic.slug, 1), posts, showPost = true)
     Page(s"${topic.name} • page ${posts.currentPage}/${posts.nbPages} • ${categ.name}")
-      .cssTag("forum")
-      .cssTag(hasAsks.option("ask"))
+      .css("bits.forum")
+      .css(hasAsks.option("bits.ask"))
       .csp(_.withInlineIconFont.withTwitter)
-      .js(
-        EsmInit("bits.forum") ++ EsmInit("bits.expandText") ++ hasAsks.so(
-          jsModuleInit("bits.ask")
-        ) ++ formWithCaptcha.isDefined.so(captchaEsmInit)
-      )
+      .js(Esm("bits.forum"))
+      .js(Esm("bits.expandText"))
+      .js(hasAsks.option(Esm("bits.ask")))
+      .js(formWithCaptcha.isDefined.option(captchaEsm))
       .graph(
         OpenGraph(
           title = topic.name,
-          url = s"$netBaseUrl${routes.ForumTopic.show(categ.slug, topic.slug, posts.currentPage).url}",
+          url = s"$netBaseUrl${routes.ForumTopic.show(categ.id, topic.slug, posts.currentPage).url}",
           description = shorten(posts.currentPageResults.headOption.so(_.post.text), 152)
         )
       ):
@@ -120,7 +126,7 @@ final class TopicUi(helpers: Helpers, bits: ForumBits, postUi: PostUi)(
                 categ,
                 topic,
                 p,
-                s"${routes.ForumTopic.show(categ.slug, topic.slug, posts.currentPage)}#${p.post.number}",
+                s"${routes.ForumTopic.show(categ.id, topic.slug, posts.currentPage)}#${p.post.number}",
                 canReply = formWithCaptcha.isDefined,
                 canModCateg = canModCateg,
                 canReact = teamOnly.isEmpty
@@ -155,26 +161,27 @@ final class TopicUi(helpers: Helpers, bits: ForumBits, postUi: PostUi)(
                     trans.site.unsubscribe()
                 ),
               (canModCateg || (topic.isUblog && ctx.me.exists(topic.isAuthor))).option(
-                postForm(action := routes.ForumTopic.close(categ.slug, topic.slug))(
+                postForm(action := routes.ForumTopic.close(categ.id, topic.slug))(
                   button(cls := "button button-empty button-red")(
                     if topic.closed then "Reopen" else "Close"
                   )
                 )
               ),
               canModCateg.option(
-                postForm(action := routes.ForumTopic.sticky(categ.slug, topic.slug))(
+                postForm(action := routes.ForumTopic.sticky(categ.id, topic.slug))(
                   button(cls := "button button-empty button-brag")(
                     if topic.isSticky then "Unsticky" else "Sticky"
                   )
                 )
               ),
-              (canModCateg || ctx.me.exists(topic.isAuthor)).option(deleteModal)
+              (canModCateg || ctx.me.exists(topic.isAuthor)).option(deleteModal),
+              canModCateg.option(relocateModal(categ))
             )
           ),
           formWithCaptcha.map: (form, captcha) =>
             postForm(
               cls    := "form3 reply",
-              action := s"${routes.ForumPost.create(categ.slug, topic.slug, posts.currentPage)}#reply",
+              action := s"${routes.ForumPost.create(categ.id, topic.slug, posts.currentPage)}#reply",
               novalidate
             )(
               form3.group(
@@ -183,7 +190,7 @@ final class TopicUi(helpers: Helpers, bits: ForumBits, postUi: PostUi)(
                 help = a(
                   dataIcon := Icon.InfoCircle,
                   cls      := "text",
-                  href     := routes.Cms.lonePage("forum-etiquette")
+                  href     := routes.Cms.lonePage(CmsPageKey("forum-etiquette"))
                 )(
                   "Forum etiquette"
                 ).some
@@ -193,7 +200,7 @@ final class TopicUi(helpers: Helpers, bits: ForumBits, postUi: PostUi)(
                 ),
               renderCaptcha(form, captcha),
               form3.actions(
-                a(href := routes.ForumCateg.show(categ.slug))(trans.site.cancel()),
+                a(href := routes.ForumCateg.show(categ.id))(trans.site.cancel()),
                 (Granter.opt(_.PublicMod) || Granter.opt(_.SeeReport)).option(
                   form3.submit(
                     frag(s"Reply as a mod ${(!Granter.opt(_.PublicMod)).so("(anonymously)")}"),
@@ -210,10 +217,10 @@ final class TopicUi(helpers: Helpers, bits: ForumBits, postUi: PostUi)(
       Context
   )(using me: Me) =
     Page("Diagnostic report")
-      .cssTag("forum")
-      .js(EsmInit("bits.forum"))
-      .js(jsModuleInit("bits.autoform", Json.obj("selector" -> ".post-text-area", "ops" -> "focus begin")))
-      .js(captchaEsmInit):
+      .css("bits.forum")
+      .js(Esm("bits.forum"))
+      .js(esmInitBit("autoForm", "selector" -> ".post-text-area", "ops" -> "focus begin"))
+      .js(captchaEsm):
         main(cls := "forum forum-topic topic-form page-small box box-pad")(
           boxTop(h1(dataIcon := Icon.BubbleConvo, cls := "text")("Diagnostics")),
           st.section(cls := "warning")(
@@ -221,7 +228,7 @@ final class TopicUi(helpers: Helpers, bits: ForumBits, postUi: PostUi)(
             p("Describe your issue above the report. Unsolicited diagnostics will be ignored."),
             p("Only you and the Lichess moderators can see this forum.")
           ),
-          postForm(cls := "form3", action := routes.ForumTopic.create(categ.slug))(
+          postForm(cls := "form3", action := routes.ForumTopic.create(categ.id))(
             form3.group(form("post")("text"), trans.site.message())(
               form3.textarea(_, klass = "post-text-area")(rows := 10, autofocus := "")(
                 "\n\n\n" +
@@ -251,6 +258,31 @@ final class TopicUi(helpers: Helpers, bits: ForumBits, postUi: PostUi)(
           form3.submit(
             frag("Delete the post")
           )(value := "default", cls := "button-red")
+        )
+      )
+    )
+
+  private val relocateTo = List(
+    "general-chess-discussion" -> "General Chess Discussion",
+    "lichess-feedback"         -> "Lichess Feedback",
+    "game-analysis"            -> "Game Analysis",
+    "off-topic-discussion"     -> "Off-Topic Discussion"
+  )
+
+  private def relocateModal(from: lila.forum.ForumCateg) =
+    div(cls := "forum-relocate-modal none")(
+      p("Move the entire thread to another forum"),
+      st.form(method := "post", cls := "form3")(
+        st.select(
+          name := "categ",
+          cls  := "form-control"
+        )(
+          relocateTo.collect:
+            case (slug, name) if slug != from.id.value => st.option(value := slug)(name)
+        ),
+        form3.actions(
+          button(cls := "cancel button button-empty", tpe := "button")("Cancel"),
+          form3.submit(frag("Relocate the thread"))(cls := "button-red")
         )
       )
     )

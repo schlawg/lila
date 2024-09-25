@@ -1,5 +1,6 @@
 import * as xhr from 'common/xhr';
-import contactEmail from './bits.contactEmail';
+import { spinnerHtml } from 'common/spinner';
+import { contactEmail } from './bits';
 
 export interface Pricing {
   currency: string;
@@ -17,7 +18,7 @@ const showErrorThenReload = (error: string) => {
   location.assign('/patron');
 };
 
-export default (window as any).checkoutStart = function (stripePublicKey: string, pricing: Pricing) {
+export function initModule({ stripePublicKey, pricing }: { stripePublicKey: string, pricing: any }): void {
   contactEmail();
 
   const hasLifetime = $('#freq_lifetime').prop('disabled');
@@ -30,7 +31,7 @@ export default (window as any).checkoutStart = function (stripePublicKey: string
   if (!$checkout.find('.amount_choice group.amount input:checked').data('amount'))
     $checkout.find('input.default').trigger('click');
 
-  const onFreqChange = function () {
+  const onFreqChange = function() {
     const freq = getFreq();
     $checkout.find('.amount_fixed').toggleClass('none', freq != 'lifetime');
     $checkout.find('.amount_choice').toggleClass('none', freq == 'lifetime');
@@ -57,12 +58,12 @@ export default (window as any).checkoutStart = function (stripePublicKey: string
     toggleCheckout();
   });
 
-  $checkout.find('group.amount .other label').on('click', function (this: HTMLLabelElement) {
+  $checkout.find('group.amount .other label').on('click', function(this: HTMLLabelElement) {
     let amount: number;
     const raw: string = prompt(this.title) || '';
     try {
       amount = parseFloat(raw.replace(',', '.').replace(/[^0-9\.]/gim, ''));
-    } catch (e) {
+    } catch (_) {
       return false;
     }
     if (!amount) {
@@ -145,6 +146,7 @@ const payPalStyle = {
 };
 
 function payPalOrderStart($checkout: Cash, pricing: Pricing, getAmount: () => number | undefined) {
+  if (!window.paypalOrder) return;
   (window.paypalOrder as any)
     .Buttons({
       style: payPalStyle,
@@ -173,6 +175,7 @@ function payPalOrderStart($checkout: Cash, pricing: Pricing, getAmount: () => nu
 }
 
 function payPalSubscriptionStart($checkout: Cash, pricing: Pricing, getAmount: () => number | undefined) {
+  if (!window.paypalSubscription) return;
   (window.paypalSubscription as any)
     .Buttons({
       style: payPalStyle,
@@ -207,10 +210,10 @@ function stripeStart(
   getAmount: () => number | undefined,
 ) {
   const stripe = window.Stripe(publicKey);
-  $checkout.find('.service .stripe').on('click', function () {
+  $checkout.find('.service .stripe').on('click', function() {
     const amount = getAmount();
     if (!amount) return;
-    $checkout.find('.service').html(site.spinnerHtml);
+    $checkout.find('.service').html(spinnerHtml);
 
     xhr
       .jsonAnyResponse(`/patron/stripe/checkout?currency=${pricing.currency}`, {
@@ -231,7 +234,7 @@ function stripeStart(
   });
 
   // Close Checkout on page navigation:
-  $(window).on('popstate', function () {
+  $(window).on('popstate', function() {
     window.stripeHandler.close();
   });
 }

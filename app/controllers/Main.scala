@@ -1,15 +1,11 @@
 package controllers
-
-import play.api.data.*
 import play.api.libs.json.*
 import play.api.mvc.*
 
 import lila.app.{ *, given }
 import lila.common.HTTPRequest
 import lila.core.id.GameFullId
-
-import lila.core.net.Bearer
-import lila.web.{ WebForms, StaticContent }
+import lila.web.{ StaticContent, WebForms }
 
 final class Main(
     env: Env,
@@ -17,18 +13,16 @@ final class Main(
 ) extends LilaController(env):
 
   def toggleBlindMode = OpenBody:
-    WebForms.blind
-      .bindFromRequest()
-      .fold(
-        _ => BadRequest,
-        (enable, redirect) =>
-          Redirect(redirect).withCookies:
-            lila.web.WebConfig.blindCookie.make(env.security.lilaCookie)(enable != "0")
-      )
+    bindForm(WebForms.blind)(
+      _ => BadRequest,
+      (enable, redirect) =>
+        Redirect(redirect).withCookies:
+          lila.web.WebConfig.blindCookie.make(env.security.lilaCookie)(enable != "0")
+    )
 
-  def handlerNotFound(using RequestHeader) =
+  def handlerNotFound(msg: Option[String])(using RequestHeader) =
     makeContext.flatMap:
-      keyPages.notFound(using _)
+      keyPages.notFound(msg)(using _)
 
   def captchaCheck(id: GameId) = Open:
     env.game.captcha.validate(id, ~get("solution")).map { valid =>
@@ -50,7 +44,7 @@ final class Main(
 
   private def serveMobile(using Context) =
     pageHit
-    FoundPage(env.api.cmsRenderKey("mobile-apk"))(views.mobile)
+    FoundPage(env.cms.renderKey("mobile-apk"))(views.mobile)
 
   def dailyPuzzleSlackApp = Open:
     Ok.page(views.site.ui.dailyPuzzleSlackApp)
@@ -100,13 +94,12 @@ final class Main(
     pageHit
     NotImplemented.page(views.site.message.temporarilyDisabled)
 
-  def keyboardMoveHelp = Open:
-    Ok(lila.ui.Snippet(lila.web.ui.help.keyboardMove))
-
-  def voiceHelp(module: String) = Open:
-    module match
-      case "move" => Ok.snip(lila.web.ui.help.voiceMove)
-      case _      => NotFound(s"Unknown voice module: $module")
+  def helpPath(path: String) = Open:
+    path match
+      case "keyboard-move" => Ok.snip(lila.web.ui.help.keyboardMove)
+      case "voice/move"    => Ok.snip(lila.web.ui.help.voiceMove)
+      case "master"        => Redirect("/verify-title")
+      case _               => notFound
 
   def movedPermanently(to: String) = Anon:
     MovedPermanently(to)
@@ -134,36 +127,12 @@ final class Main(
         then lila.mon.link.external(tag, ctx.isAuth).increment()
         Redirect(url)
 
-  lila.memo.RateLimit.composite[lila.core.net.IpAddress](
-    key = "image.upload.ip"
-  )(
-    ("fast", 10, 2.minutes),
-    ("slow", 60, 1.day)
-  )
-
   def uploadImage(rel: String) = AuthBody(parse.multipartFormData) { ctx ?=> me ?=>
     ctx.body.body.file("image") match
       case Some(image) =>
-        env.memo.picfitApi.bodyImage
-          .upload(rel = rel, image = image, me = me, ip = ctx.ip)
-          .map(url => JsonOk(Json.obj("imageUrl" -> url)))
+        limit.imageUpload(ctx.ip, rateLimited):
+          env.memo.picfitApi.bodyImage
+            .upload(rel = rel, image = image, me = me, ip = ctx.ip)
+            .map(url => JsonOk(Json.obj("imageUrl" -> url)))
       case None => JsonBadRequest(jsonError("Image content only"))
   }
-
-  def githubSecretScanning =
-    AnonBodyOf(parse.json):
-      _.asOpt[List[JsObject]]
-        .map:
-          _.flatMap: obj =>
-            for
-              token <- (obj \ "token").asOpt[String]
-              url   <- (obj \ "url").asOpt[String]
-            yield Bearer(token) -> url
-          .toMap
-        .so: tokensMap =>
-          env.oAuth.tokenApi
-            .secretScanning(tokensMap)
-            .flatMap:
-              _.traverse: (token, url) =>
-                env.msg.api.systemPost(token.userId, lila.msg.MsgPreset.apiTokenRevoked(url))
-            .as(NoContent)

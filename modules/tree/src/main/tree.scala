@@ -1,19 +1,16 @@
 package lila.tree
 
 import alleycats.Zero
-import chess.Centis
+import chess.bitboard.Bitboard
 import chess.format.pgn.{ Glyph, Glyphs }
 import chess.format.{ Fen, Uci, UciCharPair, UciPath }
 import chess.opening.Opening
-import chess.{ Ply, Square, Check }
-import chess.bitboard.Bitboard
-import chess.variant.{ Variant, Crazyhouse }
+import chess.variant.{ Crazyhouse, Variant }
+import chess.{ Centis, Check, Ply, Square }
 import play.api.libs.json.*
-import scalalib.ThreadLocalRandom
 import scalalib.StringOps.softCleanUp
-
+import scalalib.ThreadLocalRandom
 import scalalib.json.Json.{ *, given }
-import chess.json.Json.given
 
 import Node.{ Comments, Comment, Gamebook, Shapes }
 
@@ -33,22 +30,17 @@ case class Branches(nodes: List[Branch]) extends AnyVal:
   def hasNode(id: UciCharPair): Boolean    = nodes.exists(_.id == id)
 
   def nodeAt(path: UciPath): Option[Branch] =
-    path.split.flatMap { (head, rest) =>
-      rest.computeIds.foldLeft(get(head)) { (cur, id) =>
+    path.split.flatMap: (head, rest) =>
+      rest.computeIds.foldLeft(get(head)): (cur, id) =>
         cur.flatMap(_.children.get(id))
-      }
-    }
 
   // select all nodes on that path
   def nodesOn(path: UciPath): Vector[(Branch, UciPath)] =
-    path.split
-      .so { (head, tail) =>
-        get(head).so { first =>
-          (first, UciPath.fromId(head)) +: first.children.nodesOn(tail).map { (n, p) =>
-            (n, p.prepend(head))
-          }
+    path.split.so: (head, tail) =>
+      get(head).so: first =>
+        (first, UciPath.fromId(head)) +: first.children.nodesOn(tail).map { (n, p) =>
+          (n, p.prepend(head))
         }
-      }
 
   def addNodeAt(node: Branch, path: UciPath): Option[Branches] =
     path.split match
@@ -57,9 +49,9 @@ case class Branches(nodes: List[Branch]) extends AnyVal:
 
   // suboptimal due to using List instead of Vector
   def addNode(node: Branch): Branches =
-    Branches(get(node.id).fold(nodes :+ node) { prev =>
-      nodes.filterNot(_.id == node.id) :+ prev.merge(node)
-    })
+    Branches:
+      get(node.id).fold(nodes :+ node): prev =>
+        nodes.filterNot(_.id == node.id) :+ prev.merge(node)
 
   def deleteNodeAt(path: UciPath): Option[Branches] =
     path.split.flatMap {
@@ -72,11 +64,10 @@ case class Branches(nodes: List[Branch]) extends AnyVal:
     path.split match
       case None => this.some
       case Some((head, tail)) =>
-        get(head).flatMap { node =>
+        get(head).flatMap: node =>
           node.withChildren(_.promoteToMainlineAt(tail)).map { promoted =>
             Branches(promoted :: nodes.filterNot(node ==))
           }
-        }
 
   def promoteUpAt(path: UciPath): Option[(Branches, Boolean)] =
     path.split match
@@ -93,21 +84,19 @@ case class Branches(nodes: List[Branch]) extends AnyVal:
           else Branches(newNode :: nodes.filterNot(newNode ==))      -> true
 
   def updateAt(path: UciPath, f: Branch => Branch): Option[Branches] =
-    path.split.flatMap {
+    path.split.flatMap:
       case (head, p) if p.isEmpty => updateWith(head, n => Some(f(n)))
       case (head, tail)           => updateChildren(head, _.updateAt(tail, f))
-    }
 
   def updateAllWith(op: Branch => Branch): Branches =
-    Branches(nodes.map { n =>
-      op(n.copy(children = n.children.updateAllWith(op)))
-    })
+    Branches(nodes.map: n =>
+      op(n.copy(children = n.children.updateAllWith(op))))
 
   def update(child: Branch): Branches =
-    Branches(nodes.map {
+    Branches(nodes.map:
       case n if child.id == n.id => child
       case n                     => n
-    })
+    )
 
   def updateWith(id: UciCharPair, op: Branch => Option[Branch]): Option[Branches] =
     get(id).flatMap(op).map(update)
@@ -124,17 +113,14 @@ case class Branches(nodes: List[Branch]) extends AnyVal:
     )
 
   def takeMainlineWhile(f: Branch => Boolean): Branches =
-    updateMainline { node =>
-      node.children.first.fold(node) { mainline =>
+    updateMainline: node =>
+      node.children.first.fold(node): mainline =>
         if f(mainline) then node
         else node.withoutChildren
-      }
-    }
 
   def countRecursive: Int =
-    nodes.foldLeft(nodes.size) { (count, n) =>
+    nodes.foldLeft(nodes.size): (count, n) =>
       count + n.children.countRecursive
-    }
 
   def lastMainlineNode: Option[Node] =
     first.map: first =>
@@ -208,9 +194,8 @@ case class Root(
   def dropFirstChild = copy(children = if children.isEmpty then children else Branches(children.variations))
 
   def withChildren(f: Branches => Option[Branches]): Option[Root] =
-    f(children).map { newChildren =>
+    f(children).map: newChildren =>
       copy(children = newChildren)
-    }
 
   def withoutChildren = copy(children = Branches.empty)
 
@@ -408,7 +393,7 @@ object Node:
     val empty: Shapes                                    = Nil
 
   case class Comment(id: Comment.Id, text: Comment.Text, by: Comment.Author):
-    def removeMeta = text.removeMeta.map { t => copy(text = t) }
+    def removeMeta = text.removeMeta.map(t => copy(text = t))
   object Comment:
     opaque type Id = String
     object Id extends OpaqueString[Id]:
@@ -542,6 +527,7 @@ object Node:
       node.mainlineNodeList.map(minimalNodeJsonWriter.writes)
 
 object Tree:
+
   def makeMinimalJsonString(
       game: Game,
       analysis: Option[Analysis],
@@ -561,3 +547,25 @@ object Tree:
   ): JsValue =
     Node.partitionTreeJsonWriter.writes:
       TreeBuilder(game, analysis, initialFen, options, logChessError)
+
+  def makeMinimalJsonStringNew(
+      game: Game,
+      analysis: Option[Analysis],
+      initialFen: Fen.Full,
+      options: ExportOptions,
+      logChessError: TreeBuilder.LogChessError
+  ): JsValue =
+    NewRoot.minimalNodeJsonWriter.writes:
+      val x = NewTreeBuilder(game, analysis, initialFen, lila.tree.ExportOptions.default, logChessError)
+      x.size
+      x
+
+  def makePartitionTreeJsonNew(
+      game: Game,
+      analysis: Option[Analysis],
+      initialFen: Fen.Full,
+      options: ExportOptions,
+      logChessError: TreeBuilder.LogChessError
+  ): JsValue =
+    NewRoot.partitionTreeJsonWriter.writes:
+      NewTreeBuilder(game, analysis, initialFen, options, logChessError)

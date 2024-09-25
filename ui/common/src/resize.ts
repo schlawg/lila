@@ -1,7 +1,8 @@
 import * as cg from 'chessground/types';
 import * as xhr from './xhr';
-import debounce from './debounce';
+import { debounce } from './timing';
 import * as Prefs from './prefs';
+import { pubsub } from './pubsub';
 
 type MouchEvent = Event & Partial<MouseEvent & TouchEvent>;
 
@@ -18,7 +19,7 @@ export default function resizeHandle(
   pref: Prefs.ShowResizeHandle,
   ply: number,
   visible?: Visible,
-) {
+): void {
   if (pref === Prefs.ShowResizeHandle.Never) return;
 
   const el = document.createElement('cg-resize');
@@ -67,7 +68,7 @@ export default function resizeHandle(
   if (pref === Prefs.ShowResizeHandle.OnlyAtStart) {
     const toggle = (ply: number) => el.classList.toggle('none', visible ? !visible(ply) : ply >= 2);
     toggle(ply);
-    site.pubsub.on('ply', toggle);
+    pubsub.on('ply', toggle);
   }
 }
 

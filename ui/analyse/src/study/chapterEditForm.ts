@@ -4,6 +4,7 @@ import { spinnerVdom as spinner } from 'common/spinner';
 import { option, emptyRedButton } from '../view/util';
 import { ChapterMode, EditChapterData, Orientation, StudyChapterConfig, ChapterPreview } from './interfaces';
 import { defined, prop } from 'common';
+import { snabDialog } from 'common/dialog';
 import { h, VNode } from 'snabbdom';
 import { Redraw } from '../interfaces';
 import { StudySocketSend } from '../socket';
@@ -57,45 +58,45 @@ export function view(ctrl: StudyChapterEditForm): VNode | undefined {
   const data = ctrl.current(),
     noarg = ctrl.trans.noarg;
   return data
-    ? site.dialog.snab({
-        class: 'edit-' + data.id, // full redraw when changing chapter
-        onClose() {
-          ctrl.current(null);
-          ctrl.redraw();
-        },
-        vnodes: [
-          h('h2', noarg('editChapter')),
-          h(
-            'form.form3',
-            {
-              hook: bindSubmit(e => {
-                ctrl.submit({
-                  name: chapterForm.fieldValue(e, 'name'),
-                  mode: chapterForm.fieldValue(e, 'mode') as ChapterMode,
-                  orientation: chapterForm.fieldValue(e, 'orientation') as Orientation,
-                  description: chapterForm.fieldValue(e, 'description'),
-                });
-              }, ctrl.redraw),
-            },
-            [
-              h('div.form-group', [
-                h('label.form-label', { attrs: { for: 'chapter-name' } }, noarg('name')),
-                h('input#chapter-name.form-control', {
-                  attrs: { minlength: 2, maxlength: 80 },
-                  hook: onInsert<HTMLInputElement>(el => {
-                    if (!el.value) {
-                      el.value = data.name;
-                      el.select();
-                      el.focus();
-                    }
-                  }),
+    ? snabDialog({
+      class: 'edit-' + data.id, // full redraw when changing chapter
+      onClose() {
+        ctrl.current(null);
+        ctrl.redraw();
+      },
+      vnodes: [
+        h('h2', noarg('editChapter')),
+        h(
+          'form.form3',
+          {
+            hook: bindSubmit(e => {
+              ctrl.submit({
+                name: chapterForm.fieldValue(e, 'name'),
+                mode: chapterForm.fieldValue(e, 'mode') as ChapterMode,
+                orientation: chapterForm.fieldValue(e, 'orientation') as Orientation,
+                description: chapterForm.fieldValue(e, 'description'),
+              });
+            }, ctrl.redraw),
+          },
+          [
+            h('div.form-group', [
+              h('label.form-label', { attrs: { for: 'chapter-name' } }, noarg('name')),
+              h('input#chapter-name.form-control', {
+                attrs: { minlength: 2, maxlength: 80 },
+                hook: onInsert<HTMLInputElement>(el => {
+                  if (!el.value) {
+                    el.value = data.name;
+                    el.select();
+                    el.focus();
+                  }
                 }),
-              ]),
-              ...(isLoaded(data) ? viewLoaded(ctrl, data) : [spinner()]),
-            ],
-          ),
-        ],
-      })
+              }),
+            ]),
+            ...(isLoaded(data) ? viewLoaded(ctrl, data) : [spinner()]),
+          ],
+        ),
+      ],
+    })
     : undefined;
 }
 
@@ -106,10 +107,10 @@ function viewLoaded(ctrl: StudyChapterEditForm, data: StudyChapterConfig): VNode
   const mode = data.practice
       ? 'practice'
       : defined(data.conceal)
-      ? 'conceal'
-      : data.gamebook
-      ? 'gamebook'
-      : 'normal',
+        ? 'conceal'
+        : data.gamebook
+          ? 'gamebook'
+          : 'normal',
     noarg = ctrl.trans.noarg;
   return [
     h('div.form-split', [

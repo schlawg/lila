@@ -1,18 +1,17 @@
 package lila.web
 
-import play.api.mvc.*
 import play.api.libs.json.*
+import play.api.mvc.*
 
-import lila.common.Json.given
+import lila.core.game.anonCookieName
 import lila.core.id.GamePlayerId
 import lila.ui.Context
-import lila.core.game.anonCookieName
 
 trait TheftPrevention:
   self: lila.web.ResponseBuilder =>
 
   protected def PreventTheft(pov: Pov)(ok: => Fu[Result])(using Context): Fu[Result] =
-    if isTheft(pov) then Redirect(routes.Round.watcher(pov.gameId.value, pov.color.name))
+    if isTheft(pov) then Redirect(routes.Round.watcher(pov.gameId, pov.color))
     else ok
 
   protected def isTheft(pov: Pov)(using ctx: Context) =

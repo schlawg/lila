@@ -3,21 +3,21 @@ package lila.simul
 import akka.actor.*
 import chess.variant.Variant
 import chess.{ ByColor, Status }
-import play.api.libs.json.Json
 import monocle.syntax.all.*
+import play.api.libs.json.Json
+import scalalib.paginator.Paginator
 
 import lila.common.Json.given
-import scalalib.paginator.Paginator
 import lila.common.{ Bus, Debouncer }
+import lila.core.perf.UserWithPerfs
+import lila.core.socket.SendToFlag
+import lila.core.team.LightTeam
+import lila.core.timeline.{ Propagate, SimulCreate, SimulJoin }
 import lila.db.dsl.{ *, given }
 import lila.gathering.Condition
 import lila.gathering.Condition.GetMyTeamIds
-import lila.core.team.LightTeam
-import lila.core.timeline.{ Propagate, SimulCreate, SimulJoin }
 import lila.memo.CacheApi.*
 import lila.rating.PerfType
-import lila.core.socket.SendToFlag
-import lila.core.perf.UserWithPerfs
 import lila.rating.UserWithPerfs.only
 
 final class SimulApi(
@@ -67,8 +67,7 @@ final class SimulApi(
     _ <- repo.create(simul)
   yield
     publish()
-    lila.common.Bus.named
-      .timeline(Propagate(SimulCreate(me.userId, simul.id, simul.fullName)).toFollowersOf(me.userId))
+    lila.common.Bus.pub(Propagate(SimulCreate(me.userId, simul.id, simul.fullName)).toFollowersOf(me.userId))
     simul
 
   def update(prev: Simul, setup: SimulForm.Setup, teams: Seq[LightTeam])(using me: Me): Fu[Simul] =
@@ -111,9 +110,8 @@ final class SimulApi(
                       val player   = SimulPlayer.make(user, variant)
                       val newSimul = simul.addApplicant(SimulApplicant(player, accepted = false))
                       repo.update(newSimul).andDo {
-                        lila.common.Bus.named.timeline(
+                        lila.common.Bus.pub:
                           Propagate(SimulJoin(me.userId, simul.id, simul.fullName)).toFollowersOf(user.id)
-                        )
                         socket.reload(newSimul.id)
                         publish()
                       }
@@ -234,9 +232,9 @@ final class SimulApi(
   private def makeGame(simul: Simul, host: UserWithPerfs)(
       pairing: SimulPairing,
       number: Int
-  ): Fu[(Game, chess.Color)] = for
+  ): Fu[(Game, Color)] = for
     user <- userApi.withPerfs(pairing.player.user).orFail(s"No user with id ${pairing.player.user}")
-    hostColor = simul.hostColor | chess.Color.fromWhite(number % 2 == 0)
+    hostColor = simul.hostColor | Color.fromWhite(number % 2 == 0)
     us        = ByColor(host, user)
     users     = hostColor.fold(us, us.swap)
     clock     = simul.clock.chessClockOf(hostColor)
@@ -276,7 +274,7 @@ final class SimulApi(
       .filter(_.startedAt.exists(_.isBefore(nowInstant.minusHours(1))))
       // only test some random simuls, no need to test all of them all the time
       .filter(_.startedAt.exists(_.getEpochSecond % sampling == (nowSeconds % sampling)))
-      .traverse: simul =>
+      .sequentiallyVoid: simul =>
         gameRepo.light
           .gamesFromPrimary(simul.ongoingGameIds)
           .flatMap: games =>
@@ -285,10 +283,9 @@ final class SimulApi(
                 case None => (gameId, Status.UnknownFinish, none).some // the game is not in DB!!
                 case Some(g) if g.finished => (gameId, g.status, g.winnerUserId).some // DB game is finished
                 case _                     => none
-            dirty.traverse: (id, status, winner) =>
+            dirty.sequentiallyVoid: (id, status, winner) =>
               logger.info(s"Simul ${simul.id} game $id is dirty, finishing with $status")
               finishGame(simul.id, id, status, winner)
-      .void
 
   private def update(simul: Simul): Funit =
     repo.update(simul).andDo(socket.reload(simul.id)).andDo(publish())

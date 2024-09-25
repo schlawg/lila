@@ -1,5 +1,5 @@
 import { Prop, propWithEffect } from 'common';
-import debounce from 'common/debounce';
+import { debounce } from 'common/timing';
 import * as xhr from 'common/xhr';
 import { storedJsonProp, StoredJsonProp } from 'common/storage';
 import LobbyController from './ctrl';
@@ -31,18 +31,18 @@ const getPerf = (variant: VariantKey, timeMode: TimeMode, time: RealValue, incre
   return totalGameTime < 30
     ? 'ultraBullet'
     : totalGameTime < 180
-    ? 'bullet'
-    : totalGameTime < 480
-    ? 'blitz'
-    : totalGameTime < 1500
-    ? 'rapid'
-    : 'classical';
+      ? 'bullet'
+      : totalGameTime < 480
+        ? 'blitz'
+        : totalGameTime < 1500
+          ? 'rapid'
+          : 'classical';
 };
 
 export default class SetupController {
   root: LobbyController;
-  store: Record<GameType, StoredJsonProp<SetupStore>>;
-  gameType: GameType | null = null;
+  store: Record<Exclude<GameType, 'local'>, StoredJsonProp<SetupStore>>;
+  gameType: Exclude<GameType, 'local'> | null = null;
   lastValidFen = '';
   fenError = false;
   friendUser = '';
@@ -103,8 +103,10 @@ export default class SetupController {
     this.variant = propWithEffect(forceOptions?.variant || storeProps.variant, this.onDropdownChange);
     this.fen = this.propWithApply(forceOptions?.fen || storeProps.fen);
     this.timeMode = propWithEffect(forceOptions?.timeMode || storeProps.timeMode, this.onDropdownChange);
-    this.timeV = this.propWithApply(sliderInitVal(storeProps.time, timeVToTime, 100)!);
-    this.incrementV = this.propWithApply(sliderInitVal(storeProps.increment, incrementVToIncrement, 100)!);
+    this.timeV = this.propWithApply(sliderInitVal(forceOptions?.time || storeProps.time, timeVToTime, 100)!);
+    this.incrementV = this.propWithApply(
+      sliderInitVal(forceOptions?.increment || storeProps.increment, incrementVToIncrement, 100)!,
+    );
     this.daysV = this.propWithApply(sliderInitVal(storeProps.days, daysVToDays, 20)!);
     this.gameMode = this.propWithApply(storeProps.gameMode);
     this.ratingMin = this.propWithApply(storeProps.ratingMin);
@@ -188,7 +190,11 @@ export default class SetupController {
 
   private propWithApply = <A>(value: A) => propWithEffect(value, this.onPropChange);
 
-  openModal = (gameType: GameType, forceOptions?: ForceSetupOptions, friendUser?: string) => {
+  openModal = (
+    gameType: Exclude<GameType, 'local'>,
+    forceOptions?: ForceSetupOptions,
+    friendUser?: string,
+  ) => {
     this.root.leavePool();
     this.gameType = gameType;
     this.loading = false;
@@ -255,9 +261,9 @@ export default class SetupController {
     const id = `${this.time()}+${this.increment()}`;
     return valid && this.root.pools.find(p => p.id === id)
       ? {
-          id,
-          range: this.ratingRange(),
-        }
+        id,
+        range: this.ratingRange(),
+      }
       : null;
   };
 
@@ -289,7 +295,7 @@ export default class SetupController {
     this.time() >= 1;
   valid = (): boolean => this.validFen() && this.validTime() && this.validAiTime();
 
-  submit = async (color: Color | 'random') => {
+  submit = async(color: Color | 'random') => {
     const poolMember = this.hookToPoolMember(color);
     if (poolMember) {
       this.root.enterPool(poolMember);
@@ -311,7 +317,7 @@ export default class SetupController {
         method: 'post',
         body: this.propsToFormData(color),
       });
-    } catch (e) {
+    } catch (_) {
       this.loading = false;
       this.root.redraw();
       alert('Sorry, we encountered an error while creating your game. Please try again.');
@@ -325,8 +331,8 @@ export default class SetupController {
       alert(
         errs
           ? Object.keys(errs)
-              .map(k => `${k}: ${errs[k]}`)
-              .join('\n')
+            .map(k => `${k}: ${errs[k]}`)
+            .join('\n')
           : 'Invalid setup',
       );
       if (response.status == 403) {

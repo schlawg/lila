@@ -2,8 +2,8 @@ package lila.ublog
 package ui
 
 import lila.ui.*
+
 import ScalatagsTemplate.{ *, given }
-import lila.core.i18n.Language
 
 final class UblogPostUi(helpers: Helpers, ui: UblogUi)(
     ublogRank: UblogRank,
@@ -24,13 +24,11 @@ final class UblogPostUi(helpers: Helpers, ui: UblogUi)(
       hasAsks: Boolean
   )(using ctx: Context) =
     Page(s"${trans.ublog.xBlog.txt(user.username)} • ${post.title}")
-      .cssTag("ublog")
-      .cssTag(hasAsks.option("ask"))
-      .js(
-        EsmInit("bits.expandText") ++ ctx.isAuth.so(EsmInit("bits.ublog")) ++ hasAsks.so(
-          jsModuleInit("bits.ask")
-        )
-      )
+      .css("bits.ublog")
+      .css(hasAsks.option("bits.ask"))
+      .js(Esm("bits.expandText"))
+      .js(ctx.isAuth.option(Esm("bits.ublog")))
+      .js(hasAsks.option(Esm("bits.ask")))
       .graph(
         OpenGraph(
           `type` = "article",
@@ -93,9 +91,9 @@ final class UblogPostUi(helpers: Helpers, ui: UblogUi)(
                   href := addQueryParams(
                     routes.Report.form.url,
                     Map(
-                      "username" -> user.username,
+                      "username" -> user.username.value,
                       "postUrl"  -> s"$netBaseUrl${ui.urlOfPost(post)}",
-                      "reason"   -> "comm"
+                      "from"     -> "ublog"
                     )
                   ),
                   dataIcon := Icon.CautionTriangle
@@ -112,7 +110,7 @@ final class UblogPostUi(helpers: Helpers, ui: UblogUi)(
             post.isLichess.option(
               div(cls := "ublog-post__lichess")(
                 connectLinks,
-                p(a(href := routes.Plan.index)(trans.site.lichessPatronInfo()))
+                p(a(href := routes.Plan.index())(trans.site.lichessPatronInfo()))
               )
             ),
             div(cls := "ublog-post__footer")(

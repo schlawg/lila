@@ -1,12 +1,9 @@
 package lila.gathering
-
-import play.api.i18n.Lang
-
 import java.time.format.{ DateTimeFormatter, FormatStyle }
 
+import lila.core.i18n.Translate
 import lila.gathering.Condition.*
 import lila.rating.PerfType
-import lila.core.i18n.Translate
 
 object ConditionHandlers:
 
@@ -18,6 +15,7 @@ object ConditionHandlers:
     given BSONDocumentHandler[MaxRating]   = Macros.handler
     given BSONDocumentHandler[MinRating]   = Macros.handler
     given BSONHandler[Titled.type]         = ifPresentHandler(Titled)
+    given BSONHandler[AccountAge]          = Macros.handler
     given BSONDocumentHandler[TeamMember]  = Macros.handler
     given BSONDocumentHandler[AllowList]   = Macros.handler
 

@@ -4,20 +4,28 @@ package ui
 import play.api.libs.json.Json
 
 import lila.ui.*
-import ScalatagsTemplate.{ *, given }
+
+import ScalatagsTemplate.*
 
 final class LearnUi(helpers: Helpers):
   import helpers.{ *, given }
   import trans.{ learn as trl }
 
-  def apply(data: Option[play.api.libs.json.JsValue])(using Context) =
+  def apply(data: Option[play.api.libs.json.JsValue])(using ctx: Context) =
     Page(s"${trl.learnChess.txt()} - ${trl.byPlaying.txt()}")
       .js:
         PageModule(
           "learn",
-          Json.obj("data" -> data, "i18n" -> i18nJsObject(i18nKeys))
+          Json.obj(
+            "data" -> data,
+            "i18n" -> i18nJsObject(i18nKeys),
+            "pref" -> Json.obj(
+              "coords"      -> ctx.pref.coords,
+              "destination" -> ctx.pref.destination
+            )
+          )
         )
-      .cssTag("learn")
+      .css("learn")
       .graph(
         title = "Learn chess by playing",
         description = "You don't know much about chess? Excellent! Let's have fun and learn to play chess!",

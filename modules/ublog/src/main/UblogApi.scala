@@ -4,9 +4,9 @@ import reactivemongo.akkastream.{ AkkaStreamCursor, cursorProducer }
 import reactivemongo.api.*
 
 import lila.common.Markdown
+import lila.core.shutup.{ PublicSource, ShutupApi }
+import lila.core.timeline as tl
 import lila.db.dsl.{ *, given }
-import lila.core.shutup.{ ShutupApi, PublicSource }
-import lila.core.timeline.Propagate
 import lila.memo.PicfitApi
 
 final class UblogApi(
@@ -32,19 +32,16 @@ final class UblogApi(
 
   def getByPrismicId(id: String): Fu[Option[UblogPost]] = colls.post.one[UblogPost]($doc("prismicId" -> id))
 
-  def update(data: UblogForm.UblogPostData, prev: UblogPost)(using me: Me): Fu[UblogPost] =
-    askEmbed
-      .freezeAndCommit(data.markdown.value, me)
-      .flatMap { frozen =>
-        getUserBlog(me, insertMissing = true).flatMap { blog =>
-          val post = data.update(me.value, prev, Markdown(frozen))
-          (colls.post.update.one($id(prev.id), $set(bsonWriteObjTry[UblogPost](post).get)) >> {
-            (post.live && prev.lived.isEmpty).so(onFirstPublish(me.value, blog, post))
-          }).inject(post.copy(markdown = Markdown(askEmbed.unfreeze(frozen)))) // for the ask /id
-        }
-      }
+  def update(data: UblogForm.UblogPostData, prev: UblogPost)(using me: Me): Fu[UblogPost] = for
+    frozen <- askEmbed.freezeAndCommit(data.markdown.value, me)
+    author <- userApi.byId(prev.created.by).map(_ | me.value)
+    blog   <- getUserBlog(author, insertMissing = true)
+    post = data.update(me.value, prev, Markdown(frozen))
+    _ <- colls.post.update.one($id(prev.id), $set(bsonWriteObjTry[UblogPost](post).get))
+    _ <- (post.live && prev.lived.isEmpty).so(onFirstPublish(author, blog, post))
+  yield post.copy(markdown = Markdown(askEmbed.unfreeze(frozen))) // for the ask /id
 
-  private def onFirstPublish(user: User, blog: UblogBlog, post: UblogPost): Funit =
+  private def onFirstPublish(author: User, blog: UblogBlog, post: UblogPost): Funit =
     rank
       .computeRank(blog, post)
       .so: rank =>
@@ -52,13 +49,11 @@ final class UblogApi(
       .andDo:
         lila.common.Bus.publish(UblogPost.Create(post), "ublogPost")
         if blog.visible then
-          lila.common.Bus.named.timeline(
-            Propagate(
-              lila.core.timeline.UblogPost(user.id, post.id, post.slug, post.title)
-            ).toFollowersOf(post.created.by)
-          )
-          shutupApi.publicText(user.id, post.allText, PublicSource.Ublog(post.id))
-          if blog.modTier.isEmpty then sendPostToZulipMaybe(user, post)
+          lila.common.Bus.pub:
+            tl.Propagate(tl.UblogPost(author.id, post.id, post.slug, post.title))
+              .toFollowersOf(post.created.by)
+          shutupApi.publicText(author.id, post.allText, PublicSource.Ublog(post.id))
+          if blog.modTier.isEmpty then sendPostToZulipMaybe(author, post)
 
   def getUserBlog(user: User, insertMissing: Boolean = false): Fu[UblogBlog] =
     getBlog(UblogBlog.Id.User(user.id)).getOrElse(

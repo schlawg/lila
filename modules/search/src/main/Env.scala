@@ -5,6 +5,7 @@ import play.api.Configuration
 import play.api.libs.ws.StandaloneWSClient
 
 import lila.common.autoconfig.*
+import lila.search.client.SearchClient
 
 @Module
 private class SearchConfig(
@@ -21,8 +22,7 @@ final class Env(
 
   private val config = appConfig.get[SearchConfig]("search")(AutoConfig.loader)
 
-  private def makeHttp(index: Index): ESClientHttp = wire[ESClientHttp]
-
-  val makeClient = (index: Index) =>
-    if config.enabled then makeHttp(index)
-    else wire[ESClientStub]
+  val client: SearchClient =
+    val _client =
+      if config.enabled then SearchClient.play(ws, s"${config.endpoint}/api") else SearchClient.noop
+    LilaSearchClient(_client, config.writeable)

@@ -1,9 +1,9 @@
 package lila.tutor
 
 import lila.common.{ Chronometer, LilaScheduler, Uptime }
+import lila.core.perf.UserWithPerfs
 import lila.db.dsl.{ *, given }
 import lila.memo.CacheApi
-import lila.core.perf.UserWithPerfs
 
 final class TutorApi(
     colls: TutorColls,
@@ -36,7 +36,7 @@ final class TutorApi(
 
   private def pollQueue = queue.next.flatMap: items =>
     lila.mon.tutor.parallelism.update(items.size)
-    items.traverse_ : next =>
+    items.sequentiallyVoid: next =>
       next.startedAt.fold(buildThenRemoveFromQueue(next.userId)) { started =>
         val expired =
           started.isBefore(nowInstant.minusSeconds(builder.maxTime.toSeconds.toInt)) ||

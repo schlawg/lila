@@ -1,10 +1,8 @@
 package lila.search
 
-import play.api.libs.json.Writes
-
 import scalalib.paginator.*
 
-final class PaginatorBuilder[A, Q: Writes](
+final class PaginatorBuilder[A, Q](
     searchApi: SearchReadApi[A, Q],
     maxPerPage: MaxPerPage
 )(using Executor):
@@ -12,7 +10,7 @@ final class PaginatorBuilder[A, Q: Writes](
   def apply(query: Q, page: Int): Fu[Paginator[A]] =
     Paginator(
       adapter = new AdapterLike[A]:
-        def nbResults = searchApi.count(query)
+        def nbResults = searchApi.count(query).dmap(_.toInt)
         def slice(offset: Int, length: Int) =
           searchApi.search(query, From(offset), Size(length))
       ,

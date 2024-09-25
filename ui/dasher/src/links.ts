@@ -1,13 +1,14 @@
 import { Attrs, looseH as h, VNode, bind } from 'common/snabbdom';
 import * as licon from 'common/licon';
 import { Mode, DasherCtrl, PaneCtrl } from './interfaces';
+import { pubsub } from 'common/pubsub';
 
 export class LinksCtrl extends PaneCtrl {
   constructor(root: DasherCtrl) {
     super(root);
   }
 
-  render = () => {
+  render = (): VNode => {
     const modeCfg = this.modeCfg,
       noarg = this.trans.noarg;
     return h('div', [
@@ -16,7 +17,7 @@ export class LinksCtrl extends PaneCtrl {
         h('button.sub', modeCfg('langs'), noarg('language')),
         h('button.sub', modeCfg('sound'), noarg('sound')),
         h('button.sub', modeCfg('background'), noarg('background')),
-        h('button.sub', modeCfg('board'), 'Board'),
+        h('button.sub', modeCfg('board'), noarg('board')),
         h('button.sub', modeCfg('piece'), noarg('pieceSet')),
         this.root.opts.zenable &&
           h('div.zen.selector', [
@@ -24,7 +25,7 @@ export class LinksCtrl extends PaneCtrl {
               'button.text',
               {
                 attrs: { 'data-icon': licon.DiscBigOutline, title: 'Keyboard: z', type: 'button' },
-                hook: bind('click', () => site.pubsub.emit('zen')),
+                hook: bind('click', () => pubsub.emit('zen')),
               },
               this.trans.noarg('zenMode'),
             ),
@@ -44,32 +45,32 @@ export class LinksCtrl extends PaneCtrl {
       linkCfg = this.linkCfg;
     return d.user
       ? h('div.links', [
-          h(
-            'a.user-link.online.text.is-green',
-            linkCfg(`/@/${d.user.name}`, d.user.patron ? licon.Wings : licon.Disc),
-            noarg('profile'),
+        h(
+          'a.user-link.online.text.is-green',
+          linkCfg(`/@/${d.user.name}`, d.user.patron ? licon.Wings : licon.Disc),
+          noarg('profile'),
+        ),
+
+        h('a.text', linkCfg('/inbox', licon.Envelope), noarg('inbox')),
+
+        h(
+          'a.text',
+          linkCfg(
+            '/account/profile',
+            licon.Gear,
+            this.root.opts.playing ? { target: '_blank', rel: 'noopener' } : undefined,
           ),
+          noarg('preferences'),
+        ),
 
-          h('a.text', linkCfg('/inbox', licon.Envelope), noarg('inbox')),
+        d.coach && h('a.text', linkCfg('/coach/edit', licon.GraduateCap), noarg('coachManager')),
 
-          h(
-            'a.text',
-            linkCfg(
-              '/account/profile',
-              licon.Gear,
-              this.root.opts.playing ? { target: '_blank', rel: 'noopener' } : undefined,
-            ),
-            noarg('preferences'),
-          ),
+        d.streamer && h('a.text', linkCfg('/streamer/edit', licon.Mic), noarg('streamerManager')),
 
-          d.coach && h('a.text', linkCfg('/coach/edit', licon.GraduateCap), noarg('coachManager')),
-
-          d.streamer && h('a.text', linkCfg('/streamer/edit', licon.Mic), noarg('streamerManager')),
-
-          h('form.logout', { attrs: { method: 'post', action: '/logout' } }, [
-            h('button.text', { attrs: { type: 'submit', 'data-icon': licon.Power } }, noarg('logOut')),
-          ]),
-        ])
+        h('form.logout', { attrs: { method: 'post', action: '/logout' } }, [
+          h('button.text', { attrs: { type: 'submit', 'data-icon': licon.Power } }, noarg('logOut')),
+        ]),
+      ])
       : null;
   }
 

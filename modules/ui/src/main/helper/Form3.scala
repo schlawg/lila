@@ -1,10 +1,11 @@
 package lila.ui
 
 import play.api.data.*
+import scalatags.Text.TypedTag
 
-import lila.ui.ScalatagsTemplate.{ *, given }
-import lila.core.user.FlairApi
 import lila.core.i18n.{ I18nKey as trans, Translate }
+import lila.core.user.FlairApi
+import lila.ui.ScalatagsTemplate.{ *, given }
 
 final class Form3(formHelper: FormHelper & I18nHelper, flairApi: FlairApi):
 
@@ -88,18 +89,18 @@ final class Form3(formHelper: FormHelper & I18nHelper, flairApi: FlairApi):
       help.map { helper(_) }
     )
 
-  def cmnToggle(
+  def cmnToggle[Value: Show](
       fieldId: String,
       fieldName: String,
       checked: Boolean,
       disabled: Boolean = false,
-      value: String = "true"
+      value: Value = "true"
   ) =
     frag(
       st.input(
         st.id    := fieldId,
         name     := fieldName,
-        st.value := value,
+        st.value := value.show,
         tpe      := "checkbox",
         cls      := "form-control cmn-toggle",
         checked.option(st.checked),
@@ -108,18 +109,35 @@ final class Form3(formHelper: FormHelper & I18nHelper, flairApi: FlairApi):
       label(`for` := fieldId)
     )
 
+  def nativeCheckbox[Value: Show](
+      fieldId: String,
+      fieldName: String,
+      checked: Boolean,
+      value: Value = "true"
+  ) =
+    st.input(
+      st.id    := fieldId,
+      name     := fieldName,
+      st.value := value.show,
+      tpe      := "checkbox",
+      checked.option(st.checked)
+    )
+
   def select(
       field: Field,
       options: Iterable[(Any, String)],
       default: Option[String] = None,
-      disabled: Boolean = false
+      disabled: Boolean = false,
+      required: Boolean = false
   ): Frag =
     frag(
       st.select(
         st.id := id(field),
         name  := field.name,
-        cls   := "form-control"
-      )(disabled.option(st.disabled := true))(validationModifiers(field))(
+        cls   := "form-control",
+        disabled.option(st.disabled := true),
+        required.option(st.required)
+      )(validationModifiers(field))(
         default.map { option(value := "")(_) },
         options.toSeq.map { (value, name) =>
           option(
@@ -163,21 +181,27 @@ final class Form3(formHelper: FormHelper & I18nHelper, flairApi: FlairApi):
       title := confirm
     )(content)
 
-  def hidden(field: Field, value: Option[String] = None): Tag =
-    hidden(field.name, ~value.orElse(field.value))
+  def hidden[Value: Show](field: Field, value: Option[Value] = None): Tag =
+    hidden(field.name, ~value.map(_.show).orElse(field.value))
 
-  def hidden(name: String, value: String): Tag =
+  def hidden[Value: Show](name: String, value: Value): Tag =
     st.input(
       st.name  := name,
-      st.value := value,
+      st.value := value.show,
       tpe      := "hidden"
     )
 
   // allows disabling of a field that defaults to true
   def hiddenFalse(field: Field): Tag = hidden(field, "false".some)
 
-  def passwordModified(field: Field, content: Frag)(modifiers: Modifier*)(using Translate): Frag =
-    group(field, content)(input(_, typ = "password")(required)(modifiers))
+  def passwordModified(field: Field, content: Frag, reveal: Boolean = true)(
+      modifiers: Modifier*
+  )(using Translate): Frag =
+    group(field, content): f =>
+      div(cls := "password-wrapper")(
+        input(f, typ = "password")(required)(modifiers),
+        reveal.option(button(cls := "password-reveal", tpe := "button", dataIcon := Icon.Eye))
+      )
 
   def passwordComplexityMeter(labelContent: Frag): Frag =
     div(cls := "password-complexity")(
@@ -190,8 +214,14 @@ final class Form3(formHelper: FormHelper & I18nHelper, flairApi: FlairApi):
     form.globalError.map: err =>
       div(cls := "form-group is-invalid")(error(err))
 
-  def fieldset(legend: Frag): Tag =
-    st.fieldset(cls := "form-fieldset")(st.legend(legend))
+  def fieldset(legend: Frag, toggle: Option[Boolean] = none): Tag =
+    st.fieldset(
+      cls := List(
+        "toggle-box"             -> true,
+        "toggle-box--toggle"     -> toggle.isDefined,
+        "toggle-box--toggle-off" -> toggle.has(false)
+      )
+    )(st.legend(toggle.map(_ => tabindex := 0))(legend))
 
   private val dataEnableTime = attr("data-enable-time")
   private val dataTime24h    = attr("data-time_24h")
@@ -244,4 +274,4 @@ final class Form3(formHelper: FormHelper & I18nHelper, flairApi: FlairApi):
     def image(name: String): Frag =
       st.input(tpe := "file", st.name := name, accept := "image/png, image/jpeg, image/webp")
     def pgn(name: String): Frag = st.input(tpe := "file", st.name := name, accept := ".pgn")
-    def selectImage             = button(cls := "button select-image")("select image")
+    def selectImage             = button(cls := "button select-image", tpe := "button")("Select image")

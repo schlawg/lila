@@ -1,7 +1,7 @@
 package lila.tv
 
-import scalalib.actor.SyncActor
 import chess.PlayerTitle
+import scalalib.actor.SyncActor
 
 import lila.core.LightUser
 import lila.game.GameRepo
@@ -58,7 +58,7 @@ object Tv:
   import chess.{ variant as V, Speed as S }
   import lila.rating.{ PerfType as P }
 
-  case class Champion(user: LightUser, rating: IntRating, gameId: GameId, color: chess.Color)
+  case class Champion(user: LightUser, rating: IntRating, gameId: GameId, color: Color)
   case class Champions(channels: Map[Channel, Champion]):
     export channels.get
 

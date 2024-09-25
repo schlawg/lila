@@ -1,12 +1,12 @@
 package lila.study
 
 import chess.format.UciPath
-import scalalib.ThreadLocalRandom
 import reactivemongo.api.bson.Macros.Annotations.Key
+import scalalib.ThreadLocalRandom
 
-import lila.core.{ study as hub }
-import lila.core.study.Visibility
 import lila.core.data.OpaqueInstant
+import lila.core.study as hub
+import lila.core.study.Visibility
 
 case class Study(
     @Key("_id") id: StudyId,
@@ -20,6 +20,7 @@ case class Study(
     likes: Study.Likes,
     description: Option[String] = None,
     topics: Option[StudyTopics] = None,
+    flair: Option[Flair] = None,
     createdAt: Instant,
     updatedAt: Instant
 ) extends hub.Study:
@@ -57,7 +58,7 @@ case class Study(
   def isOld = (nowSeconds - updatedAt.toSeconds) > 20 * 60
 
   def isRelay = from match
-    case From.Relay(_) => true
+    case _: From.Relay => true
     case _             => false
 
   def cloneFor(user: User): Study =
@@ -117,6 +118,7 @@ object Study:
 
   case class Data(
       name: String,
+      flair: Option[String],
       visibility: String,
       computer: Settings.UserSelection,
       explorer: Settings.UserSelection,

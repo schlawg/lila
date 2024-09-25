@@ -3,23 +3,22 @@ package lila.setup
 import chess.format.Fen
 import chess.variant.{ FromPosition, Variant }
 import chess.{ ByColor, Clock }
-
 import scalalib.model.Days
-import lila.lobby.Color
-import lila.rating.PerfType
+
+import lila.core.game.{ IdGenerator, NewPlayer, Source }
 import lila.core.user.GameUser
-import lila.core.game.{ IdGenerator, Source }
-import lila.core.game.NewPlayer
+import lila.lobby.TriColor
 
 final case class ApiAiConfig(
     variant: Variant,
     clock: Option[Clock.Config],
     daysO: Option[Days],
-    color: Color,
+    color: TriColor,
     level: Int,
     fen: Option[Fen.Full] = None
 ) extends Config
-    with Positional:
+    with Positional
+    with WithColor:
 
   val strictFen = false
 
@@ -72,7 +71,7 @@ object ApiAiConfig extends BaseConfig:
       variant = Variant.orDefault(v),
       clock = cl,
       daysO = d,
-      color = Color.orDefault(~c),
+      color = TriColor.orDefault(~c),
       level = l,
       fen = pos
     ).autoVariant

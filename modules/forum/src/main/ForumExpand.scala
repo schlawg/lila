@@ -19,5 +19,11 @@ final class ForumTextExpand(askEmbed: lila.core.ask.AskEmbed)(using Executor, Sc
       .map: (body, _) =>
         ForumPost.WithFrag(post, body)
 
-  def manyPosts(posts: Seq[ForumPost])(using NetDomain): Fu[Seq[ForumPost.WithFrag]] =
-    posts.traverse(one)
+  def manyPosts(posts: Seq[ForumPost])(using NetDomain): Fu[Seq[ForumPost.WithFrag]] = posts.traverse(one)
+  // posts.view
+  //   .map(_.text)
+  //   .toList
+  //   .sequentially(one)
+  //   .map:
+  //     _.zip(posts).map: (body, post) =>
+  //       ForumPost.WithFrag(post, body)

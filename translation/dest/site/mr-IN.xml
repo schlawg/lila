@@ -211,6 +211,7 @@
   <string name="forgotPassword">परवलीचा शब्द विसरलात?</string>
   <string name="youAreLeavingLichess">तुमही लिचेस सोडून जात आहात</string>
   <string name="proceedToX">%s कडे जा</string>
+  <string name="whatSignupUsername">तू कुठला उसरनेम वापरला साईन अप करायला?</string>
   <string name="accountClosed">खाते %s बंद झाले आहे.</string>
   <string name="rank">मानांकन</string>
   <string name="rankX">मानांकन: %s</string>
@@ -427,9 +428,6 @@
   <string name="safeTournamentName">क्रीडासत्रासाठी खूप सुरक्षित नाव निवडा.</string>
   <string name="inappropriateNameWarning">थोडे अनुचित काहीही आपले खाते बंद करू शकते.</string>
   <string name="emptyTournamentName">क्रीडासत्राला उल्लेखनीय बुद्धिबळपटूचे नाव देणीसाठी रिकामे सोडा.</string>
-  <string name="recommendNotTouching">आमच्या मते तुम्ही याला बदलू नये.</string>
-  <string name="fewerPlayers">आपण प्रविष्टी आवश्यकता सेट केल्यास, आपल्या क्रीडासत्रात कमी खेळाडू असतील.</string>
-  <string name="showAdvancedSettings">प्रगत सेटिंग्ज दाखवा</string>
   <string name="makePrivateTournament">क्रीडासत्र खाजगी करा, व पासवर्डने प्रवेश मर्यादित करा</string>
   <string name="join">सामील व्हा</string>
   <string name="withdraw">मागे घ्या</string>
@@ -468,8 +466,6 @@
   <string name="ifNoneLeaveEmpty">काहीही नसल्यास रिक्त सोडा</string>
   <string name="profile">प्रोफाइल</string>
   <string name="editProfile">प्रोफाईल संपादित करा</string>
-  <string name="firstName">नाव</string>
-  <string name="lastName">आडनाव</string>
   <string name="biography">चरित्र</string>
   <string name="thankYou">आभारी आहे</string>
   <string name="socialMediaLinks">सोशल मीडिया दुवे</string>
@@ -510,11 +506,8 @@
   <string name="reason">कारण</string>
   <string name="whatIsIheMatter">काय समस्या आहे</string>
   <string name="cheat">फसवणूक</string>
-  <string name="insult">अपमान</string>
   <string name="troll">थट्टा</string>
-  <string name="ratingManipulation">रेटिंग मॅनिपुलेशन</string>
   <string name="other">इतर</string>
-  <string name="reportDescriptionHelp">खेळाचा दुवा पेस्ट करा आणि या वापरकर्त्याच्या वर्तनाबद्दल काय चुकीचे आहे ते सांगा. फक्त \"ते फसवतात\" असे म्हणू नका, परंतु आपण या निष्कर्षावर कसे आलात ते सांगा. इंग्रजीमध्ये लिहिले असल्यास आपल्या अहवालावर वेगवान प्रक्रिया केली जाईल.</string>
   <string name="error.provideOneCheatedGameLink">कृपया फसवणूक झालेल्या खेळासाठी किमान एक दुवा प्रदान करा.</string>
   <string name="by">%s ने</string>
   <string name="importedByX">%s ने आयात केलेले</string>
@@ -733,9 +726,6 @@
   <string name="transparent">पारदर्शक</string>
   <string name="deviceTheme">उपकरणानुसार</string>
   <string name="backgroundImageUrl">Background चित्रासाठी URL:</string>
-  <string name="boardGeometry">पटाचा प्रकार</string>
-  <string name="boardTheme">पटाचे रंगरूप</string>
-  <string name="boardSize">बुद्धिबळ पटाचा आकार</string>
   <string name="pieceSet">सोंगट्या</string>
   <string name="embedInYourWebsite">तुमच्या वेबसाइटवर टाका</string>
   <string name="usernameAlreadyUsed">हे नाव अगोदर वापरलेले आहे, कृपया अन्य वापरा.</string>

@@ -3,6 +3,7 @@ import { h, VNode } from 'snabbdom';
 import * as licon from 'common/licon';
 import { spinnerVdom as spinner } from 'common/spinner';
 import { userLink } from 'common/userLink';
+import { initMiniBoard } from 'common/miniBoard';
 import { opposite } from 'chessground/util';
 import ChallengeCtrl from './ctrl';
 
@@ -59,13 +60,9 @@ function challenge(ctrl: ChallengeCtrl, dir: ChallengeDirection) {
         ]),
         fromPosition
           ? h('div.position.mini-board.cg-wrap.is2d', {
-              attrs: { 'data-state': `${c.initialFen},${myColor}` },
-              hook: {
-                insert(vnode) {
-                  site.miniBoard.init(vnode.elm as HTMLElement);
-                },
-              },
-            })
+            attrs: { 'data-state': `${c.initialFen},${myColor}` },
+            hook: { insert: vnode => initMiniBoard(vnode.elm as HTMLElement) },
+          })
           : null,
         h('div.buttons', (dir === 'in' ? inButtons : outButtons)(ctrl, c)),
       ],
@@ -74,7 +71,8 @@ function challenge(ctrl: ChallengeCtrl, dir: ChallengeDirection) {
 }
 
 function inButtons(ctrl: ChallengeCtrl, c: Challenge): VNode[] {
-  return [
+  const viewInsteadOfAccept = (c.rules?.length ?? 0) > 0;
+  const acceptElement = () =>
     h('form', { attrs: { method: 'post', action: `/challenge/${c.id}/accept` } }, [
       h('button.button.accept', {
         attrs: {
@@ -85,7 +83,14 @@ function inButtons(ctrl: ChallengeCtrl, c: Challenge): VNode[] {
         },
         hook: onClick(ctrl.onRedirect),
       }),
-    ]),
+    ]);
+  const viewElement = () =>
+    h('a.view', {
+      attrs: { 'data-icon': licon.Eye, href: '/' + c.id, title: ctrl.trans('viewInFullSize') },
+    });
+
+  return [
+    viewInsteadOfAccept ? viewElement() : acceptElement(),
     h('button.button.decline', {
       attrs: { type: 'submit', 'data-icon': licon.X, title: ctrl.trans('decline') },
       hook: onClick(() => ctrl.decline(c.id, 'generic')),

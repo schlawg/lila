@@ -1,6 +1,9 @@
 import * as xhr from 'common/xhr';
 import main from './main';
 import { LobbyOpts } from './interfaces';
+import StrongSocket from 'common/socket';
+import { trans } from 'common/i18n';
+import { pubsub } from 'common/pubsub';
 
 export function initModule(opts: LobbyOpts) {
   opts.pools = [
@@ -17,12 +20,12 @@ export function initModule(opts: LobbyOpts) {
     { id: '30+0', lim: 30, inc: 0, perf: 'Classical' },
     { id: '30+20', lim: 30, inc: 20, perf: 'Classical' },
   ];
-  opts.trans = site.trans(opts.i18n);
+  opts.trans = trans(opts.i18n);
 
-  site.socket = new site.StrongSocket('/lobby/socket/v5', false, {
+  site.socket = new StrongSocket('/lobby/socket/v5', false, {
     receive: (t: string, d: any) => lobbyCtrl.socket.receive(t, d),
     events: {
-      n(_: string, msg: { d: number; r: number }) {
+      n(_: string, msg: any) {
         lobbyCtrl.spreadPlayersNumber && lobbyCtrl.spreadPlayersNumber(msg.d);
         setTimeout(
           () => lobbyCtrl.spreadGamesNumber && lobbyCtrl.spreadGamesNumber(msg.r),
@@ -32,16 +35,16 @@ export function initModule(opts: LobbyOpts) {
       reload_timeline() {
         xhr.text('/timeline').then(html => {
           $('.timeline').html(html);
-          site.contentLoaded();
+          pubsub.emit('content-loaded');
         });
       },
       featured(o: { html: string }) {
         $('.lobby__tv').html(o.html);
-        site.contentLoaded();
+        pubsub.emit('content-loaded');
       },
       redirect(e: RedirectTo) {
-        lobbyCtrl.leavePool();
         lobbyCtrl.setRedirecting();
+        lobbyCtrl.leavePool();
         site.redirect(e, true);
         return true;
       },
@@ -50,7 +53,7 @@ export function initModule(opts: LobbyOpts) {
       },
     },
   });
-  site.StrongSocket.firstConnect.then(() => {
+  pubsub.after('socket.hasConnected').then(() => {
     const gameId = new URLSearchParams(location.search).get('hook_like');
     if (!gameId) return;
     const { ratingMin, ratingMax } = lobbyCtrl.setupCtrl.makeSetupStore('hook')();

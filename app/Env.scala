@@ -4,12 +4,9 @@ import akka.actor.*
 import com.softwaremill.macwire.*
 import play.api.libs.ws.StandaloneWSClient
 import play.api.mvc.{ ControllerComponents, SessionCookieBaker }
-import play.api.{ Configuration, Environment, Mode, ConfigLoader }
+import play.api.{ ConfigLoader, Configuration, Environment, Mode }
 
 import lila.core.config.*
-import lila.common.config.given
-import lila.common.autoconfig.{ *, given }
-import lila.core.data.{ Strings, UserIds }
 import lila.core.i18n.Translator
 
 final class Env(
@@ -26,9 +23,10 @@ final class Env(
 
   export net.{ domain, baseUrl, assetBaseUrlInternal }
 
-  given Mode                   = environment.mode
-  given translator: Translator = lila.i18n.Translator
-  given scheduler: Scheduler   = system.scheduler
+  given mode: Mode                 = environment.mode
+  given translator: Translator     = lila.i18n.Translator
+  given scheduler: Scheduler       = system.scheduler
+  given lila.core.config.RateLimit = net.rateLimit
 
   // wire all the lila modules in the right order
   val i18n: lila.i18n.Env.type          = lila.i18n.Env
@@ -53,8 +51,8 @@ final class Env(
   val analyse: lila.analyse.Env         = wire[lila.analyse.Env]
   val fishnet: lila.fishnet.Env         = wire[lila.fishnet.Env]
   val history: lila.history.Env         = wire[lila.history.Env]
-  val round: lila.round.Env             = wire[lila.round.Env]
   val bookmark: lila.bookmark.Env       = wire[lila.bookmark.Env]
+  val round: lila.round.Env             = wire[lila.round.Env]
   val search: lila.search.Env           = wire[lila.search.Env]
   val gameSearch: lila.gameSearch.Env   = wire[lila.gameSearch.Env]
   val perfStat: lila.perfStat.Env       = wire[lila.perfStat.Env]
@@ -82,6 +80,7 @@ final class Env(
   val challenge: lila.challenge.Env     = wire[lila.challenge.Env]
   val explorer: lila.explorer.Env       = wire[lila.explorer.Env]
   val fide: lila.fide.Env               = wire[lila.fide.Env]
+  val title: lila.title.Env             = wire[lila.title.Env]
   val study: lila.study.Env             = wire[lila.study.Env]
   val studySearch: lila.studySearch.Env = wire[lila.studySearch.Env]
   val learn: lila.learn.Env             = wire[lila.learn.Env]
@@ -145,6 +144,7 @@ given ConfigLoader[NetConfig] = ConfigLoader(config =>
       siteName = get[String]("site.name"),
       socketDomains = get[List[String]]("socket.domains"),
       socketAlts = get[List[String]]("socket.alts"),
+      socketTest = get[Boolean]("socket.test"),
       crawlable = get[Boolean]("crawlable"),
       rateLimit = get[RateLimit]("ratelimit"),
       email = get[EmailAddress]("email"),

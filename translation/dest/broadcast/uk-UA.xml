@@ -25,14 +25,12 @@
   <string name="tournamentDescription">Короткий опис турніру</string>
   <string name="fullDescription">Повний опис події</string>
   <string name="fullDescriptionHelp">Необов\'язковий довгий опис трансляції. Наявна розмітка %1$s. Довжина має бути менша ніж %2$s символів.</string>
-  <string name="sourceUrlOrGameIds">Посилання на джерело або ідентифікатор гри</string>
+  <string name="sourceSingleUrl">Адреса джерела PGN</string>
   <string name="sourceUrlHelp">Посилання, яке Lichess перевірятиме, щоб отримати оновлення PGN. Воно має бути загальнодоступним в Інтернеті.</string>
-  <string name="gameIdsHelp">Крім того, ви можете ввести до 64 ідентифікаторів гри Lichess, розділених пробілами.</string>
+  <string name="sourceGameIds">До 64 ігрових ID Lichess, відокремлені пробілами.</string>
   <string name="startDate">Дата початку у вашому часовому поясі</string>
   <string name="startDateHelp">За бажанням, якщо ви знаєте, коли починається подія</string>
   <string name="credits">Вдячність джерелу</string>
-  <string name="broadcastUrl">Посилання на трансляцію</string>
-  <string name="currentRoundUrl">Посилання на поточний раунд</string>
   <string name="currentGameUrl">Посилання на поточну гру</string>
   <string name="downloadAllRounds">Завантажити всі тури</string>
   <string name="resetRound">Скинути цей раунд</string>
@@ -42,9 +40,17 @@
   <string name="editRoundStudy">Редагувати дослідження раунду</string>
   <string name="deleteTournament">Видалити турнір</string>
   <string name="definitivelyDeleteTournament">Остаточно видалити весь турнір, всі його раунди та всі його ігри.</string>
-  <string name="automaticLeaderboard">Автоматична таблиця лідерів</string>
-  <string name="automaticLeaderboardHelp">Розрахунки та показ простої таблиці лідерів на основі результатів гри</string>
+  <string name="showScores">Показувати результати гравців за результатами гри</string>
   <string name="replacePlayerTags">За бажанням: замінити імена, рейтинги та титули гравців</string>
   <string name="periodInSeconds">Період у секундах</string>
   <string name="periodInSecondsHelp">Опціонально: час очікування між запитами. Мінімально 2 с, максимально 60 с. За замовчуванням - автоматично, виходячи з кількості запитів глядачів.</string>
+  <string name="fideFederations">Федерації FIDE</string>
+  <string name="top10Rating">Топ 10 рейтингу</string>
+  <string name="fidePlayers">Гравці FIDE</string>
+  <string name="fidePlayerNotFound">Гравця FIDE не знайдено</string>
+  <string name="fideProfile">Профіль FIDE</string>
+  <string name="federation">Федерація</string>
+  <string name="ageThisYear">Вік цього року</string>
+  <string name="unrated">Без рейтингу</string>
+  <string name="recentTournaments">Нещодавні турніри</string>
 </resources>

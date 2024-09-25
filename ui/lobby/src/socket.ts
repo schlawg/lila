@@ -2,6 +2,7 @@ import * as xhr from './xhr';
 import * as hookRepo from './hookRepo';
 import LobbyController from './ctrl';
 import { PoolMember, Hook } from './interfaces';
+import { idleTimer } from 'common/timing';
 
 interface Handlers {
   [key: string]: (data: any) => void;
@@ -21,7 +22,7 @@ export default class LobbySocket {
         ctrl.redraw();
       },
       hrm(ids: string) {
-        ids.match(/.{8}/g)!.forEach(function (id) {
+        ids.match(/.{8}/g)!.forEach(function(id) {
           hookRepo.remove(ctrl, id);
         });
         ctrl.redraw();
@@ -40,7 +41,7 @@ export default class LobbySocket {
       },
     };
 
-    site.idleTimer(
+    idleTimer(
       3 * 60 * 1000,
       () => send('idle', true),
       () => {

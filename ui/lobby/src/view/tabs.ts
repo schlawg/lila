@@ -21,7 +21,7 @@ function tab(ctrl: LobbyController, key: Tab, v: { name?: string }) {
   );
 }
 
-export default function (ctrl: LobbyController) {
+export default function(ctrl: LobbyController) {
   console.log(ctrl.tab.active);
   return [
     h(
@@ -32,9 +32,9 @@ export default function (ctrl: LobbyController) {
     ctrl.tab.active === 'pools' || (ctrl.tab.primary === 'games' && ctrl.data.nbNowPlaying === 0)
       ? null
       : h(
-          'div.tabs-horiz.secondary-tabs',
-          { attrs: { role: 'tablist' } },
-          ctrl.tab.secondaries.map(([k, v]) => tab(ctrl, k, v)),
-        ),
+        'div.tabs-horiz.secondary-tabs',
+        { attrs: { role: 'tablist' } },
+        ctrl.tab.secondaries.map(([k, v]) => tab(ctrl, k, v)),
+      ),
   ];
 }

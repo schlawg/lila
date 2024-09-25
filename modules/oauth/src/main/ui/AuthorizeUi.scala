@@ -1,9 +1,10 @@
 package lila.oauth
 package ui
 
-import lila.ui.*
-import ScalatagsTemplate.{ *, given }
 import lila.core.LightUser
+import lila.ui.*
+
+import ScalatagsTemplate.{ *, given }
 
 final class AuthorizeUi(helpers: Helpers)(lightUserFallback: UserId => LightUser):
   import helpers.{ *, given }
@@ -17,20 +18,14 @@ final class AuthorizeUi(helpers: Helpers)(lightUserFallback: UserId => LightUser
   private def buttonClass(prompt: AuthorizationRequest.Prompt) =
     s"button${prompt.isDanger.so(" button-red confirm text")}"
 
-  def moreJs(prompt: AuthorizationRequest.Prompt) =
-    val buttonDelay = if prompt.isDanger then 5000 else 2000
-    // ensure maximum browser compatibility
-    val cls = buttonClass(prompt)
-    s"""setTimeout(function(){var el=document.getElementById('oauth-authorize');el.removeAttribute('disabled');el.setAttribute('class','$cls')}, $buttonDelay);"""
-
   def apply(prompt: AuthorizationRequest.Prompt, me: User, authorizeUrl: String)(using
       Context
   ) =
     import prompt.{ isDanger, looksLikeLichessMobile as mobile }
     val otherUserRequested = prompt.userId.filterNot(me.is(_)).map(lightUserFallback)
     Page("Authorization")
-      .cssTag("oauth")
-      .js(embedJsUnsafe(moreJs(prompt)))
+      .css("bits.oauth")
+      .js(esmInitBit("oauth", "danger" -> prompt.isDanger))
       .csp(_.withLegacyCompatibility):
         main(cls := "oauth box box-pad force-ltr")(
           div(cls := "oauth__top")(

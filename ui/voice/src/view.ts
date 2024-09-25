@@ -1,18 +1,19 @@
 import * as licon from 'common/licon';
-import { onInsert, bind, looseH as h } from 'common/snabbdom';
+import { onInsert, bind, looseH as h, VNode } from 'common/snabbdom';
 import * as xhr from 'common/xhr';
-import { onClickAway } from 'common';
-import { Entry, VoiceCtrl } from './interfaces';
+import { snabDialog, Dialog } from 'common/dialog';
+import { onClickAway, $as } from 'common';
+import { Entry, VoiceCtrl, MsgType } from './interfaces';
 import { supportedLangs } from './voice';
 
-export function renderVoiceBar(ctrl: VoiceCtrl, redraw: () => void, cls?: string) {
+export function renderVoiceBar(ctrl: VoiceCtrl, redraw: () => void, cls?: string): VNode {
   return h(`div#voice-bar${cls ? '.' + cls : ''}`, [
     h('div#voice-status-row', [
       h('button#microphone-button', {
         hook: onInsert(el => el.addEventListener('click', () => ctrl.toggle())),
       }),
       h('span#voice-status', {
-        hook: onInsert(el => site.mic.setController(voiceBarUpdater(ctrl, el))),
+        hook: onInsert(el => ctrl.mic.setController(voiceBarUpdater(ctrl, el))),
       }),
       h('button#voice-help-button', {
         attrs: { 'data-icon': licon.InfoCircle, title: 'Voice help' },
@@ -35,7 +36,7 @@ export function renderVoiceBar(ctrl: VoiceCtrl, redraw: () => void, cls?: string
   ]);
 }
 
-export function flash() {
+export function flash(): void {
   const div = $as<HTMLElement>('#voice-status-row');
   div.classList.add('flash');
   div.onanimationend = () => div.classList.remove('flash');
@@ -43,14 +44,11 @@ export function flash() {
 
 function voiceBarUpdater(ctrl: VoiceCtrl, el: HTMLElement) {
   const voiceBtn = $('button#microphone-button');
-
-  return (txt: string, tpe: Voice.MsgType) => {
-    const classes: [string, boolean][] = [];
-    classes.push(['listening', site.mic.isListening]);
-    classes.push(['busy', site.mic.isBusy]);
-    classes.push(['push-to-talk', ctrl.pushTalk() && !site.mic.isListening && !site.mic.isBusy]);
-    classes.map(([clz, has]) => (has ? voiceBtn.addClass(clz) : voiceBtn.removeClass(clz)));
-    voiceBtn.attr('data-icon', site.mic.isBusy ? licon.Cancel : licon.Voice);
+  return (txt: string, tpe: MsgType) => {
+    voiceBtn.toggleClass('listening', ctrl.mic.isListening);
+    voiceBtn.toggleClass('busy', ctrl.mic.isBusy);
+    voiceBtn.toggleClass('push-to-talk', ctrl.pushTalk() && !ctrl.mic.isListening && !ctrl.mic.isBusy);
+    voiceBtn.attr('data-icon', ctrl.mic.isBusy ? licon.Cancel : licon.Voice);
 
     if (tpe !== 'partial') el.innerText = txt;
   };
@@ -111,7 +109,7 @@ function deviceSelector(ctrl: VoiceCtrl, redraw: () => void) {
       {
         hook: onInsert((el: HTMLSelectElement) => {
           el.addEventListener('change', () => ctrl.micId(el.value));
-          site.mic.getMics().then(ds => {
+          ctrl.mic.getMics().then(ds => {
             devices = ds.length ? ds : [nullMic];
             redraw();
           });
@@ -155,10 +153,10 @@ function renderHelpModal(ctrl: VoiceCtrl) {
     if (!dlg.open) dlg.showModal();
   };
 
-  return site.dialog.snab({
+  return snabDialog({
     class: 'help.voice-move-help',
     htmlUrl: `/help/voice/${ctrl.moduleId}`,
-    css: [{ themed: 'voiceMove.help' }],
+    css: [{ hashed: 'voice.move.help' }],
     onClose: () => ctrl.showHelp(false),
     onInsert: async dlg => {
       if (ctrl.showHelp() === 'list') {
@@ -174,7 +172,7 @@ function renderHelpModal(ctrl: VoiceCtrl) {
         grammar.entries.find(
           (e: Entry) => (e.val ?? e.tok) === val && (!phonetic || e.tags?.includes('phonetic')),
         )?.in;
-      $('.val-to-word', dlg.view).each(function (this: HTMLElement) {
+      $('.val-to-word', dlg.view).each(function(this: HTMLElement) {
         const tryPhonetic = (val: string) =>
           (this.classList.contains('phonetic') && valToWord(val, true)) || valToWord(val, false);
         this.innerText = this.innerText

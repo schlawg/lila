@@ -1,7 +1,10 @@
-import type { Square as Key } from 'chess.js';
-import type chessground from 'chessground';
-import m from './mithrilFix';
+import type { SquareName as Key } from 'chessops';
 import { Level, LevelPartial } from './stage/list';
+import { h } from 'snabbdom';
+import * as cg from 'chessground/types';
+import { DrawShape } from 'chessground/draw';
+
+export type WithGround = <A>(f: (cg: CgApi) => A) => A | false | undefined;
 
 export function toLevel(l: LevelPartial, it: number): Level {
   if (l.fen.split(' ').length === 4) l.fen += ' 0 1';
@@ -17,61 +20,33 @@ export function toLevel(l: LevelPartial, it: number): Level {
 
 export const assetUrl = document.body.dataset.assetUrl + '/assets/';
 
-export const roleToSan: {
-  [R in PromotionRole]: PromotionChar;
-} = {
-  knight: 'n',
-  bishop: 'b',
-  rook: 'r',
-  queen: 'q',
-};
 export type PromotionRole = 'knight' | 'bishop' | 'rook' | 'queen';
 export type PromotionChar = 'n' | 'b' | 'r' | 'q';
 
-export function isRole(str: PromotionChar | PromotionRole): str is PromotionRole {
-  return str.length > 1;
-}
+export const isRole = (str: PromotionChar | PromotionRole): str is PromotionRole => str.length > 1;
 
-export function arrow(vector: Uci, brush?: chessground.BrushName) {
-  return {
-    brush: brush || 'paleGreen',
-    orig: vector.slice(0, 2) as Key,
-    dest: vector.slice(2, 4) as Key,
-  };
-}
+export const arrow = (vector: Uci, brush?: cg.BrushColor): DrawShape => ({
+  brush: brush || 'paleGreen',
+  orig: vector.slice(0, 2) as Key,
+  dest: vector.slice(2, 4) as Key,
+});
 
-export function circle(key: Key, brush?: chessground.BrushName) {
-  return {
-    brush: brush || 'green',
-    orig: key,
-  };
-}
+export const circle = (key: Key, brush?: cg.BrushColor): DrawShape => ({
+  brush: brush || 'green',
+  orig: key,
+});
 
-export function readKeys(keys: string | Key[]) {
-  return typeof keys === 'string' ? (keys.split(' ') as Key[]) : keys;
-}
+export const readKeys = (keys: string | Key[]): Key[] =>
+  typeof keys === 'string' ? (keys.split(' ') as Key[]) : keys;
 
-export function setFenTurn(fen: string, turn: 'b' | 'w') {
-  return fen.replace(/ (w|b) /, ' ' + turn + ' ');
-}
+export const pieceImg = (role: cg.Role) => h('div.no-square', h('piece.white.' + role));
 
-export function pieceImg(role: string) {
-  return m('div.is2d.no-square', m('piece.white.' + role));
-}
+export const roundSvg = (url: string) => h('div.round-svg', h('img', { attrs: { src: url } }));
 
-export function roundSvg(url: string) {
-  return m(
-    'div.round-svg',
-    m('img', {
-      src: url,
-    }),
-  );
-}
+export const withLinebreaks = (text: string) =>
+  text.split(/(\n)/g).map(part => (part === '\n' ? h('br') : part));
 
-export function withLinebreaks(text: string) {
-  return m.trust(site.escapeHtml(text).replace(/\n/g, '<br>'));
-}
+export const decomposeUci = (uci: string) =>
+  [uci.slice(0, 2), uci.slice(2, 4), uci.slice(4, 5)] as [Key, Key, PromotionChar | ''];
 
-export function decomposeUci(uci: string) {
-  return [uci.slice(0, 2), uci.slice(2, 4), uci.slice(4, 5)] as [Key, Key, PromotionChar | ''];
-}
+export const oppColor = (color: Color): Color => (color == 'white' ? 'black' : 'white');

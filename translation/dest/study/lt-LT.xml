@@ -59,6 +59,7 @@
   <string name="allSyncMembersRemainOnTheSamePosition">Visi SYNC nariai lieka toje pačioje pozicijoje</string>
   <string name="shareChanges">Dalinkitės pakeitimais su žiūrovais ir saugokite juos serveryje</string>
   <string name="playing">Žaidžiama</string>
+  <string name="showEvalBar">Vertinimo skalė</string>
   <string name="first">Pirmas</string>
   <string name="previous">Ankstesnis</string>
   <string name="next">Kitas</string>
@@ -69,7 +70,6 @@
   <string name="downloadAllGames">Atsisiųsti visus žaidimus</string>
   <string name="chapterPgn">Skyriaus PGN</string>
   <string name="copyChapterPgn">Kopijuoti PGN</string>
-  <string name="copyChapterPgnDescription">Kopijuoti skyriaus PGN į iškarpinę.</string>
   <string name="downloadGame">Atsisiųsti žaidimą</string>
   <string name="studyUrl">Studijos URL</string>
   <string name="currentChapterUrl">Dabartinio skyriaus URL</string>
@@ -90,7 +90,7 @@
   <string name="pinnedChapterComment">Prisegtas skyriaus komentaras</string>
   <string name="saveChapter">Išsaugoti skyrių</string>
   <string name="clearAnnotations">Pašalinti anotacijas</string>
-  <string name="clearVariations" comment="Clear is used as a verb here. This erases the variations in the study (https://lichess.org/study) you are preparing.">Išvalyti variacijas</string>
+  <string name="clearVariations">Išvalyti variacijas</string>
   <string name="deleteChapter">Ištrinti skyrių</string>
   <string name="deleteThisChapter">Ištrinti šį skyrių? Nėra kelio atgal!</string>
   <string name="clearAllCommentsInThisChapter">Išvalyti visus komentarus, ženklus ir figūras šiame skyriuje?</string>

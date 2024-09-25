@@ -1,7 +1,6 @@
 package views.mod
 
 import lila.app.UiEnv.{ *, given }
-
 import lila.common.String.html.richText
 import lila.core.shutup.PublicSource
 import lila.mod.IpRender.RenderIp
@@ -17,13 +16,14 @@ def communication(
     notes: List[lila.user.Note],
     history: List[lila.mod.Modlog],
     logins: lila.security.UserLogins.TableData[UserWithModlog],
+    reports: List[lila.report.Report],
     appeals: List[lila.appeal.Appeal],
     priv: Boolean
 )(using ctx: Context, renderIp: RenderIp) =
-  Page(u.username + " communications")
-    .cssTag("mod.communication")
-    .cssTag(isGranted(_.UserModView).option("mod.user"))
-    .js(isGranted(_.UserModView).option(EsmInit("mod.user"))):
+  Page(s"${u.username} communications")
+    .css("mod.communication")
+    .css(isGranted(_.UserModView).option("mod.user"))
+    .js(isGranted(_.UserModView).option(Esm("mod.user"))):
       main(id := "communication", cls := "box box-pad")(
         boxTop(
           h1(
@@ -57,7 +57,7 @@ def communication(
                         icon = none,
                         confirm =
                           s"Confirm you want to export all comms from **${u.username}** (including other party)".some
-                      )(cls := "button-red comms-export")
+                      )(cls := "button-red button-empty comms-export")
                     )
                   )
                 }
@@ -69,6 +69,24 @@ def communication(
             div(cls := "mod-zone mod-zone-full none"),
             views.user.mod.otherUsers(mod, u, logins, appeals)(
               cls := "mod-zone communication__logins"
+            )
+          )
+        ),
+        reports.nonEmpty.option(
+          frag(
+            h2("Comm reports"),
+            div(cls := "reports history")(
+              reports
+                .flatMap(_.atoms.toList)
+                .map: a =>
+                  div(
+                    h3(a.reason.name),
+                    userIdLink(a.by.some),
+                    " ",
+                    momentFromNowServer(a.at),
+                    ": ",
+                    richText(a.text)
+                  )
             )
           )
         ),
@@ -113,21 +131,22 @@ def communication(
         else
           ul(cls := "public_chats")(
             publicLines.reverse.map: line =>
-              li(cls := "line author")(
+              li(
                 line.date.fold[Frag]("[OLD]")(momentFromNowServer),
                 " ",
                 line.from.map:
                   case PublicSource.Tournament(id) => views.tournament.ui.tournamentLink(id)
                   case PublicSource.Simul(id)      => views.simul.ui.link(id)
                   case PublicSource.Team(id)       => teamLink(id)
-                  case PublicSource.Watcher(id) => a(href := routes.Round.watcher(id, "white"))("Game #", id)
-                  case PublicSource.Study(id)   => a(href := routes.Study.show(id))("Study #", id)
-                  case PublicSource.Swiss(id)   => views.swiss.ui.link(SwissId(id))
-                  case PublicSource.Forum(id)   => a(href := routes.ForumPost.redirect(id))("Forum #", id)
-                  case PublicSource.Ublog(id)   => a(href := routes.Ublog.redirect(id))("User blog #", id)
+                  case PublicSource.Watcher(id) =>
+                    a(href := routes.Round.watcher(id, Color.white))("Game #", id)
+                  case PublicSource.Study(id) => a(href := routes.Study.show(id))("Study #", id)
+                  case PublicSource.Swiss(id) => views.swiss.ui.link(id)
+                  case PublicSource.Forum(id) => a(href := routes.ForumPost.redirect(id))("Forum #", id)
+                  case PublicSource.Ublog(id) => a(href := routes.Ublog.redirect(id))("User blog #", id)
                 ,
                 nbsp,
-                span(cls := "message")(Analyser.highlightBad(line.text))
+                span(cls := "line author")(span(cls := "message")(Analyser.highlightBad(line.text)))
               )
           )
         ,

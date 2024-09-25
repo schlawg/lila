@@ -1,7 +1,5 @@
 package lila.app
 package http
-
-import akka.stream.scaladsl.Source
 import alleycats.Zero
 import play.api.http.*
 import play.api.libs.json.*
@@ -25,6 +23,9 @@ trait ResponseBuilder(using Executor)
   def Found[A](a: Fu[Option[A]])(f: A => Fu[Result])(using Context): Fu[Result] =
     a.flatMap(_.fold(notFound)(f))
 
+  def FoundEmbed[A](a: Fu[Option[A]])(f: A => Fu[Result])(using EmbedContext): Fu[Result] =
+    a.flatMap(_.fold(notFoundEmbed)(f))
+
   def Found[A](a: Option[A])(f: A => Fu[Result])(using Context): Fu[Result] =
     a.fold(notFound)(f)
 
@@ -43,6 +44,8 @@ trait ResponseBuilder(using Executor)
   extension [A](fua: Fu[Option[A]])
     def orNotFound(f: A => Fu[Result])(using Context): Fu[Result] =
       fua.flatMap { _.fold(notFound)(f) }
+    def orNotFoundEmbed(f: A => Fu[Result])(using EmbedContext): Fu[Result] =
+      fua.flatMap { _.fold(notFoundEmbed)(f) }
   extension [A](fua: Fu[Boolean])
     def elseNotFound(f: => Fu[Result])(using Context): Fu[Result] =
       fua.flatMap { if _ then f else notFound }
@@ -68,23 +71,35 @@ trait ResponseBuilder(using Executor)
     then json.dmap(_.withHeaders(VARY -> "Accept").as(JSON))
     else html.dmap(_.withHeaders(VARY -> "Accept"))
 
-  def negotiateJson(result: => Fu[Result])(using Context) = negotiate(notFound, result)
+  def negotiateJson(result: => Fu[Result])(using Context) =
+    negotiate(
+      notFound("This endpoint only returns JSON, add the header `Accept: application/json`".some),
+      result
+    )
 
-  def notFound(using ctx: Context): Fu[Result] =
+  def notFound(using ctx: Context): Fu[Result] = notFound(none)
+  def notFound(msg: Option[String])(using ctx: Context): Fu[Result] =
     negotiate(
       html =
         if HTTPRequest.isSynchronousHttp(ctx.req)
-        then keyPages.notFound
-        else notFoundText(),
-      json = notFoundJson()
+        then keyPages.notFound(msg)
+        else msg.fold(notFoundText())(notFoundText),
+      json = msg.fold(notFoundJson())(notFoundJson)
     )
+
+  def notFoundEmbed(using ctx: EmbedContext): Fu[Result] = notFoundEmbed(none)
+  def notFoundEmbed(msg: Option[String])(using ctx: EmbedContext): Fu[Result] =
+    keyPages.notFoundEmbed(msg)
 
   def authenticationFailed(using ctx: Context): Fu[Result] =
     negotiate(
       html = Redirect(
         if HTTPRequest.isClosedLoginPath(ctx.req)
-        then routes.Auth.login
-        else routes.Auth.signup
+        then routes.Auth.login.url
+        else
+          HTTPRequest.queryStringGet(ctx.req, "login") match
+            case Some(login) => s"${routes.Auth.login.url}?as=$login"
+            case _           => routes.Auth.signup.url
       ).withCookies(env.security.lilaCookie.session(env.security.api.AccessUri, ctx.req.uri)),
       json = env.security.lilaCookie.ensure(ctx.req):
         Unauthorized(jsonError("Login required"))

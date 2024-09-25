@@ -4,11 +4,11 @@ import reactivemongo.api.bson.*
 
 import lila.analyse.{ Analysis, AnalysisRepo }
 import lila.common.Bus
+import lila.core.report.SuspectId
+import lila.core.userId.ModId
 import lila.db.dsl.{ *, given }
 import lila.game.{ GameRepo, Query }
 import lila.report.{ Mod, Report, Reporter, Suspect }
-import lila.core.report.SuspectId
-import lila.core.userId.ModId
 
 final class IrwinApi(
     reportColl: Coll,
@@ -111,10 +111,10 @@ final class IrwinApi(
       )
 
     private[irwin] def fromTournamentLeaders(suspects: List[Suspect]): Funit =
-      suspects.traverse_(insert(_, _.Tournament))
+      suspects.sequentiallyVoid(insert(_, _.Tournament))
 
     private[irwin] def topOnline(leaders: List[Suspect]): Funit =
-      leaders.traverse_(insert(_, _.Leaderboard))
+      leaders.sequentiallyVoid(insert(_, _.Leaderboard))
 
     import lila.game.BSONHandlers.given
 
@@ -154,7 +154,7 @@ final class IrwinApi(
       subs.get(report.suspectId).so { modIds =>
         subs = subs - report.suspectId
         modIds.toList
-          .traverse_ { modId =>
+          .sequentiallyVoid { modId =>
             notifyApi.notifyOne(modId, lila.core.notify.IrwinDone(report.suspectId.value))
           }
       }

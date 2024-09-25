@@ -24,5 +24,14 @@ final class Env(
     c -> system.actorOf(Props(wire[TvBroadcast]))
   }.toMap
 
+  def channelSource(channel: Channel, bc: Boolean): Option[Fu[TvBroadcast.SourceType]] =
+    given timeout: akka.util.Timeout = akka.util.Timeout(1 second)
+    import akka.pattern.ask
+    val ctag = summon[scala.reflect.ClassTag[TvBroadcast.SourceType]]
+    channelBroadcasts
+      .get(channel)
+      .map: actor =>
+        (actor ? TvBroadcast.Connect(bc)).mapTo(ctag)
+
   system.scheduler.scheduleWithFixedDelay(12 seconds, 3 seconds): () =>
     tvSyncActor ! TvSyncActor.Select

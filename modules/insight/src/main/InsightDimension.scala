@@ -1,18 +1,18 @@
 package lila.insight
 
-import chess.{ Color, Role }
+import chess.Role
 import play.api.libs.json.*
 import reactivemongo.api.bson.*
 
 import lila.analyse.{ AccuracyPercent, WinPercent }
 import lila.common.Json.given
 import lila.common.{ LilaOpeningFamily, SimpleOpening }
+import lila.core.i18n.Translate
 import lila.db.dsl.{ *, given }
 import lila.insight.BSONHandlers.given
 import lila.insight.InsightEntry.BSONFields as F
 import lila.rating.BSONHandlers.perfTypeIdHandler
 import lila.rating.PerfType
-import lila.core.i18n.Translate
 
 enum InsightDimension[A](
     val key: String,
@@ -244,7 +244,7 @@ object InsightDimension:
     case Phase                   => lila.insight.Phase.values.toIndexedSeq
     case Result                  => lila.insight.Result.values.toIndexedSeq
     case Termination             => lila.insight.Termination.values.toIndexedSeq
-    case Color                   => chess.Color.values.toIndexedSeq
+    case Color                   => lila.insight.Color.values.toIndexedSeq
     case OpeningFamily           => LilaOpeningFamily.familyList
     case OpeningVariation        => SimpleOpening.openingList
     case OpponentStrength        => RelativeStrength.values.toIndexedSeq
@@ -268,7 +268,7 @@ object InsightDimension:
     case Phase                   => key.toIntOption.flatMap(lila.insight.Phase.byId.get)
     case Result                  => key.toIntOption.flatMap(lila.insight.Result.byId.get)
     case Termination             => key.toIntOption.flatMap(lila.insight.Termination.byId.get)
-    case Color                   => chess.Color.fromName(key)
+    case Color                   => lila.insight.Color.fromName(key)
     case OpeningFamily           => LilaOpeningFamily.find(key)
     case OpeningVariation        => SimpleOpening.find(key)
     case OpponentStrength        => key.toIntOption.flatMap(RelativeStrength.byId.get)

@@ -2,6 +2,8 @@ import {
   EditorState,
   Selected,
   Redraw,
+  Options,
+  Config,
   CastlingToggle,
   CastlingToggles,
   CASTLING_TOGGLES,
@@ -15,9 +17,10 @@ import { Castles, defaultPosition, setupPosition } from 'chessops/variant';
 import { makeFen, parseFen, parseCastlingFen, INITIAL_FEN, EMPTY_FEN } from 'chessops/fen';
 import { lichessVariant, lichessRules } from 'chessops/compat';
 import { defined, prop, Prop } from 'common';
+import { trans } from 'common/i18n';
 
 export default class EditorCtrl {
-  options: Editor.Options;
+  options: Options;
   trans: Trans;
   chessground: CgApi | undefined;
 
@@ -35,12 +38,12 @@ export default class EditorCtrl {
   fullmoves: number;
 
   constructor(
-    readonly cfg: Editor.Config,
+    readonly cfg: Config,
     readonly redraw: Redraw,
   ) {
     this.options = cfg.options || {};
 
-    this.trans = site.trans(this.cfg.i18n);
+    this.trans = trans(this.cfg.i18n);
 
     this.selected = prop('pointer');
 
@@ -216,9 +219,9 @@ export default class EditorCtrl {
     this.onChange();
   }
 
-  startPosition = () => this.setFen(makeFen(defaultPosition(this.rules).toSetup()));
+  startPosition = (): boolean => this.setFen(makeFen(defaultPosition(this.rules).toSetup()));
 
-  clearBoard = () => this.setFen(EMPTY_FEN);
+  clearBoard = (): boolean => this.setFen(EMPTY_FEN);
 
   loadNewFen(fen: string | 'prompt'): void {
     if (fen === 'prompt') {

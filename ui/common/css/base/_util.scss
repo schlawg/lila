@@ -40,6 +40,13 @@ bad {
 
 .drop-target {
   border: 2px dashed $c-font;
-  width: 100%;
   height: min-content;
+}
+
+.icon-flair {
+  height: 1.1em;
+  vertical-align: middle;
+  margin-right: 0.5ch;
+  transform: translateY(-0.1em);
+  user-select: none;
 }

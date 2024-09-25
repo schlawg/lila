@@ -3,6 +3,8 @@ import { makeCgOpts } from 'puz/run';
 import { makeConfig as makeCgConfig } from 'puz/view/chessground';
 import { h, VNode } from 'snabbdom';
 import { INITIAL_BOARD_FEN } from 'chessops/fen';
+import { Chessground as makeChessground } from 'chessground';
+import { pubsub } from 'common/pubsub';
 
 export const renderBoard = (ctrl: RacerCtrl) => {
   const secs = ctrl.countdownSeconds();
@@ -16,9 +18,9 @@ export const renderBoard = (ctrl: RacerCtrl) => {
 const renderGround = (ctrl: RacerCtrl): VNode =>
   h('div.cg-wrap', {
     hook: {
-      insert: vnode =>
+      insert: vnode => {
         ctrl.ground(
-          site.makeChessground(
+          makeChessground(
             vnode.elm as HTMLElement,
             makeCgConfig(
               ctrl.isRacing() && ctrl.isPlayer()
@@ -28,7 +30,14 @@ const renderGround = (ctrl: RacerCtrl): VNode =>
               ctrl.userMove,
             ),
           ),
-        ),
+        );
+        pubsub.on('board.change', (is3d: boolean) =>
+          ctrl.withGround(g => {
+            g.state.addPieceZIndex = is3d;
+            g.redrawAll();
+          }),
+        );
+      },
     },
   });
 

@@ -4,6 +4,7 @@ package ui
 import play.api.data.Form
 
 import lila.ui.*
+
 import ScalatagsTemplate.{ *, given }
 
 final class AccountPages(helpers: Helpers, ui: AccountUi, flagApi: lila.core.user.FlagApi):
@@ -78,8 +79,7 @@ final class AccountPages(helpers: Helpers, ui: AccountUi, flagApi: lila.core.use
             form3.group(form("location"), trans.site.location(), half = true)(form3.input(_))
           ),
           form3.split(
-            form3.group(form("firstName"), trans.site.firstName(), half = true)(form3.input(_)),
-            form3.group(form("lastName"), trans.site.lastName(), half = true)(form3.input(_))
+            form3.group(form("realName"), trans.site.realName(), half = true)(form3.input(_))
           ),
           form3.split(
             List("fide", "uscf", "ecf", "rcf", "cfc", "dsb").map: rn =>
@@ -90,8 +90,10 @@ final class AccountPages(helpers: Helpers, ui: AccountUi, flagApi: lila.core.use
                 klass = "form-third"
               )(form3.input(_, typ = "number"))
           ),
-          form3.group(form("links"), trans.site.socialMediaLinks(), help = Some(linksHelp())): f =>
-            form3.textarea(f)(rows := 5),
+          ctx.kid.no.option(
+            form3.group(form("links"), trans.site.socialMediaLinks(), help = Some(linksHelp())): f =>
+              form3.textarea(f)(rows := 5)
+          ),
           form3.action(form3.submit(trans.site.apply()))
         )
       )
@@ -160,7 +162,7 @@ final class AccountPages(helpers: Helpers, ui: AccountUi, flagApi: lila.core.use
       )
 
   def password(form: Form[?])(using Context) =
-    AccountPage(trans.site.changePassword.txt(), "password").js(jsModuleInit("bits.passwordComplexity")):
+    AccountPage(trans.site.changePassword.txt(), "password").js(esmInit("bits.passwordComplexity")):
       div(cls := "box box-pad")(
         h1(cls := "box__top")(trans.site.changePassword()),
         standardFlash | flashMessage("warning")(trans.site.passwordSuggestion()),
@@ -226,7 +228,7 @@ final class AccountPages(helpers: Helpers, ui: AccountUi, flagApi: lila.core.use
 
     def form(form: lila.core.security.HcaptchaForm[?], error: Option[String] = None)(using ctx: Context) =
       Page(trans.site.reopenYourAccount.txt())
-        .cssTag("auth")
+        .css("bits.auth")
         .js(hcaptchaScript(form))
         .csp(_.withHcaptcha):
           main(cls := "page-small box box-pad")(

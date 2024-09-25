@@ -2,13 +2,13 @@ package lila.playban
 
 import chess.{ Centis, Color, Status }
 import reactivemongo.api.bson.*
+import scalalib.model.Days
 
 import lila.common.{ Bus, Uptime }
-import lila.db.dsl.{ *, given }
-
-import lila.core.msg.{ MsgApi, MsgPreset }
 import lila.core.game.Source
+import lila.core.msg.MsgApi
 import lila.core.playban.RageSit as RageSitCounter
+import lila.db.dsl.{ *, given }
 
 final class PlaybanApi(
     coll: Coll,
@@ -34,10 +34,11 @@ final class PlaybanApi(
   private given BSONDocumentHandler[TempBan]    = Macros.handler
   private given BSONDocumentHandler[UserRecord] = Macros.handler
 
-  private val blameableSources: Set[Source] = Set(Source.Lobby, Source.Pool, Source.Arena)
+  private def blameableSource(game: Game): Boolean = game.source.exists: s =>
+    s == Source.Lobby || s == Source.Pool || s == Source.Arena
 
   private def blameable(game: Game): Fu[Boolean] =
-    (game.source.exists(blameableSources.contains) && game.hasClock).so {
+    (blameableSource(game) && game.hasClock).so {
       if game.rated then fuTrue
       else userApi.containsEngine(game.userIds).not
     }
@@ -89,21 +90,18 @@ final class PlaybanApi(
       game
         .player(flaggerColor)
         .userId
-        .ifTrue {
+        .ifTrue:
           ~(for
             movetimes    <- gameApi.computeMoveTimes(game, flaggerColor)
             lastMovetime <- movetimes.lastOption
             limit        <- unreasonableTime
           yield lastMovetime.toSeconds >= limit)
-        }
-        .map { userId =>
+        .map: userId =>
           (save(Outcome.SitMoving, userId, RageSit.imbalanceInc(game, flaggerColor), game.source) >>
             propagateSitting(game, userId)).andDo(feedback.sitting(Pov(game, flaggerColor)))
-        }
 
-    IfBlameable(game) {
-      sitting.orElse(sitMoving).getOrElse(good(game, flaggerColor))
-    }
+    IfBlameable(game):
+      sitting.orElse(sitMoving).getOrElse(good(game, Status.Outoftime, flaggerColor))
 
   private def propagateSitting(game: Game, userId: UserId): Funit =
     game.tournamentId.so: tourId =>
@@ -112,37 +110,55 @@ final class PlaybanApi(
         then Bus.publish(lila.core.playban.SittingDetected(tourId, userId), "playban")
       }
 
-  def other(game: Game, status: Status.type => Status, winner: Option[Color]): Funit =
-    IfBlameable(game) {
-      ~(for
-        w <- winner
-        loser = game.player(!w)
-        loserId <- loser.userId
-      yield
-        if Status.NoStart.is(status) then
-          save(Outcome.NoPlay, loserId, RageSit.Update.Reset, game.source)
-            .andDo(feedback.noStart(Pov(game, !w)))
-        else
-          game.clock
-            .filter:
-              _.remainingTime(loser.color) < Centis(1000) &&
-                game.turnOf(loser) &&
-                Status.Resign.is(status)
-            .map: c =>
-              (c.estimateTotalSeconds / 10).atLeast(30).atMost(3 * 60)
-            .exists(_ < nowSeconds - game.movedAt.toSeconds)
-            .option:
-              (save(Outcome.SitResign, loserId, RageSit.imbalanceInc(game, loser.color), game.source) >>
-                propagateSitting(game, loserId)).andDo(feedback.sitting(Pov(game, loser.color)))
-            .getOrElse:
-              good(game, !w)
-      )
-    }
+  def other(game: Game, status: Status, winner: Option[Color]): Funit =
+    if game.casual && blameableSource(game) && isQuickResign(game, status)
+    then
+      winner
+        .map(game.opponent)
+        .flatMap(_.userId)
+        .so: loserId =>
+          save(Outcome.Sandbag, loserId, RageSit.Update.Noop, game.source)
+    else
+      IfBlameable(game) {
+        ~(for
+          w <- winner
+          loser = game.opponent(w)
+          loserId <- loser.userId
+        yield
+          if status.is(_.NoStart) then
+            save(Outcome.NoPlay, loserId, RageSit.Update.Reset, game.source)
+              .andDo(feedback.noStart(Pov(game, !w)))
+          else
+            game.clock
+              .filter:
+                _.remainingTime(loser.color) < Centis(1000) &&
+                  game.turnOf(loser) &&
+                  status.is(_.Resign)
+              .map: c =>
+                (c.estimateTotalSeconds / 10).atLeast(30).atMost(3 * 60)
+              .exists(_ < nowSeconds - game.movedAt.toSeconds)
+              .option:
+                (save(Outcome.SitResign, loserId, RageSit.imbalanceInc(game, loser.color), game.source) >>
+                  propagateSitting(game, loserId)).andDo(feedback.sitting(Pov(game, loser.color)))
+              .getOrElse:
+                good(game, status, !w)
+        )
+      }
 
-  private def good(game: Game, loserColor: Color): Funit =
-    game.player(loserColor).userId.so {
-      save(Outcome.Good, _, RageSit.redeem(game), game.source)
-    }
+  private def isQuickResign(game: Game, status: Status) =
+    status.is(_.Resign) && game.hasFewerMovesThanExpected &&
+      game.durationSeconds.exists(_ < 60)
+
+  private def good(game: Game, status: Status, loserColor: Color): Funit =
+    if isQuickResign(game, status) then
+      game.userIds.parallelVoid: userId =>
+        save(Outcome.Sandbag, userId, RageSit.Update.Noop, game.source)
+    else
+      game
+        .player(loserColor)
+        .userId
+        .so: userId =>
+          save(Outcome.Good, userId, RageSit.redeem(game), game.source)
 
   // memorize users without any ban to save DB reads
   private val cleanUserIds = scalalib.cache.ExpireSetMemo[UserId](30 minutes)
@@ -222,16 +238,16 @@ final class PlaybanApi(
         if outcome == Outcome.Good then fuccess(withOutcome)
         else
           for
-            createdAt <- userApi.createdAtById(userId).orFail(s"Missing user creation date $userId")
-            withBan   <- legiferate(withOutcome, createdAt, source)
+            age     <- userApi.accountAge(userId)
+            withBan <- legiferate(withOutcome, age, source)
           yield withBan
       _ <- registerRageSit(withBan, rsUpdate)
     yield ()
   }.void.logFailure(lila.log("playban"))
 
-  private def legiferate(record: UserRecord, accCreatedAt: Instant, source: Option[Source]): Fu[UserRecord] =
+  private def legiferate(record: UserRecord, age: Days, source: Option[Source]): Fu[UserRecord] =
     record
-      .bannable(accCreatedAt)
+      .bannable(age)
       .ifFalse(record.banInEffect)
       .so: ban =>
         lila.mon.playban.ban.count.increment()
