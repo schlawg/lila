@@ -17,7 +17,7 @@ final class AskRepo(
     Executor
 ) extends lila.core.ask.AskRepo:
   import lila.core.ask.Ask.*
-  import AskEmbed.*
+  import AskApi.*
 
   given BSONDocumentHandler[Ask] = Macros.handler[Ask]
 
@@ -35,7 +35,7 @@ final class AskRepo(
   def getAsync(aid: AskId): Fu[Option[Ask]] = cache.async(aid)
 
   def preload(text: String*): Fu[Boolean] =
-    val ids = text.flatMap(AskEmbed.extractIds)
+    val ids = text.flatMap(AskApi.extractIds)
     ids.map(getAsync).parallel.inject(ids.nonEmpty)
 
   // vid (voter id) are sometimes anonymous hashes.
@@ -87,14 +87,14 @@ final class AskRepo(
         asks
 
   def deleteAll(text: String): Funit = askDb: coll =>
-    val ids = AskEmbed.extractIds(text)
+    val ids = AskApi.extractIds(text)
     ids.map(cache.invalidate)
     if ids.nonEmpty then coll.delete.one($inIds(ids)).void
     else funit
 
   // none values (deleted asks) in these lists are still important for sequencing in renders
   def asksIn(text: String): Fu[List[Option[Ask]]] = askDb: coll =>
-    val ids = AskEmbed.extractIds(text)
+    val ids = AskApi.extractIds(text)
     ids.map(getAsync).parallel.inject(ids.map(get))
 
   def isOpen(aid: AskId): Fu[Boolean] = askDb: coll =>
@@ -104,7 +104,7 @@ final class AskRepo(
   def setUrl(text: String, url: Option[String]): Funit = askDb: coll =>
     if !hasAskId(text) then funit
     else
-      val selector = $inIds(AskEmbed.extractIds(text))
+      val selector = $inIds(AskApi.extractIds(text))
       coll.update.one(selector, $set("url" -> url), multi = true) >>
         coll.list(selector).map(_.foreach(ask => cache.set(ask._id, ask.copy(url = url).some)))
 

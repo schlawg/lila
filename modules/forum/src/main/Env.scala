@@ -31,7 +31,7 @@ final class Env(
     teamApi: lila.core.team.TeamApi,
     cacheApi: lila.memo.CacheApi,
     ws: StandaloneWSClient,
-    askEmbed: lila.core.ask.AskEmbed
+    askApi: lila.core.ask.AskApi
 )(using Executor, Scheduler, akka.stream.Materializer):
 
   private val config = appConfig.get[ForumConfig]("forum")(AutoConfig.loader)

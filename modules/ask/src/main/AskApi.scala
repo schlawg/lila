@@ -3,6 +3,7 @@ package lila.ask
 import lila.db.dsl.{ *, given }
 import lila.core.id.AskId
 import lila.core.ask.*
+import lila.core.ask.Ask.{ frozenIdMagic, frozenIdRe }
 
 /* the freeze process transforms form text prior to database storage and creates/updates collection
  * objects with data from ask markup. freeze methods return replacement text with magic id tags in place
@@ -10,9 +11,9 @@ import lila.core.ask.*
  * tags in a previously frozen text with their markup. ids in magic tags correspond to db.ask._id
  */
 
-final class AskEmbed(val repo: lila.ask.AskRepo)(using Executor) extends lila.core.ask.AskEmbed:
+final class AskApi(val repo: lila.ask.AskRepo)(using Executor) extends lila.core.ask.AskApi:
 
-  import AskEmbed.*
+  import AskApi.*
   import Ask.*
 
   def freeze(text: String, creator: UserId): Frozen =
@@ -28,7 +29,7 @@ final class AskEmbed(val repo: lila.ask.AskRepo)(using Executor) extends lila.co
 
     Frozen(sb.toString, asks)
 
-  // commit flushes the asks to repo and optionally sets the timeline entry link (for poll conclusion)
+  // commit flushes the asks to repo and optionally sets a timeline entry link (for poll conclusion)
   def commit(
       frozen: Frozen,
       url: Option[String] = none[String]
@@ -65,9 +66,9 @@ final class AskEmbed(val repo: lila.ask.AskRepo)(using Executor) extends lila.co
 
   def isOpen(aid: AskId): Fu[Boolean] = repo.isOpen(aid)
 
-  def bake(text: String, askFrags: Iterable[String]): String = AskEmbed.bake(text, askFrags)
+  def bake(text: String, askFrags: Iterable[String]): String = AskApi.bake(text, askFrags)
 
-object AskEmbed:
+object AskApi:
   val askNotFoundFrag = "&lt;deleted&gt;<br>"
 
   def hasAskId(text: String): Boolean = text.contains(frozenIdMagic)
@@ -145,9 +146,9 @@ object AskEmbed:
     val points = (0 :: intervals.flatten(i => List(i._1, i._2)) ::: upper :: Nil).distinct.sorted
     points.zip(points.tail)
 
-  // https://www.unicode.org/faq/private_use.html
-  private val frozenIdMagic = "\ufdd6\ufdd4\ufdd2\ufdd0"
-  private val frozenIdRe    = s"$frozenIdMagic\\{(\\S{8})}".r
+  // // https://www.unicode.org/faq/private_use.html
+  // private val frozenIdMagic = "\ufdd6\ufdd4\ufdd2\ufdd0"
+  // private val frozenIdRe    = s"$frozenIdMagic\\{(\\S{8})}".r
 
   // assemble a list of magic ids within a frozen text that look like: ﷖﷔﷒﷐{8 char id}
   // this is called quite often so it's optimized and ugly

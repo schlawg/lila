@@ -3,7 +3,7 @@ import { throttle } from 'common/timing';
 import { isTouchDevice } from 'common/device';
 
 export default function initModule(): void {
-  site.load.then(() => $('.ask-container').each((_, e: EleLoose) => new Ask(e.firstElementChild!)));
+  $('.ask-container').each((_, e: EleLoose) => new Ask(e.firstElementChild!));
 }
 
 if (isTouchDevice()) site.asset.loadIife('javascripts/vendor/dragdroptouch.js');
@@ -30,7 +30,6 @@ class Ask {
     wireExclusiveChoices(this);
     wireMultipleChoices(this);
     wireActions(this);
-    console.log('hayo');
   }
 
   ranking(): string {

@@ -28,7 +28,7 @@ final class UblogPostUi(helpers: Helpers, ui: UblogUi)(
       .css(hasAsks.option("bits.ask"))
       .js(Esm("bits.expandText"))
       .js(ctx.isAuth.option(Esm("bits.ublog")))
-      .js(hasAsks.option(Esm("bits.ask")))
+      .js(hasAsks.option(esmInit("bits.ask")))
       .graph(
         OpenGraph(
           `type` = "article",

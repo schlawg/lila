@@ -101,7 +101,7 @@ final class TopicUi(helpers: Helpers, bits: ForumBits, postUi: PostUi)(
       .csp(_.withInlineIconFont.withTwitter)
       .js(Esm("bits.forum"))
       .js(Esm("bits.expandText"))
-      .js(hasAsks.option(Esm("bits.ask")))
+      .js(hasAsks.option(esmInit("bits.ask")))
       .js(formWithCaptcha.isDefined.option(captchaEsm))
       .graph(
         OpenGraph(

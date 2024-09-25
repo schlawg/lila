@@ -30,12 +30,12 @@ final class Feed(env: Env) extends LilaController(env):
   }
 
   def edit(id: String) = Secure(_.Feed) { _ ?=> _ ?=>
-    Found(api.get(id)): up =>
+    Found(api.edit(id)): up =>
       Ok.async(views.feed.edit(api.form(up.some), up))
   }
 
   def update(id: String) = SecureBody(_.Feed) { _ ?=> _ ?=>
-    Found(api.get(id)): from =>
+    Found(api.edit(id)): from =>
       bindForm(api.form(from.some))(
         err => BadRequest.async(views.feed.edit(err, from)),
         data => api.set(data.toUpdate(from.id.some)).inject(Redirect(routes.Feed.edit(from.id)).flashSuccess)

@@ -35,7 +35,7 @@ object oAuth:
 val plan      = lila.plan.ui.PlanUi(helpers)(netConfig.email)
 val planPages = lila.plan.ui.PlanPages(helpers)(lila.fishnet.FishnetLimiter.maxPerDay)
 
-val askUi      = lila.ask.ui.AskUi(helpers)(env.ask.embed)
+val askUi      = lila.ask.ui.AskUi(helpers)(env.ask.api)
 val askAdminUi = lila.ask.ui.AskAdminUi(helpers)(askUi.renderGraph)
 
 val feed =
@@ -66,7 +66,7 @@ val practice = lila.practice.ui.PracticeUi(helpers)(
 object forum:
   import lila.forum.ui.*
   val bits  = ForumBits(helpers)
-  val post  = PostUi(helpers, bits)(askUi.render, env.ask.embed.unfreeze)
+  val post  = PostUi(helpers, bits)(askUi.render, env.ask.api.unfreeze)
   val categ = CategUi(helpers, bits)
   val topic = TopicUi(helpers, bits, post)(captcha.apply, lila.msg.MsgPreset.forumDeletion.presets)
 

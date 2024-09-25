@@ -31,7 +31,7 @@ object home:
       )
       .css("lobby")
       .css(homepage.hasAsks.option("bits.ask"))
-      .js(homepage.hasAsks.option(Esm("bits.ask")))
+      .js(homepage.hasAsks.option(esmInit("bits.ask")))
       .graph(
         OpenGraph(
           image = staticAssetUrl("logo/lichess-tile-wide.png").some,

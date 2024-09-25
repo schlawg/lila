@@ -26,7 +26,7 @@ final private class ForumTopicApi(
     detectLanguage: DetectLanguage,
     cacheApi: CacheApi,
     relationApi: lila.core.relation.RelationApi,
-    askEmbed: lila.core.ask.AskEmbed
+    askApi: lila.core.ask.AskApi
 )(using Executor):
 
   import BSONHandlers.given
@@ -83,7 +83,7 @@ final private class ForumTopicApi(
       data: ForumForm.TopicData
   )(using me: Me): Fu[ForumTopic] =
     topicRepo.nextSlug(categ, data.name).zip(detectLanguage(data.post.text)).flatMap { (slug, lang) =>
-      val frozen = askEmbed.freeze(spam.replace(data.post.text), me)
+      val frozen = askApi.freeze(spam.replace(data.post.text), me)
       val topic = ForumTopic.make(
         categId = categ.id,
         slug = slug,
@@ -107,7 +107,7 @@ final private class ForumTopicApi(
           for
             _ <- topicRepo.coll.insert.one(topic.withPost(post))
             _ <- categRepo.coll.update.one($id(categ.id), categ.withPost(topic, post))
-            _ <- askEmbed.commit(frozen, s"/forum/redirect/post/${post.id}".some)
+            _ <- askApi.commit(frozen, s"/forum/redirect/post/${post.id}".some)
           yield
             promotion.save(me, post.text)
             val text = s"${topic.name} ${post.text}"

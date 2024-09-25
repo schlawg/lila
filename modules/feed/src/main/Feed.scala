@@ -5,7 +5,7 @@ import reactivemongo.api.bson.*
 import reactivemongo.api.bson.Macros.Annotations.Key
 
 import java.time.format.{ DateTimeFormatter, FormatStyle }
-import lila.core.ask.{ Ask, AskEmbed }
+import lila.core.ask.{ Ask, AskApi }
 import lila.db.dsl.{ *, given }
 
 import lila.core.lilaism.Lilaism.*
@@ -43,7 +43,9 @@ object Feed:
   import scalalib.ThreadLocalRandom
   def makeId = ThreadLocalRandom.nextString(6)
 
-final class FeedApi(coll: Coll, cacheApi: CacheApi, flairApi: FlairApi, askEmbed: AskEmbed)(using Executor):
+final class FeedApi(coll: Coll, cacheApi: CacheApi, flairApi: FlairApi, askApi: AskApi)(using
+    Executor
+):
 
   import Feed.*
 
@@ -75,19 +77,19 @@ final class FeedApi(coll: Coll, cacheApi: CacheApi, flairApi: FlairApi, askEmbed
   def get(id: ID): Fu[Option[Update]] = coll
     .byId[Update](id)
     .flatMap:
-      case Some(up) => askEmbed.repo.preload(up.content.value).inject(up.some)
+      case Some(up) => askApi.repo.preload(up.content.value).inject(up.some)
       case _        => fuccess(none[Update])
 
   def edit(id: ID): Fu[Option[Update]] = get(id).flatMap:
     case Some(up) =>
-      askEmbed
+      askApi
         .unfreezeAndLoad(up.content.value)
         .map: text =>
-          up.copy(content = Markdown(text)).some
+          up.copy(content = Markdown(text.pp)).some
     case _ => fuccess(none[Update])
 
   def set(update: Update)(using me: lila.user.Me): Funit =
-    askEmbed.freezeAndCommit(update.content.value, me, s"/feed#${update.id}".some).flatMap { text =>
+    askApi.freezeAndCommit(update.content.value, me, s"/feed#${update.id}".some).flatMap { text =>
       coll.update
         .one($id(update.id), update.copy(content = Markdown(text)), upsert = true)
         .void

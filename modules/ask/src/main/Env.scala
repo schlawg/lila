@@ -12,4 +12,4 @@ final class Env(
 )(using Executor, Scheduler):
   private lazy val askColl = db(CollName("ask"))
   lazy val repo            = wire[AskRepo]
-  lazy val embed           = wire[AskEmbed]
+  lazy val api             = wire[AskApi]

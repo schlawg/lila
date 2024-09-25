@@ -7,16 +7,7 @@ import scalalib.extensions.{ *, given }
 import lila.core.id.{ AskId }
 import lila.core.userId.*
 
-case class Frozen(text: String, asks: Iterable[Ask])
-
-// https://www.unicode.org/faq/private_use.html
-val frozenIdMagic = "\ufdd6\ufdd4\ufdd2\ufdd0"
-val frozenIdRe    = s"$frozenIdMagic\\{(\\S{8})}".r
-
-def stripAsks(text: String, n: Int = -1): String =
-  frozenIdRe.replaceAllIn(text, "").take(if n == -1 then text.length else n)
-
-trait AskEmbed:
+trait AskApi:
   def freeze(text: String, creator: UserId): Frozen
   def commit(frozen: Frozen, url: Option[String] = none[String]): Fu[Iterable[Ask]]
   def freezeAndCommit(text: String, creator: UserId, url: Option[String] = none[String]): Fu[String]
@@ -40,6 +31,8 @@ trait AskRepo:
   def asksIn(text: String): Fu[List[Option[Ask]]]
   def isOpen(aid: AskId): Fu[Boolean]
   def setUrl(text: String, url: Option[String]): Funit
+
+case class Frozen(text: String, asks: Iterable[Ask])
 
 case class Ask(
     _id: AskId,
@@ -185,6 +178,10 @@ object Ask:
   type Picks   = Map[String, Vector[Int]] // ranked list of indices into Choices vector
   type Form    = Map[String, String]
 
+  // https://www.unicode.org/faq/private_use.html
+  val frozenIdMagic = "\ufdd6\ufdd4\ufdd2\ufdd0"
+  val frozenIdRe    = s"$frozenIdMagic\\{(\\S{8})}".r
+
   def make(
       _id: Option[String],
       question: String,
@@ -205,6 +202,9 @@ object Ask:
     form = None,
     url = None
   )
+
+  def strip(text: String, n: Int = -1): String =
+    frozenIdRe.replaceAllIn(text, "").take(if n == -1 then text.length else n)
 
   def anonHash(text: String, aid: AskId): String =
     "anon-" + base64

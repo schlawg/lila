@@ -135,11 +135,10 @@ final class Ublog(env: Env) extends LilaController(env):
   def edit(id: UblogPostId) = AuthBody { ctx ?=> me ?=>
     NotForKids:
       FoundPage(env.ublog.api.findEditableByMe(id)): post =>
-        env.ask.embed
+        env.ask.api
           .unfreezeAndLoad(post.markdown.value)
-          .flatMap: editText =>
-            val editPost = post.copy(markdown = Markdown(editText))
-            views.ublog.form.edit(editPost, env.ublog.form.edit(editPost))
+          .flatMap: frozen =>
+            views.ublog.form.edit(post, env.ublog.form.edit(post.copy(markdown = Markdown(frozen))))
   }
 
   def update(id: UblogPostId) = AuthBody { ctx ?=> me ?=>

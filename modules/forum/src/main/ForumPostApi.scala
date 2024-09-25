@@ -18,7 +18,7 @@ final class ForumPostApi(
     promotion: lila.core.security.PromotionApi,
     shutupApi: lila.core.shutup.ShutupApi,
     detectLanguage: DetectLanguage,
-    askEmbed: lila.core.ask.AskEmbed
+    askApi: lila.core.ask.AskApi
 )(using Executor)(using scheduler: Scheduler)
     extends lila.core.forum.ForumPostApi:
 
@@ -33,7 +33,7 @@ final class ForumPostApi(
       val publicMod = MasterGranter(_.PublicMod)
       val modIcon   = ~data.modIcon && (publicMod || MasterGranter(_.SeeReport))
       val anonMod   = modIcon && !publicMod
-      val frozen    = askEmbed.freeze(spam.replace(data.text), me)
+      val frozen    = askApi.freeze(spam.replace(data.text), me)
       val post = ForumPost.make(
         topicId = topic.id,
         userId = (!anonMod).option(me),
@@ -51,7 +51,7 @@ final class ForumPostApi(
             _ <- postRepo.coll.insert.one(post)
             _ <- topicRepo.coll.update.one($id(topic.id), topic.withPost(post))
             _ <- categRepo.coll.update.one($id(categ.id), categ.withPost(topic, post))
-            _ <- askEmbed.commit(frozen, s"/forum/redirect/post/${post.id}".some)
+            _ <- askApi.commit(frozen, s"/forum/redirect/post/${post.id}".some)
           yield
             promotion.save(me, post.text)
             if post.isTeam
@@ -86,7 +86,7 @@ final class ForumPostApi(
         case (_, post) if !post.canStillBeEdited =>
           fufail("Post can no longer be edited")
         case (_, post) =>
-          askEmbed
+          askApi
             .freezeAndCommit(spam.replace(newText), me, s"/forum/redirect/post/${postId}".some)
             .flatMap: frozen =>
               val newPost = post.editPost(nowInstant, frozen)

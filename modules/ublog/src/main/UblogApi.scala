@@ -16,16 +16,16 @@ final class UblogApi(
     picfitApi: PicfitApi,
     shutupApi: ShutupApi,
     irc: lila.core.irc.IrcApi,
-    askEmbed: lila.core.ask.AskEmbed
+    askApi: lila.core.ask.AskApi
 )(using Executor)
     extends lila.core.ublog.UblogApi:
 
   import UblogBsonHandlers.{ *, given }
 
   def create(data: UblogForm.UblogPostData, author: User): Fu[UblogPost] =
-    val frozen = askEmbed.freeze(data.markdown.value, author.id)
+    val frozen = askApi.freeze(data.markdown.value, author.id)
     val post   = data.create(author, Markdown(frozen.text))
-    (askEmbed.commit(frozen, s"/ublog/${post.id}/redirect".some) >>
+    (askApi.commit(frozen, s"/ublog/${post.id}/redirect".some) >>
       colls.post.insert.one(
         bsonWriteObjTry[UblogPost](post).get ++ $doc("likers" -> List(author.id))
       )).inject(post)
@@ -33,13 +33,13 @@ final class UblogApi(
   def getByPrismicId(id: String): Fu[Option[UblogPost]] = colls.post.one[UblogPost]($doc("prismicId" -> id))
 
   def update(data: UblogForm.UblogPostData, prev: UblogPost)(using me: Me): Fu[UblogPost] = for
-    frozen <- askEmbed.freezeAndCommit(data.markdown.value, me)
+    frozen <- askApi.freezeAndCommit(data.markdown.value, me)
     author <- userApi.byId(prev.created.by).map(_ | me.value)
     blog   <- getUserBlog(author, insertMissing = true)
     post = data.update(me.value, prev, Markdown(frozen))
     _ <- colls.post.update.one($id(prev.id), $set(bsonWriteObjTry[UblogPost](post).get))
     _ <- (post.live && prev.lived.isEmpty).so(onFirstPublish(author, blog, post))
-  yield post.copy(markdown = Markdown(askEmbed.unfreeze(frozen))) // for the ask /id
+  yield post.copy(markdown = Markdown(askApi.unfreeze(frozen)))
 
   private def onFirstPublish(author: User, blog: UblogBlog, post: UblogPost): Funit =
     rank
@@ -169,7 +169,7 @@ final class UblogApi(
   def delete(post: UblogPost): Funit =
     colls.post.delete.one($id(post.id)) >>
       image.deleteAll(post) >>
-      askEmbed.repo.deleteAll(post.markdown.value)
+      askApi.repo.deleteAll(post.markdown.value)
 
   def setTier(blog: UblogBlog.Id, tier: UblogRank.Tier): Funit =
     colls.blog.update
