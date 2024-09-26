@@ -19,6 +19,7 @@
     ---cols: 2; // ui/lobby/src/main.ts
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: auto repeat(2, fit-content(0)) auto repeat(2, fit-content(0)) auto;
+    // grid-template-rows: auto fit-content(0) repeat(3, min-content) 20em;
     grid-template-areas:
       'app      app'
       'side     buttons'
@@ -37,6 +38,10 @@
       7,
       fit-content(0)
     ); //auto repeat(3, fit-content(0)); //fit-content(0)) auto repeat(3, fit-content(0));
+    // grid-template-rows: 12em fit-content(0) min-content auto fit-content(15em) repeat(2, fit-content(0)) minmax(
+    //     0,
+    //     1fr
+    //   );
     grid-template-areas:
       'app     app buttons'
       'app     app side'
@@ -68,6 +73,7 @@
     ---cols: 4; // ui/lobby/src/main.ts
     grid-template-columns: repeat(4, 1fr);
     grid-template-rows: repeat(2, fit-content(0)) minmax(auto, 15em) auto auto; //repeat(4, fit-content(0));
+    //grid-template-rows: fit-content(0) min-content auto repeat(3, fit-content(0));
     grid-template-areas:
       'side   app     app     buttons'
       'side app app timeline'

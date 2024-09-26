@@ -5,6 +5,7 @@ import makeCtrl from './ctrl';
 import appView from './view/main';
 import startView from './view/start';
 import { countersView } from './view/counters';
+import { rotateBlogs } from './view/blog';
 
 export const patch = init([classModule, attributesModule, eventListenersModule]);
 
@@ -27,22 +28,21 @@ export default function main(opts: LobbyOpts) {
   }
 
   requestIdleCallback(() => {
-    layoutHacks();
-    window.addEventListener('resize', layoutHacks);
+    layoutChanged();
+    window.addEventListener('resize', layoutChanged);
   });
 
   return ctrl;
 }
 
 let cols = 0;
-let blogRotateTimer: number | undefined = undefined;
 
 /* Move the timeline to/from the bottom depending on screen width.
  * This must not cause any FOUC or layout shifting on page load. */
 
 let animationFrameId: number;
 
-const layoutHacks = () => {
+const layoutChanged = () => {
   cancelAnimationFrame(animationFrameId); // avoid more than one call per frame
   animationFrameId = requestAnimationFrame(() => {
     $('main.lobby').each(function(this: HTMLElement) {
@@ -56,34 +56,6 @@ const layoutHacks = () => {
         else $('.lobby__side .lobby__feed').appendTo('.lobby');
       }
     });
-    $('.lobby__blog').each((_, el: HTMLElement) => {
-      const style = window.getComputedStyle(el);
-      const gridGap = parseFloat(style.columnGap);
-      const kids = el.children as HTMLCollectionOf<HTMLElement>;
-      const visible = Math.floor((el.clientWidth + gridGap) / (180 + gridGap));
-      const colW = (el.clientWidth - gridGap * (visible - 1)) / visible;
-      el.style.gridTemplateColumns = `repeat(7, ${colW}px)`;
-      const blogRotate = () => {
-        for (let i = 0; i < kids.length; i++) {
-          kids[i].style.transition = 'transform 0.3s ease';
-          kids[i].style.transform = `translateX(-${Math.floor(colW + gridGap)}px)`;
-        }
-        setTimeout(() => {
-          el.append(el.firstChild!);
-          fix();
-        }, 500);
-      };
-
-      const fix = () => {
-        for (let i = 0; i < kids.length; i++) {
-          const kid = kids[i % kids.length];
-          kid.style.transition = '';
-          kid.style.transform = 'translateX(0)';
-        }
-      };
-      fix();
-      clearInterval(blogRotateTimer);
-      blogRotateTimer = setInterval(blogRotate, 10000);
-    });
+    rotateBlogs();
   });
 };
